@@ -32,7 +32,7 @@ use function is_string;
     name: 'typo3-ai-mate:middlewares:list',
     description: 'Resolved PSR-15 middleware order of a stack (frontend|backend) as JSON.',
 )]
-final class MiddlewareListCommand extends Command
+final class MiddlewareListCommand extends AbstractJsonCommand
 {
     public function __construct(private readonly MiddlewareStackResolver $resolver)
     {
@@ -63,16 +63,5 @@ final class MiddlewareListCommand extends Command
         }
 
         return $this->emit($output, ['stack' => $stack, 'middlewares' => $middlewares]);
-    }
-
-    /**
-     * @param mixed $data
-     */
-    private function emit(OutputInterface $output, $data, int $exitCode = Command::SUCCESS): int
-    {
-        $json = json_encode($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
-        $output->writeln(false === $json ? '{"error":"Failed to encode JSON."}' : $json);
-
-        return $exitCode;
     }
 }

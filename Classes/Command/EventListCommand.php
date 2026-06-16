@@ -31,7 +31,7 @@ use function is_string;
     name: 'typo3-ai-mate:events:list',
     description: 'Resolved PSR-14 event listener registry (event => listeners) as JSON.',
 )]
-final class EventListCommand extends Command
+final class EventListCommand extends AbstractJsonCommand
 {
     public function __construct(private readonly ListenerProvider $listenerProvider)
     {
@@ -63,10 +63,7 @@ final class EventListCommand extends Command
             $events[] = ['event' => $eventClass, 'listeners' => $this->mapListeners($listeners)];
         }
 
-        $json = json_encode(['events' => $events], \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
-        $output->writeln(false === $json ? '{"error":"Failed to encode JSON."}' : $json);
-
-        return Command::SUCCESS;
+        return $this->emit($output, ['events' => $events]);
     }
 
     /**
