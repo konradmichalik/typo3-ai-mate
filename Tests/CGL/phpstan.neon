@@ -1,0 +1,16 @@
+includes:
+	- %rootDir%/../../konradmichalik/phpstan-typo3-preset/phpstan.neon.dist
+	- phpstan-baseline.neon
+
+parameters:
+	level: max
+
+	scanDirectories:
+		- ../../vendor
+	paths:
+		- ../../Classes
+		- ../../Configuration
+		- ../../Tests/Unit
+
+	type_coverage:
+		constant: 0 # TODO: Set to 100, when PHP 8.3 is minimum requirement

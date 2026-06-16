@@ -1,0 +1,20 @@
+name: typo3-ai-mate
+type: php
+docroot: .Build
+php_version: "8.3"
+webserver_type: apache-fpm
+database:
+  type: mariadb
+  version: "10.11"
+use_dns_when_possible: true
+web_environment:
+  - TYPO3_CONTEXT=Development
+hooks:
+  post-start:
+    - exec: composer install --no-scripts
+
+# The multi-version TYPO3 environment is provided by the add-on:
+#   ddev add-on get konradmichalik/ddev-typo3-multi-version-extension
+# It adds .ddev/config.typo3-setup.yaml (docroot .Build, per-version hostnames)
+# and .ddev/docker-compose.typo3-setup.yaml. Limit TYPO3_VERSIONS to "13 14"
+# there, then run `ddev restart && ddev install all`.

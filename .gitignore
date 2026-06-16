@@ -1,0 +1,13 @@
+/.ai/
+/.Build/
+/composer.lock
+/public/
+/var/
+/vendor/
+.DS_Store
+.phpunit.result.cache
+
+# DDEV: only config.yaml is tracked; the multi-version add-on and ddev-generated
+# files are fetched via `ddev add-on get konradmichalik/ddev-typo3-multi-version-extension`.
+/.ddev/*
+!/.ddev/config.yaml
