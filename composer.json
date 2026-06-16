@@ -25,7 +25,8 @@
 	},
 	"require-dev": {
 		"phpunit/phpunit": "^10.5 || ^11.0 || ^12.0",
-		"typo3/cms-base-distribution": "^13.4 || ^14.0"
+		"typo3/cms-base-distribution": "^13.4 || ^14.0",
+		"typo3/testing-framework": "^8.2 || ^9.0"
 	},
 	"autoload": {
 		"psr-4": {
@@ -74,6 +75,7 @@
 		],
 		"cgl": "@composer -d Tests/CGL --",
 		"test": "@test:coverage --no-coverage",
-		"test:coverage": "XDEBUG_MODE=coverage phpunit -c phpunit.xml"
+		"test:coverage": "XDEBUG_MODE=coverage phpunit -c phpunit.xml",
+		"test:functional": "phpunit -c FunctionalTests.xml"
 	}
 }
