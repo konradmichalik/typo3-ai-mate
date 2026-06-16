@@ -10,31 +10,39 @@ VERSION="${1:-13}"
 if [ "$#" -gt 0 ]; then shift; fi
 
 INSTANCE="/var/www/html/.Build/${VERSION}"
+APPROOT="${DDEV_APPROOT:-$PWD}"
 
 # The Inspector runs here on the host (Node/npx); the MCP server itself
 # (vendor/bin/mate serve, stdio transport) runs inside the web container.
 #
-# The Inspector UI splits a multi-word command field on spaces, which shreds a
-# `bash -c "..."` argument and leaves the Connect button disabled. To avoid that
-# entirely we point the Inspector at a single-file launcher (no arguments, so it
-# cannot be mis-split) that shells into the container via `ddev exec` — not the
-# `ddev <version>` wrapper, whose header line would corrupt the stdio MCP stream.
+# We point the Inspector at a single-file launcher rather than a multi-word
+# command, because:
+#   * the UI splits a command field on spaces and would shred `bash -c "..."`,
+#     leaving Connect disabled;
+#   * the Inspector proxy spawns the command from its OWN working directory, but
+#     `ddev` resolves the project from the cwd — so the launcher first cd's into
+#     the project root, otherwise `ddev exec` fails with "could not find a
+#     project" and the UI connect times out.
+# `ddev exec` is used on purpose (not the `ddev <version>` wrapper, whose header
+# line would corrupt the stdio MCP stream).
 LAUNCHER="$(mktemp -t mate-serve.XXXXXX)"
 trap 'rm -f "${LAUNCHER}"' EXIT
 
 cat > "${LAUNCHER}" <<LAUNCH
 #!/usr/bin/env bash
+cd "${APPROOT}" || exit 1
 exec ddev exec bash -c "cd ${INSTANCE} && exec ./vendor/bin/mate serve"
 LAUNCH
 chmod +x "${LAUNCHER}"
 
-# DANGEROUSLY_OMIT_AUTH disables the proxy session token. This is a local dev-only
-# tool against a dev-only MCP server, and it removes the token handshake that can
-# otherwise leave the UI's Connect button disabled.
+# DANGEROUSLY_OMIT_AUTH: drop the proxy session token (local dev-only tool against
+# a dev-only server) so the UI's Connect is never blocked on the token handshake.
+# MCP_SERVER_REQUEST_TIMEOUT: give the cold `ddev exec` + mate boot enough head-room.
 #
 # Without extra args the interactive browser UI opens, pre-wired to the launcher —
 # just click "Connect", then open the Tools tab. Pass Inspector CLI flags for
 # headless checks, e.g.:
 #   ddev mcp-inspect 13 --cli --method tools/list
 #   ddev mcp-inspect 13 --cli --method tools/call --tool-name typo3-tca --tool-arg table=tt_content
-DANGEROUSLY_OMIT_AUTH=true npx --yes @modelcontextprotocol/inspector@latest "${LAUNCHER}" "$@"
+DANGEROUSLY_OMIT_AUTH=true MCP_SERVER_REQUEST_TIMEOUT=30000 \
+  npx --yes @modelcontextprotocol/inspector@latest "${LAUNCHER}" "$@"
