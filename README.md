@@ -29,7 +29,7 @@ It is both a **TYPO3 extension** (it ships console commands that boot _inside_ T
 - Resolved (merged) TCA of any table
 - Page composition — content elements, cache signals, `USER_INT` plugins
 - Resolved frontend TypoScript of a page
-- The resolved PSR-15 middleware order
+- The resolved PSR-15 middleware order and PSR-14 event listener registry
 - TYPO3 logs (search / tail / by level) with exception extraction
 - Per-request profiles — SQL, N+1 patterns, cache state, timing
 
@@ -89,6 +89,7 @@ The MCP tools run in the **Mate process** (its own Symfony DI container, `Config
 | `typo3-tca` | `typo3-ai-mate:tca:dump` | resolved (trimmed) TCA |
 | `typo3-typoscript` | `typo3-ai-mate:typoscript:dump` | resolved frontend TypoScript |
 | `typo3-middlewares` | `typo3-ai-mate:middlewares:list` | resolved PSR-15 order |
+| `typo3-events` | `typo3-ai-mate:events:list` | resolved PSR-14 event listener registry |
 
 > [!NOTE]
 > The profiler tools (`typo3-profiler-*`) read profiles recorded by the bundled `typo3-request-profiler`. Trigger a frontend request in the Development context to produce `var/log/profiles/*.json`.

@@ -40,6 +40,7 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
 - `typo3-tca` — resolved (trimmed) TCA of a table, or all table names.
 - `typo3-typoscript` — resolved frontend TypoScript of a page (scope with `path`).
 - `typo3-middlewares` — resolved PSR-15 middleware order of a stack.
+- `typo3-events` — resolved PSR-14 event listener registry (event => listeners).
 
 ## Adding your own TYPO3 tool
 
