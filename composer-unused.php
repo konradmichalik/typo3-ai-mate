@@ -15,9 +15,12 @@ use ComposerUnused\ComposerUnused\Configuration\Configuration;
 use ComposerUnused\ComposerUnused\Configuration\NamedFilter;
 
 return static function (Configuration $config): Configuration {
-    // typo3-request-profiler is a runtime/artifact dependency: the typo3-profiler-*
-    // MCP tools read the JSON profiles it writes but reference none of its PHP
-    // symbols, so composer-unused cannot detect the link. It is used on purpose.
+    // Both dependencies are used at runtime but expose no PHP symbols this package
+    // references, so composer-unused cannot detect the link — they are used on purpose:
+    //   * symfony/ai-mate — the host framework; provides the `mate` binary and loads
+    //     our MCP tools via the extra.ai-mate declaration.
+    //   * typo3-request-profiler — its JSON profiles are read by the typo3-profiler-* tools.
     return $config
+        ->addNamedFilter(NamedFilter::fromString('symfony/ai-mate'))
         ->addNamedFilter(NamedFilter::fromString('konradmichalik/typo3-request-profiler'));
 };
