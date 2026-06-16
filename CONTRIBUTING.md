@@ -71,6 +71,20 @@ The command intentionally connects via `ddev exec` rather than the `ddev <versio
 wrapper: the wrapper prints a `[TYPO3 v<n>] …` header that would corrupt the stdio
 MCP stream.
 
+To verify **all** tools at once, `ddev mcp-smoke [13|14]` calls every tool over the
+protocol and prints a pass/fail summary (exit code non-zero if any fail):
+
+```bash
+ddev mcp-smoke 13
+#   ✔ typo3-tca
+#   ✔ typo3-extensions
+#   …
+#   12 passed, 0 failed
+```
+
+The `typo3-profiler-*` tools only pass once the profiler is installed and a request
+has been recorded (see above).
+
 ## Run tests & checks
 
 ```bash

@@ -17,3 +17,4 @@
 !/.ddev/commands/host
 /.ddev/commands/host/*
 !/.ddev/commands/host/mcp-inspect
+!/.ddev/commands/host/mcp-smoke

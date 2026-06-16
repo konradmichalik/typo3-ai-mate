@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+
+## Description: Smoke-test every typo3-ai-mate MCP tool via the Inspector and print a pass/fail summary
+## Usage: mcp-smoke [13|14]
+## Example: "ddev mcp-smoke 13"
+
+set -uo pipefail
+
+VERSION="${1:-13}"
+INSTANCE="/var/www/html/.Build/${VERSION}"
+
+# MCP server command (stdio). Deliberately via `ddev exec`, not the `ddev <n>`
+# wrapper, whose header line would corrupt the stdio MCP stream.
+SERVER=(ddev exec bash -c "cd ${INSTANCE} && exec ./vendor/bin/mate serve")
+
+# Newest profile token for typo3-profiler-get (the profiler must be installed and
+# a request recorded — see CONTRIBUTING "Exercising the request profiler flow").
+TOKEN="$(ddev exec bash -c "ls -t ${INSTANCE}/var/log/profiles/*.json 2>/dev/null | head -1 | xargs -n1 basename 2>/dev/null | sed 's/.json//'")"
+
+# tool|space-separated args
+TESTS=(
+  "typo3-tca|--tool-arg table=tt_content"
+  "typo3-extensions|"
+  "typo3-page|--tool-arg pageId=1"
+  "typo3-typoscript|--tool-arg pageId=1 --tool-arg path=tt_content"
+  "typo3-middlewares|--tool-arg stack=frontend"
+  "typo3-logs-search|--tool-arg query=intentional"
+  "typo3-logs-tail|--tool-arg limit=5"
+  "typo3-logs-by-level|--tool-arg level=error"
+  "typo3-profiler-latest|"
+  "typo3-profiler-list|--tool-arg limit=5"
+  "typo3-profiler-search|--tool-arg url=/"
+)
+[ -n "${TOKEN}" ] && TESTS+=("typo3-profiler-get|--tool-arg token=${TOKEN}")
+
+# Call one tool over the real MCP protocol; succeeds when the result carries
+# "isError": false. Returns the captured output on stdout.
+call_tool() {
+  local name="$1" args="$2"
+  # Free the Inspector proxy port so back-to-back launches don't collide.
+  pkill -f "modelcontextprotocol/inspector" 2>/dev/null || true
+  # shellcheck disable=SC2086
+  npx --yes @modelcontextprotocol/inspector@latest "${SERVER[@]}" \
+    --cli --method tools/call --tool-name "${name}" ${args} 2>/dev/null
+}
+
+printf "Smoke-testing typo3-ai-mate MCP tools on TYPO3 v%s\n\n" "${VERSION}"
+pass=0
+fail=0
+failed=()
+for entry in "${TESTS[@]}"; do
+  name="${entry%%|*}"
+  args="${entry#*|}"
+
+  ok=0
+  # One retry to absorb a transient Inspector-proxy race.
+  for attempt in 1 2; do
+    if call_tool "${name}" "${args}" | grep -qE '"isError":[[:space:]]*false'; then
+      ok=1
+      break
+    fi
+    sleep 1
+  done
+
+  if [ "${ok}" -eq 1 ]; then
+    printf "  \033[32m✔\033[0m %s\n" "${name}"
+    pass=$((pass + 1))
+  else
+    printf "  \033[31m✘\033[0m %s\n" "${name}"
+    fail=$((fail + 1))
+    failed+=("${name}")
+  fi
+done
+
+printf "\n%d passed, %d failed" "${pass}" "${fail}"
+[ "${fail}" -gt 0 ] && printf " (%s)" "${failed[*]}"
+printf "\n"
+[ "${fail}" -eq 0 ]
