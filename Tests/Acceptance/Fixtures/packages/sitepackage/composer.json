@@ -1,0 +1,24 @@
+{
+  "name": "test/sitepackage",
+  "description": "typo3-ai-mate N+1 / exception demo sitepackage",
+  "license": "GPL-2.0-or-later",
+  "type": "typo3-cms-extension",
+  "authors": [
+    {
+      "name": "Konrad Michalik",
+      "email": "km@move-elevator.de"
+    }
+  ],
+  "require": {},
+  "extra": {
+    "typo3/cms": {
+      "extension-key": "sitepackage"
+    }
+  },
+  "version": "1.0.0",
+  "autoload": {
+    "psr-4": {
+      "Test\\Sitepackage\\": "Classes/"
+    }
+  }
+}

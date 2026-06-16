@@ -1,0 +1,36 @@
+# Self-contained content rendering (no fluid_styled_content dependency).
+# tt_content is a CASE keyed on CType so the resolved TypoScript places the
+# USER_INT marker exactly where typo3-page looks for it: tt_content.<CType>.
+tt_content = CASE
+tt_content {
+    key.field = CType
+
+    # USER_INT keeps the element uncached so the N+1 queries run on every request
+    # and the profiler records them. typo3-page reads tt_content.sitepackage_nplusone
+    # as USER_INT and marks the element accordingly.
+    sitepackage_nplusone = USER_INT
+    sitepackage_nplusone.userFunc = Test\Sitepackage\ContentObject\NplusOneDemoRenderer->render
+
+    sitepackage_throws = USER_INT
+    sitepackage_throws.userFunc = Test\Sitepackage\ContentObject\ExceptionRenderer->render
+
+    default = TEXT
+    default.value = (content element not configured)
+}
+
+page = PAGE
+page {
+    10 = TEXT
+    10.value = <h1>AI Mate — demo</h1>
+
+    20 = CONTENT
+    20 {
+        table = tt_content
+        select {
+            pidInList = this
+            orderBy = sorting
+            where = colPos = 0
+        }
+        renderObj < tt_content
+    }
+}
