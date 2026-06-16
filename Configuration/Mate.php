@@ -12,7 +12,7 @@ declare(strict_types=1);
  */
 
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{ExtensionsTool, LogsTool, MiddlewaresTool, PageTool, PerformanceTool, TcaTool, TypoScriptTool};
+use KonradMichalik\Typo3AiMate\Mcp\{LogsTool, MiddlewaresTool, PageTool, PerformanceTool, TcaTool, TypoScriptTool};
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 /*
@@ -36,7 +36,6 @@ return static function (ContainerConfigurator $container): void {
 
     // CLI-wrapping tools (autowire Typo3CliRunner).
     $services->set(TcaTool::class);
-    $services->set(ExtensionsTool::class);
     $services->set(PageTool::class);
     $services->set(TypoScriptTool::class);
     $services->set(MiddlewaresTool::class);

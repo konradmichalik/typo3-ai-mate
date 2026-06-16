@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{ExtensionsTool, LogsTool, MiddlewaresTool, PageTool, TcaTool, TypoScriptTool};
+use KonradMichalik\Typo3AiMate\Mcp\{LogsTool, MiddlewaresTool, PageTool, TcaTool, TypoScriptTool};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -66,15 +66,6 @@ final class McpToolWrappersTest extends TestCase
         self::assertIsArray($forwarded);
         self::assertSame('typo3-ai-mate:tca:dump', $forwarded['command']);
         self::assertSame(['--list'], $forwarded['args']);
-    }
-
-    #[Test]
-    public function extensionsToolCallsTheListCommand(): void
-    {
-        $result = (new ExtensionsTool($this->runner))->list();
-
-        self::assertSame('typo3-ai-mate:extensions:list', $result['extensions']['command']);
-        self::assertSame([], $result['extensions']['args']);
     }
 
     #[Test]

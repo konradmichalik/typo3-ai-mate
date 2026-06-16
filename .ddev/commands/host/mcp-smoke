@@ -20,7 +20,6 @@ TOKEN="$(ddev exec bash -c "ls -t ${INSTANCE}/var/log/profiles/*.json 2>/dev/nul
 # tool|space-separated args
 TESTS=(
   "typo3-tca|--tool-arg table=tt_content"
-  "typo3-extensions|"
   "typo3-page|--tool-arg pageId=1"
   "typo3-typoscript|--tool-arg pageId=1 --tool-arg path=tt_content"
   "typo3-middlewares|--tool-arg stack=frontend"

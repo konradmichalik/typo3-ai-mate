@@ -38,7 +38,6 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
 - `typo3-page` — page composition + cache signals (expand a profile `page.id`).
 - `typo3-logs-search` / `-tail` / `-by-level` — TYPO3 logs.
 - `typo3-tca` — resolved (trimmed) TCA of a table, or all table names.
-- `typo3-extensions` — active extensions incl. version and description.
 - `typo3-typoscript` — resolved frontend TypoScript of a page (scope with `path`).
 - `typo3-middlewares` — resolved PSR-15 middleware order of a stack.
 

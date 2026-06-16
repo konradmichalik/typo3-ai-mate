@@ -53,7 +53,6 @@ and emit raw JSON.
 | `typo3-page` | `typo3-ai-mate:page:info` | page composition, cache signals, USER_INT plugins |
 | `typo3-logs-search` / `-tail` / `-by-level` | `typo3-ai-mate:logs:search` | TYPO3 logs |
 | `typo3-tca` | `typo3-ai-mate:tca:dump` | resolved (trimmed) TCA |
-| `typo3-extensions` | `typo3-ai-mate:extensions:list` | active extensions incl. description |
 | `typo3-typoscript` | `typo3-ai-mate:typoscript:dump` | resolved frontend TypoScript |
 | `typo3-middlewares` | `typo3-ai-mate:middlewares:list` | resolved PSR-15 order |
 

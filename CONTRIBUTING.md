@@ -77,7 +77,6 @@ protocol and prints a pass/fail summary (exit code non-zero if any fail):
 ```bash
 ddev mcp-smoke 13
 #   ✔ typo3-tca
-#   ✔ typo3-extensions
 #   …
 #   12 passed, 0 failed
 ```
