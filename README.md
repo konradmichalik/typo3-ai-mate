@@ -32,6 +32,7 @@ It is both a **TYPO3 extension** (it ships console commands that boot _inside_ T
 - The resolved PSR-15 middleware order and PSR-14 event listener registry
 - TYPO3 logs (search / tail / by level) with exception extraction
 - Per-request profiles — SQL, N+1 patterns, cache state, timing
+- Upgrade readiness — pending upgrade wizards, extension scanner hits, runtime deprecations
 
 ## 🔥 Installation
 
@@ -90,6 +91,9 @@ The MCP tools run in the **Mate process** (its own Symfony DI container, `Config
 | `typo3-typoscript` | `typo3-ai-mate:typoscript:dump` | resolved frontend TypoScript |
 | `typo3-middlewares` | `typo3-ai-mate:middlewares:list` | resolved PSR-15 order |
 | `typo3-events` | `typo3-ai-mate:events:list` | resolved PSR-14 event listener registry |
+| `typo3-upgrade-wizards` | `typo3-ai-mate:upgrade:wizards` | upgrade wizards (pending/done) — outstanding DB/config migrations |
+| `typo3-extension-scanner` | `typo3-ai-mate:upgrade:scan` | static scan of an extension against the core breaking/deprecation matchers |
+| `typo3-deprecations` | `typo3-ai-mate:upgrade:deprecations` | runtime deprecation notices, deduplicated and counted |
 
 > [!NOTE]
 > The profiler tools (`typo3-profiler-*`) read profiles recorded by the bundled `typo3-request-profiler`. Trigger a frontend request in the Development context to produce `var/log/profiles/*.json`.
@@ -100,6 +104,7 @@ Two common assistant workflows the tools directly support:
 
 - **Slow page** — `typo3-profiler-latest` → spot N+1 queries / uncached blocks → `typo3-page` for cache signals → correlate via `request_id`
 - **Error page** — `typo3-logs-search` / `-by-level` → locate the exception → `typo3-page` for context → correlate via `request_id`
+- **Major upgrade (v13 → v14)** — `typo3-extension-scanner` for code that breaks → `typo3-upgrade-wizards` for outstanding migrations → `typo3-deprecations` for what ran (see `INSTRUCTIONS.md`)
 
 ### Correlation anchor `request_id`
 

@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{EventsTool, LogsTool, MiddlewaresTool, PageTool, TcaTool, TypoScriptTool};
+use KonradMichalik\Typo3AiMate\Mcp\{DeprecationsTool, EventsTool, ExtensionScannerTool, LogsTool, MiddlewaresTool, PageTool, TcaTool, TypoScriptTool, UpgradeWizardsTool};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -111,6 +111,33 @@ final class McpToolWrappersTest extends TestCase
 
         self::assertSame('typo3-ai-mate:events:list', $result['command']);
         self::assertSame(['--event', 'SomeEvent'], $result['args']);
+    }
+
+    #[Test]
+    public function extensionScannerToolForwardsTheExtensionKey(): void
+    {
+        $result = (new ExtensionScannerTool($this->runner))->scan('my_ext');
+
+        self::assertSame('typo3-ai-mate:upgrade:scan', $result['command']);
+        self::assertSame(['my_ext'], $result['args']);
+    }
+
+    #[Test]
+    public function upgradeWizardsToolCallsTheWizardsCommand(): void
+    {
+        $result = (new UpgradeWizardsTool($this->runner))->list();
+
+        self::assertSame('typo3-ai-mate:upgrade:wizards', $result['command']);
+        self::assertSame([], $result['args']);
+    }
+
+    #[Test]
+    public function deprecationsToolCallsTheDeprecationsCommand(): void
+    {
+        $result = (new DeprecationsTool($this->runner))->list();
+
+        self::assertSame('typo3-ai-mate:upgrade:deprecations', $result['command']);
+        self::assertSame([], $result['args']);
     }
 
     #[Test]

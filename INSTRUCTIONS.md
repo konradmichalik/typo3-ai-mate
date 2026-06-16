@@ -41,6 +41,28 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
 - `typo3-typoscript` — resolved frontend TypoScript of a page (scope with `path`).
 - `typo3-middlewares` — resolved PSR-15 middleware order of a stack.
 - `typo3-events` — resolved PSR-14 event listener registry (event => listeners).
+- `typo3-upgrade-wizards` — all upgrade wizards (pending/done) with status; which
+  DB/config migrations are still outstanding. Read-only.
+- `typo3-extension-scanner` — static scan of an extension's PHP against the core
+  breaking/deprecation matchers (`extension=<key>`); where *your* code breaks.
+- `typo3-deprecations` — runtime deprecation notices, deduplicated and grouped by
+  message with counts (`loggingEnabled` flag — see below).
+
+## Planning a major upgrade (v13 → v14)
+
+Combine the three upgrade tools — the same building blocks as the backend upgrade
+module — to reason from the installation's real state instead of the changelog:
+
+1. `typo3-extension-scanner extension=<key>` — static analysis: which lines in your
+   own code break / are deprecated in the installed target version (`message`,
+   `line`, `strong`/`weak` `indicator`). Biggest lever, runs headless.
+2. `typo3-upgrade-wizards` — which DB/config migrations are still `AVAILABLE` vs
+   `DONE`. Read-only; the assistant must not run wizards autonomously.
+3. `typo3-deprecations` — what actually logged a deprecation at runtime,
+   deduplicated by message. Complements (1). If `loggingEnabled` is `false`, the
+   `deprecations` log channel is off (the default) — an empty list means "not
+   measured", **not** "no deprecations". Enable
+   `[LOG][TYPO3][CMS][deprecations][writerConfiguration]` to collect data.
 
 ## Adding your own TYPO3 tool
 
