@@ -15,6 +15,7 @@
 	"require": {
 		"php": "~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0",
 		"ext-mbstring": "*",
+		"konradmichalik/typo3-request-profiler": "dev-main",
 		"mcp/sdk": "^0.5",
 		"symfony/ai-mate": "^0.9",
 		"symfony/console": "^6.4 || ^7.0",
@@ -25,9 +26,6 @@
 	"require-dev": {
 		"phpunit/phpunit": "^10.5 || ^11.0 || ^12.0",
 		"typo3/cms-base-distribution": "^13.4 || ^14.0"
-	},
-	"suggest": {
-		"konradmichalik/typo3-request-profiler": "Records per-request SQL/N+1/cache/timing profiles consumed by the typo3-profiler-* MCP tools."
 	},
 	"autoload": {
 		"psr-4": {
