@@ -14,29 +14,27 @@ INSTANCE="/var/www/html/.Build/${VERSION}"
 # The Inspector runs here on the host (Node/npx); the MCP server itself
 # (vendor/bin/mate serve, stdio transport) runs inside the web container.
 #
-# We hand the server to the Inspector via a generated config file with `args` as
-# a JSON array. The interactive UI splits a plain command field on spaces, which
-# would shred the `bash -c "..."` argument and make "Connect" fail — a config
-# file keeps it as a single argument. We deliberately use `ddev exec` rather than
-# the `ddev <version>` wrapper, whose "[TYPO3 v<n>] ..." header would corrupt the
-# stdio MCP stream.
-CONFIG="$(mktemp -t mcp-inspect.XXXXXX)"
-trap 'rm -f "${CONFIG}"' EXIT
+# The Inspector UI splits a multi-word command field on spaces, which shreds a
+# `bash -c "..."` argument and leaves the Connect button disabled. To avoid that
+# entirely we point the Inspector at a single-file launcher (no arguments, so it
+# cannot be mis-split) that shells into the container via `ddev exec` — not the
+# `ddev <version>` wrapper, whose header line would corrupt the stdio MCP stream.
+LAUNCHER="$(mktemp -t mate-serve.XXXXXX)"
+trap 'rm -f "${LAUNCHER}"' EXIT
 
-cat > "${CONFIG}" <<JSON
-{
-  "mcpServers": {
-    "typo3-ai-mate": {
-      "command": "ddev",
-      "args": ["exec", "bash", "-c", "cd ${INSTANCE} && exec ./vendor/bin/mate serve"]
-    }
-  }
-}
-JSON
+cat > "${LAUNCHER}" <<LAUNCH
+#!/usr/bin/env bash
+exec ddev exec bash -c "cd ${INSTANCE} && exec ./vendor/bin/mate serve"
+LAUNCH
+chmod +x "${LAUNCHER}"
 
-# Without extra args the interactive browser UI opens, pre-wired to the server —
+# DANGEROUSLY_OMIT_AUTH disables the proxy session token. This is a local dev-only
+# tool against a dev-only MCP server, and it removes the token handshake that can
+# otherwise leave the UI's Connect button disabled.
+#
+# Without extra args the interactive browser UI opens, pre-wired to the launcher —
 # just click "Connect", then open the Tools tab. Pass Inspector CLI flags for
 # headless checks, e.g.:
 #   ddev mcp-inspect 13 --cli --method tools/list
 #   ddev mcp-inspect 13 --cli --method tools/call --tool-name typo3-tca --tool-arg table=tt_content
-npx --yes @modelcontextprotocol/inspector@latest --config "${CONFIG}" --server typo3-ai-mate "$@"
+DANGEROUSLY_OMIT_AUTH=true npx --yes @modelcontextprotocol/inspector@latest "${LAUNCHER}" "$@"
