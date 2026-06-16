@@ -1,4 +1,8 @@
+# MCP client config written by `mate init` / the ai-mate composer plugin —
+# machine-/setup-specific (stdio command differs host vs. ddev), never committed.
 /.ai/
+/mcp.json
+/.mcp.json
 /.Build/
 /public/
 /var/
@@ -17,3 +21,6 @@
 /.ddev/commands/host/*
 !/.ddev/commands/host/mcp-inspect
 !/.ddev/commands/host/mcp-smoke
+
+# php-cs-fixer cache (created when running CGL config from repo root)
+.php-cs-fixer.cache

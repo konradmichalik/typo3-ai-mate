@@ -87,6 +87,11 @@ has been recorded (see above).
 # Unit tests
 composer test
 
+# Functional tests (need a database; run inside DDEV)
+ddev exec env typo3DatabaseDriver=mysqli typo3DatabaseHost=db \
+  typo3DatabaseUsername=root typo3DatabasePassword=root typo3DatabaseName=db \
+  composer test:functional
+
 # Coding standards, static analysis, rector (CGL)
 composer cgl install
 composer cgl lint

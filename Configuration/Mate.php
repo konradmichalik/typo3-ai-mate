@@ -12,7 +12,7 @@ declare(strict_types=1);
  */
 
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{LogsTool, MiddlewaresTool, PageTool, PerformanceTool, TcaTool, TypoScriptTool};
+use KonradMichalik\Typo3AiMate\Mcp\{DeprecationsTool, EventsTool, ExtensionScannerTool, LogsTool, MiddlewaresTool, PageTool, PerformanceTool, TcaTool, TypoScriptTool, UpgradeWizardsTool};
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 /*
@@ -39,7 +39,11 @@ return static function (ContainerConfigurator $container): void {
     $services->set(PageTool::class);
     $services->set(TypoScriptTool::class);
     $services->set(MiddlewaresTool::class);
+    $services->set(EventsTool::class);
     $services->set(LogsTool::class);
+    $services->set(UpgradeWizardsTool::class);
+    $services->set(ExtensionScannerTool::class);
+    $services->set(DeprecationsTool::class);
 
     // Profiler artifact reader needs the project root to locate var/log/profiles.
     $services->set(PerformanceTool::class)

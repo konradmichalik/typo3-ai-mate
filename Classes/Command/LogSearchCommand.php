@@ -15,7 +15,6 @@ namespace KonradMichalik\Typo3AiMate\Command;
 
 use KonradMichalik\Typo3AiMate\Support\Cast;
 use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\{InputInterface, InputOption};
 use Symfony\Component\Console\Output\OutputInterface;
 use TYPO3\CMS\Core\Core\Environment;
@@ -32,7 +31,7 @@ use function is_string;
     name: 'typo3-ai-mate:logs:search',
     description: 'Search the TYPO3 logs (level/component/request-id/query) and return matching entries as JSON.',
 )]
-final class LogSearchCommand extends Command
+final class LogSearchCommand extends AbstractJsonCommand
 {
     /**
      * PSR-3 severity order: lower number = more severe. A --level filter keeps
@@ -155,10 +154,7 @@ final class LogSearchCommand extends Command
         $limit = max(1, Cast::int($input->getOption('limit')));
         $entries = array_slice($entries, -$limit);
 
-        $json = json_encode($entries, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
-        $output->writeln(false === $json ? '{"error":"Failed to encode JSON."}' : $json);
-
-        return Command::SUCCESS;
+        return $this->emit($output, $entries);
     }
 
     /**

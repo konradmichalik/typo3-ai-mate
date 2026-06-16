@@ -31,7 +31,7 @@ use function sprintf;
     name: 'typo3-ai-mate:tca:dump',
     description: 'Resolved TCA of a table (trimmed) or the list of all table names as JSON.',
 )]
-final class TcaDumpCommand extends Command
+final class TcaDumpCommand extends AbstractJsonCommand
 {
     /**
      * Reduce a full TCA table definition to the fields that matter for an
@@ -98,22 +98,12 @@ final class TcaDumpCommand extends Command
         }
 
         if (!isset($tca[$table]) || !is_array($tca[$table])) {
-            $this->emit($output, ['error' => sprintf('Unknown TCA table "%s".', $table)]);
-
-            return Command::FAILURE;
+            return $this->emit($output, ['error' => sprintf('Unknown TCA table "%s".', $table)], Command::FAILURE);
         }
 
         /** @var array<string, mixed> $definition */
         $definition = $tca[$table];
 
         return $this->emit($output, $this->extractTable($definition));
-    }
-
-    private function emit(OutputInterface $output, mixed $data): int
-    {
-        $json = json_encode($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
-        $output->writeln(false === $json ? '{"error":"Failed to encode JSON."}' : $json);
-
-        return Command::SUCCESS;
     }
 }

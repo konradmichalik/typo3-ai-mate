@@ -39,7 +39,7 @@ use function sprintf;
     name: 'typo3-ai-mate:page:info',
     description: 'Page composition (content elements, backend layout) and cache signals as JSON.',
 )]
-final class PageInfoCommand extends Command
+final class PageInfoCommand extends AbstractJsonCommand
 {
     public function __construct(
         private readonly ConnectionPool $connectionPool,
@@ -210,16 +210,5 @@ final class PageInfoCommand extends Command
         }
 
         return array_keys($userInt);
-    }
-
-    /**
-     * @param mixed $data
-     */
-    private function emit(OutputInterface $output, $data, int $exitCode = Command::SUCCESS): int
-    {
-        $json = json_encode($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
-        $output->writeln(false === $json ? '{"error":"Failed to encode JSON."}' : $json);
-
-        return $exitCode;
     }
 }
