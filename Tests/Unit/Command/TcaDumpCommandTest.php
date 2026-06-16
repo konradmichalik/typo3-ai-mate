@@ -17,13 +17,11 @@ use KonradMichalik\Typo3AiMate\Command\TcaDumpCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-
 /**
  * TcaDumpCommandTest.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
-
 final class TcaDumpCommandTest extends TestCase
 {
     #[Test]

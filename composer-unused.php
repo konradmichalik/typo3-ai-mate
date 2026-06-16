@@ -11,8 +11,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-use ComposerUnused\ComposerUnused\Configuration\Configuration;
-use ComposerUnused\ComposerUnused\Configuration\NamedFilter;
+use ComposerUnused\ComposerUnused\Configuration\{Configuration, NamedFilter};
 
 return static function (Configuration $config): Configuration {
     // Both dependencies are used at runtime but expose no PHP symbols this package

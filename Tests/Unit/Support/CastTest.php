@@ -18,13 +18,11 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use stdClass;
 
-
 /**
  * CastTest.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
-
 final class CastTest extends TestCase
 {
     #[Test]
