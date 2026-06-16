@@ -1,0 +1,16 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  KonradMichalik\Typo3AiMate\Command\:
+    resource: '../Classes/Command/*'
+
+  KonradMichalik\Typo3AiMate\Service\:
+    resource: '../Classes/Service/*'
+
+  # Console commands are auto-tagged from the #[AsCommand] attribute via
+  # autoconfigure (TYPO3 v12+). The MCP tool classes in Classes/Mcp/* are NOT
+  # registered here: they run in the separate Symfony DI container of the Mate
+  # process (see Configuration/Mate.php).
