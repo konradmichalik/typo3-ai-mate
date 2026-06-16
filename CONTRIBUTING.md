@@ -50,6 +50,27 @@ ddev 13 ./vendor/bin/mate discover
 ddev 13 ./vendor/bin/mate mcp:tools:call typo3-profiler-latest
 ```
 
+## Inspecting the MCP protocol layer
+
+`ddev mcp-inspect` wraps the [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector)
+and connects it to `vendor/bin/mate serve` (stdio transport) inside the chosen
+instance. This validates the real protocol — the `initialize` handshake, the tool
+JSON-schemas as an assistant sees them, and that stdout stays clean — which the
+`mate mcp:tools:*` commands bypass.
+
+```bash
+# Interactive browser UI against v13 (default), or pass 14
+ddev mcp-inspect 13
+
+# Headless checks (CLI mode)
+ddev mcp-inspect 13 --cli --method tools/list
+ddev mcp-inspect 13 --cli --method tools/call --tool-name typo3-tca --tool-arg table=tt_content
+```
+
+The command intentionally connects via `ddev exec` rather than the `ddev <version>`
+wrapper: the wrapper prints a `[TYPO3 v<n>] …` header that would corrupt the stdio
+MCP stream.
+
 ## Run tests & checks
 
 ```bash

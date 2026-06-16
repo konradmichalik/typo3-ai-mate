@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+## Description: Inspect the typo3-ai-mate MCP server with the MCP Inspector
+## Usage: mcp-inspect [13|14] [inspector args...]
+## Example: "ddev mcp-inspect 13" (interactive UI), "ddev mcp-inspect 14 --cli --method tools/list"
+
+set -euo pipefail
+
+VERSION="${1:-13}"
+if [ "$#" -gt 0 ]; then shift; fi
+
+INSTANCE="/var/www/html/.Build/${VERSION}"
+
+# The MCP Inspector runs here on the host (Node/npx); the MCP server itself
+# (vendor/bin/mate serve, stdio transport) runs inside the web container. We
+# connect via `ddev exec` and deliberately do NOT use the `ddev <version>`
+# wrapper, because that prints a "[TYPO3 v<n>] ..." header to stdout which would
+# corrupt the stdio MCP stream.
+#
+# Without extra args the interactive browser UI opens. Pass Inspector CLI flags
+# for headless checks, e.g.:
+#   ddev mcp-inspect 13 --cli --method tools/list
+#   ddev mcp-inspect 13 --cli --method tools/call --tool-name typo3-tca --tool-arg table=tt_content
+exec npx --yes @modelcontextprotocol/inspector@latest "$@" \
+  ddev exec bash -c "cd ${INSTANCE} && exec ./vendor/bin/mate serve"

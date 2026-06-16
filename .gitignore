@@ -7,7 +7,13 @@
 .DS_Store
 .phpunit.result.cache
 
-# DDEV: only config.yaml is tracked; the multi-version add-on and ddev-generated
-# files are fetched via `ddev add-on get konradmichalik/ddev-typo3-multi-version-extension`.
+# DDEV: only config.yaml and our own custom commands are tracked; the
+# multi-version add-on and ddev-generated files are fetched via
+# `ddev add-on get konradmichalik/ddev-typo3-multi-version-extension`.
 /.ddev/*
 !/.ddev/config.yaml
+!/.ddev/commands
+/.ddev/commands/*
+!/.ddev/commands/host
+/.ddev/commands/host/*
+!/.ddev/commands/host/mcp-inspect
