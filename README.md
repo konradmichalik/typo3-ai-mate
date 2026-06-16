@@ -118,6 +118,10 @@ Recipe: (1) a TYPO3 console command that prints **raw JSON** (no `SymfonyStyle` 
 > [!WARNING]
 > All tools operate on the **local installation only** and must never be exposed over a network. ai-mate redacts cookies, auth headers and secrets by default.
 
+## 🔗 Related
+
+[`hauptsacheNet/typo3-mcp-server`](https://github.com/hauptsacheNet/typo3-mcp-server) is a complementary project with a different goal: it gives assistants a native MCP server to **create, edit and translate TYPO3 content**, safely gated behind workspaces. `typo3-ai-mate` deliberately does **not** write anything — it is a dev-only, read-only **diagnostics** bridge for the resolved runtime state (performance, TypoScript, middlewares, logs). Use the former to edit content, the latter to debug it; they sit happily side by side.
+
 ## 🧑‍💻 Contributing
 
 Please have a look at [`CONTRIBUTING.md`](CONTRIBUTING.md).
