@@ -50,10 +50,7 @@ It is both a **TYPO3 extension** (it ships console commands that boot _inside_ T
 ### Composer
 
 ```bash
-composer require --dev konradmichalik/typo3-ai-mate   # also pulls symfony/ai-mate + typo3-request-profiler
-vendor/bin/mate init                                  # scaffold mate/ + mcp.json (skip if already present)
-vendor/bin/mate discover                              # register the typo3-* tools
-vendor/bin/mate serve                                 # MCP server; the assistant binds via mcp.json
+composer require --dev konradmichalik/typo3-ai-mate
 ```
 
 > [!NOTE]
@@ -61,7 +58,14 @@ vendor/bin/mate serve                                 # MCP server; the assistan
 
 ## 🔌 Connect your assistant
 
-`mate serve` is a single MCP server exposing all `typo3-*` tools. After running `vendor/bin/mate discover` once, register it with Claude Code:
+Scaffold the Mate workspace and register the tools once:
+
+```bash
+vendor/bin/mate init       # scaffold mate/ + mcp.json (skip if already present)
+vendor/bin/mate discover   # register the typo3-* tools
+```
+
+`mate serve` is a single MCP server exposing all `typo3-*` tools — Claude starts it for you once it is registered:
 
 ```bash
 claude mcp add typo3-ai-mate --scope project -- ddev exec vendor/bin/mate serve   # DDEV project
