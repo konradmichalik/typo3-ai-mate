@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{LogsTool, MiddlewaresTool, PageTool, TcaTool, TypoScriptTool};
+use KonradMichalik\Typo3AiMate\Mcp\{EventsTool, LogsTool, MiddlewaresTool, PageTool, TcaTool, TypoScriptTool};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -102,6 +102,15 @@ final class McpToolWrappersTest extends TestCase
 
         self::assertSame('typo3-ai-mate:middlewares:list', $result['command']);
         self::assertSame(['--stack', 'backend'], $result['args']);
+    }
+
+    #[Test]
+    public function eventsToolForwardsTheEventFilter(): void
+    {
+        $result = (new EventsTool($this->runner))->list('SomeEvent');
+
+        self::assertSame('typo3-ai-mate:events:list', $result['command']);
+        self::assertSame(['--event', 'SomeEvent'], $result['args']);
     }
 
     #[Test]
