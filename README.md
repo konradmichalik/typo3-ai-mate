@@ -14,17 +14,22 @@ composition, resolved TypoScript, the PSR-15 middleware order, logs and per-requ
 profiles — to assistants like Claude Code, Cursor or Copilot over **MCP**, so the
 assistant reasons from facts instead of guessing from source files.
 
-> **Lead use case:** *"This page is slow, find the performance problem."* The
+> [!TIP]
+> **Lead use case:** *"This page is slow — find the performance problem."* The
 > assistant calls a profiler tool, sees the N+1 queries / cache state / timing,
 > and diagnoses — instead of reading ten files and guessing.
 
-## Requirements
+## 🔥 Requirements
 
 - TYPO3 **v13.4** or **v14.0**
 - PHP **8.2+**, Composer mode
-- **Development** application context (`Environment::getContext()->isDevelopment()`)
 
-## Installation
+> [!IMPORTANT]
+> This package is **development-only**. All tools require
+> `Environment::getContext()->isDevelopment()` — they will not activate in
+> production or staging contexts.
+
+## 🚀 Installation
 
 ```bash
 composer require --dev symfony/ai-mate
@@ -36,7 +41,7 @@ vendor/bin/mate discover                                      # registers typo3-
 vendor/bin/mate serve                                         # MCP server; the assistant binds via mcp.json
 ```
 
-## How it works — two containers
+## ⚙️ How it works — two containers
 
 The MCP tools run in the **Mate process** (its own Symfony DI container,
 `Configuration/Mate.php`). They boot no TYPO3; they reach it by shelling out to
@@ -45,7 +50,7 @@ The MCP tools run in the **Mate process** (its own Symfony DI container,
 commands run in the **TYPO3 process** (TYPO3 DI, `Configuration/Services.yaml`)
 and emit raw JSON.
 
-## Tools
+## ✨ Tools
 
 | MCP tool | Wraps / reads | Purpose |
 |---|---|---|
@@ -56,12 +61,23 @@ and emit raw JSON.
 | `typo3-typoscript` | `typo3-ai-mate:typoscript:dump` | resolved frontend TypoScript |
 | `typo3-middlewares` | `typo3-ai-mate:middlewares:list` | resolved PSR-15 order |
 
+> [!NOTE]
+> The profiler tools (`typo3-profiler-*`) require the companion package
+> `konradmichalik/typo3-request-profiler` to generate `var/log/profiles/*.json`.
+
+### Diagnose flows
+
+Two common assistant workflows the tools directly support:
+
+- **Slow page** — `typo3-profiler-latest` → spot N+1 queries / uncached blocks → `typo3-page` for cache signals → correlate via `request_id`
+- **Error page** — `typo3-logs-search` / `-by-level` → locate the exception → `typo3-page` for context → correlate via `request_id`
+
 ### Correlation anchor `request_id`
 
 `request_id` (= profile `token` = `Core\RequestId`, also logged as `request="…"`)
 links the profile, the page and the logs of one request — see `INSTRUCTIONS.md`.
 
-## Adding your own tool
+## 💡 Adding your own tool
 
 ai-mate provides two native ways, both able to reuse the public `Typo3CliRunner`
 service (same error handling, `TYPO3_CONTEXT=Development`, JSON parsing):
@@ -90,16 +106,17 @@ Recipe: (1) a TYPO3 console command that prints **raw JSON** (no `SymfonyStyle` 
 it decorates the output and breaks parsing), (2) a `#[McpTool]` class injecting
 `Typo3CliRunner`, (3) register via A or B.
 
-## Security
+## 🛡️ Security
 
-ai-mate redacts cookies / auth headers / secrets by default. All tools are
-dev-only and operate on the local installation.
+> [!WARNING]
+> All tools operate on the **local installation only** and must never be exposed
+> over a network. ai-mate redacts cookies, auth headers and secrets by default.
 
-## Development
+## 🧑‍💻 Contributing
 
 See [`CONTRIBUTING.md`](CONTRIBUTING.md). Tests run via `composer test`; coding
 guidelines, static analysis and rector live in `Tests/CGL` (`composer cgl …`).
 
-## License
+## 📜 License
 
 GPL-2.0-or-later. See [`LICENSE.md`](LICENSE.md).
