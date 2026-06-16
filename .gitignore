@@ -1,6 +1,5 @@
 /.ai/
 /.Build/
-/composer.lock
 /public/
 /var/
 /vendor/
