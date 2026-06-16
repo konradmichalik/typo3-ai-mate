@@ -32,14 +32,16 @@ assistant reasons from facts instead of guessing from source files.
 ## 🚀 Installation
 
 ```bash
-composer require --dev symfony/ai-mate
-vendor/bin/mate init                                          # creates mate/, mate/src, mcp.json
-composer require --dev konradmichalik/typo3-ai-mate           # MCP tools (extra.ai-mate)
-composer require --dev konradmichalik/typo3-request-profiler  # profile artifacts (optional but recommended)
-composer dump-autoload
-vendor/bin/mate discover                                      # registers typo3-ai-mate in mate/extensions.php
-vendor/bin/mate serve                                         # MCP server; the assistant binds via mcp.json
+composer require --dev konradmichalik/typo3-ai-mate   # also pulls symfony/ai-mate + typo3-request-profiler
+vendor/bin/mate init                                  # scaffold mate/ + mcp.json (skip if already present)
+vendor/bin/mate discover                              # register the typo3-* tools
+vendor/bin/mate serve                                 # MCP server; the assistant binds via mcp.json
 ```
+
+> [!NOTE]
+> Requiring `typo3-ai-mate` automatically pulls in `symfony/ai-mate` (the MCP
+> server and `mate` binary) and `konradmichalik/typo3-request-profiler` (the
+> profile source for the `typo3-profiler-*` tools) — no separate installs needed.
 
 ## ⚙️ How it works — two containers
 
@@ -54,7 +56,7 @@ and emit raw JSON.
 
 | MCP tool | Wraps / reads | Purpose |
 |---|---|---|
-| `typo3-profiler-latest` / `-list` / `-search` / `-get` | `var/log/profiles/*.json` | request profiles (needs `typo3-request-profiler`) |
+| `typo3-profiler-latest` / `-list` / `-search` / `-get` | `var/log/profiles/*.json` | request profiles (recorded by `typo3-request-profiler`) |
 | `typo3-page` | `typo3-ai-mate:page:info` | page composition, cache signals, USER_INT plugins |
 | `typo3-logs-search` / `-tail` / `-by-level` | `typo3-ai-mate:logs:search` | TYPO3 logs |
 | `typo3-tca` | `typo3-ai-mate:tca:dump` | resolved (trimmed) TCA |
@@ -62,8 +64,9 @@ and emit raw JSON.
 | `typo3-middlewares` | `typo3-ai-mate:middlewares:list` | resolved PSR-15 order |
 
 > [!NOTE]
-> The profiler tools (`typo3-profiler-*`) require the companion package
-> `konradmichalik/typo3-request-profiler` to generate `var/log/profiles/*.json`.
+> The profiler tools (`typo3-profiler-*`) read profiles recorded by the bundled
+> `typo3-request-profiler`. Trigger a frontend request in the Development context
+> to produce `var/log/profiles/*.json`.
 
 ### Diagnose flows
 

@@ -30,14 +30,11 @@ extension and the demo sitepackage, and imports `Tests/Acceptance/Fixtures/data.
 ## Exercising the request profiler flow
 
 The `typo3-profiler-*` MCP tools read the profiles written by
-[`konradmichalik/typo3-request-profiler`](https://packagist.org/packages/konradmichalik/typo3-request-profiler).
-That package is only a `suggest` (this extension consumes its JSON artifacts, it
-has no code dependency on it), so install it into the test instances to exercise
-the full "slow page" flow:
+[`konradmichalik/typo3-request-profiler`](https://packagist.org/packages/konradmichalik/typo3-request-profiler),
+which is a dependency of this extension — so `ddev install all` already provides
+it. Just trigger a request to record a profile:
 
 ```bash
-# Install the profiler into both TYPO3 instances (dev-main until a release is tagged)
-ddev all composer require --dev "konradmichalik/typo3-request-profiler:dev-main"
 ddev all typo3 cache:flush
 
 # Trigger the N+1 demo page so a profile is recorded (Development context)
