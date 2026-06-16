@@ -23,6 +23,7 @@ TESTS=(
   "typo3-page|--tool-arg pageId=1"
   "typo3-typoscript|--tool-arg pageId=1 --tool-arg path=tt_content"
   "typo3-middlewares|--tool-arg stack=frontend"
+  "typo3-events|"
   "typo3-logs-search|--tool-arg query=intentional"
   "typo3-logs-tail|--tool-arg limit=5"
   "typo3-logs-by-level|--tool-arg level=error"
