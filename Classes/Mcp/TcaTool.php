@@ -32,7 +32,8 @@ final readonly class TcaTool
     public function dump(?string $table = null, bool $list = false): array
     {
         if ($list || null === $table || '' === $table) {
-            return $this->typo3->json('typo3-ai-mate:tca:dump', [], ['list' => true]);
+            // Wrap the list in an object: MCP structuredContent must be a record, not a bare array.
+            return ['tables' => $this->typo3->json('typo3-ai-mate:tca:dump', [], ['list' => true])];
         }
 
         return $this->typo3->json('typo3-ai-mate:tca:dump', [$table]);

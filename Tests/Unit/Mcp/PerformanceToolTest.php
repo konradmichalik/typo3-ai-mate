@@ -72,7 +72,7 @@ final class PerformanceToolTest extends TestCase
     #[Test]
     public function listReturnsSummariesNewestFirst(): void
     {
-        $list = (new PerformanceTool($this->rootDir))->list();
+        $list = (new PerformanceTool($this->rootDir))->list()['profiles'];
 
         self::assertCount(3, $list);
         self::assertSame(['ccc', 'bbb', 'aaa'], array_column($list, 'token'));
@@ -89,7 +89,7 @@ final class PerformanceToolTest extends TestCase
     #[Test]
     public function listRespectsTheLimit(): void
     {
-        $list = (new PerformanceTool($this->rootDir))->list(1);
+        $list = (new PerformanceTool($this->rootDir))->list(1)['profiles'];
 
         self::assertCount(1, $list);
         self::assertSame('ccc', $list[0]['token']);
@@ -98,7 +98,7 @@ final class PerformanceToolTest extends TestCase
     #[Test]
     public function searchFiltersByUrlSubstring(): void
     {
-        $matches = (new PerformanceTool($this->rootDir))->search('/slow');
+        $matches = (new PerformanceTool($this->rootDir))->search('/slow')['profiles'];
 
         self::assertCount(1, $matches);
         self::assertSame('bbb', $matches[0]['token']);
@@ -107,7 +107,7 @@ final class PerformanceToolTest extends TestCase
     #[Test]
     public function searchFiltersByStatus(): void
     {
-        $matches = (new PerformanceTool($this->rootDir))->search(null, 500);
+        $matches = (new PerformanceTool($this->rootDir))->search(null, 500)['profiles'];
 
         self::assertCount(1, $matches);
         self::assertSame('ccc', $matches[0]['token']);

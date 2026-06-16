@@ -26,11 +26,12 @@ final readonly class ExtensionsTool
     public function __construct(private Typo3CliRunner $typo3) {}
 
     /**
-     * @return array<mixed>
+     * @return array{extensions: array<mixed>}
      */
     #[McpTool(name: 'typo3-extensions', description: 'Active extensions including key, version and resolved description.')]
     public function list(): array
     {
-        return $this->typo3->json('typo3-ai-mate:extensions:list');
+        // Wrap the list in an object: MCP structuredContent must be a record, not a bare array.
+        return ['extensions' => $this->typo3->json('typo3-ai-mate:extensions:list')];
     }
 }

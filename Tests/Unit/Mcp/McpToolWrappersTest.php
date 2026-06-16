@@ -61,8 +61,11 @@ final class McpToolWrappersTest extends TestCase
     {
         $result = (new TcaTool($this->runner))->dump();
 
-        self::assertSame('typo3-ai-mate:tca:dump', $result['command']);
-        self::assertSame(['--list'], $result['args']);
+        self::assertArrayHasKey('tables', $result);
+        $forwarded = $result['tables'];
+        self::assertIsArray($forwarded);
+        self::assertSame('typo3-ai-mate:tca:dump', $forwarded['command']);
+        self::assertSame(['--list'], $forwarded['args']);
     }
 
     #[Test]
@@ -70,8 +73,8 @@ final class McpToolWrappersTest extends TestCase
     {
         $result = (new ExtensionsTool($this->runner))->list();
 
-        self::assertSame('typo3-ai-mate:extensions:list', $result['command']);
-        self::assertSame([], $result['args']);
+        self::assertSame('typo3-ai-mate:extensions:list', $result['extensions']['command']);
+        self::assertSame([], $result['extensions']['args']);
     }
 
     #[Test]
@@ -115,8 +118,8 @@ final class McpToolWrappersTest extends TestCase
     {
         $result = (new LogsTool($this->runner))->search('boom', 'error');
 
-        self::assertSame('typo3-ai-mate:logs:search', $result['command']);
-        self::assertSame(['--query', 'boom', '--level', 'error', '--limit', '50'], $result['args']);
+        self::assertSame('typo3-ai-mate:logs:search', $result['entries']['command']);
+        self::assertSame(['--query', 'boom', '--level', 'error', '--limit', '50'], $result['entries']['args']);
     }
 
     #[Test]
@@ -124,8 +127,8 @@ final class McpToolWrappersTest extends TestCase
     {
         $result = (new LogsTool($this->runner))->byLevel('error', 'abc123');
 
-        self::assertSame('typo3-ai-mate:logs:search', $result['command']);
-        self::assertSame(['--level', 'error', '--request-id', 'abc123', '--limit', '50'], $result['args']);
+        self::assertSame('typo3-ai-mate:logs:search', $result['entries']['command']);
+        self::assertSame(['--level', 'error', '--request-id', 'abc123', '--limit', '50'], $result['entries']['args']);
     }
 
     #[Test]
@@ -133,7 +136,7 @@ final class McpToolWrappersTest extends TestCase
     {
         $result = (new LogsTool($this->runner))->tail(10);
 
-        self::assertSame('typo3-ai-mate:logs:search', $result['command']);
-        self::assertSame(['--limit', '10'], $result['args']);
+        self::assertSame('typo3-ai-mate:logs:search', $result['entries']['command']);
+        self::assertSame(['--limit', '10'], $result['entries']['args']);
     }
 }

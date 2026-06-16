@@ -46,7 +46,7 @@ final readonly class PerformanceTool
     }
 
     /**
-     * @return list<array<mixed>>
+     * @return array{profiles: list<array<string, mixed>>}
      */
     #[McpTool(name: 'typo3-profiler-list', description: 'List the most recent request profiles as compact summaries (token, url, status, timing, queries, cache).')]
     public function list(int $limit = 20): array
@@ -60,11 +60,12 @@ final readonly class PerformanceTool
             }
         }
 
-        return $summaries;
+        // Wrap the list in an object: MCP structuredContent must be a record, not a bare array.
+        return ['profiles' => $summaries];
     }
 
     /**
-     * @return list<array<mixed>>
+     * @return array{profiles: list<array<string, mixed>>}
      */
     #[McpTool(name: 'typo3-profiler-search', description: 'Search request profiles by url substring and/or HTTP status; returns matching summaries, newest first.')]
     public function search(?string $url = null, ?int $status = null, int $limit = 20): array
@@ -88,7 +89,8 @@ final readonly class PerformanceTool
             }
         }
 
-        return $matches;
+        // Wrap the list in an object: MCP structuredContent must be a record, not a bare array.
+        return ['profiles' => $matches];
     }
 
     /**
@@ -141,7 +143,7 @@ final readonly class PerformanceTool
     /**
      * @param array<mixed> $profile
      *
-     * @return array<mixed>
+     * @return array<string, mixed>
      */
     private function summarize(array $profile): array
     {
