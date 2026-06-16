@@ -59,6 +59,18 @@ vendor/bin/mate serve                                 # MCP server; the assistan
 > [!NOTE]
 > Requiring `typo3-ai-mate` automatically pulls in `symfony/ai-mate` (the MCP server and `mate` binary) and [`konradmichalik/typo3-request-profiler`](https://packagist.org/packages/konradmichalik/typo3-request-profiler) (the profile source for the `typo3-profiler-*` tools) — no separate installs needed.
 
+## 🔌 Connect your assistant
+
+`mate serve` is a single MCP server exposing all `typo3-*` tools. After running `vendor/bin/mate discover` once, register it with Claude Code:
+
+```bash
+claude mcp add typo3-ai-mate --scope project -- ddev exec vendor/bin/mate serve   # DDEV project
+claude mcp add typo3-ai-mate --scope project -- ./vendor/bin/mate serve           # host PHP project
+```
+
+> [!TIP]
+> Use `ddev exec` (not the `ddev <version>` wrapper — its header line would corrupt the stdio MCP stream). Verify with `claude mcp list` or `/mcp`. For Claude Desktop or other clients, add the same command to their `mcpServers` config.
+
 ## ⚙️ How it works
 
 The MCP tools run in the **Mate process** (its own Symfony DI container, `Configuration/Mate.php`). They boot no TYPO3; they reach it by shelling out to `vendor/bin/typo3 <command>` (`TYPO3_CONTEXT=Development`, stdout→JSON) via the `Typo3CliRunner` service, or by reading profile artifacts directly. The console commands run in the **TYPO3 process** (TYPO3 DI, `Configuration/Services.yaml`) and emit raw JSON.
