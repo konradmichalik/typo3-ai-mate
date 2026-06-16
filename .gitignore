@@ -1,4 +1,8 @@
+# MCP client config written by `mate init` / the ai-mate composer plugin —
+# machine-/setup-specific (stdio command differs host vs. ddev), never committed.
 /.ai/
+/mcp.json
+/.mcp.json
 /.Build/
 /public/
 /var/
