@@ -16,13 +16,12 @@ namespace KonradMichalik\Typo3AiMate\Mcp;
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
 use Mcp\Capability\Attribute\McpTool;
 
-
 /**
  * EventsTool.
  *
  * @author Konrad Michalik <km@move-elevator.de>
+ * @license GPL-2.0-or-later
  */
-
 final readonly class EventsTool
 {
     public function __construct(private Typo3CliRunner $typo3) {}

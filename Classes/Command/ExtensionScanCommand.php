@@ -141,7 +141,7 @@ final class ExtensionScanCommand extends AbstractJsonCommand
         $absoluteConfigDir = GeneralUtility::getFileAbsFileName(self::CONFIG_DIR);
         $files = glob($absoluteConfigDir.'/*.php') ?: [];
 
-        return array_map('basename', $files);
+        return array_map(basename(...), $files);
     }
 
     /**

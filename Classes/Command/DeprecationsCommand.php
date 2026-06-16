@@ -33,7 +33,7 @@ final class DeprecationsCommand extends AbstractJsonCommand
 {
     private const CHANNEL = 'TYPO3.CMS.deprecations';
 
-    private LogSearchCommand $logSearch;
+    private readonly LogSearchCommand $logSearch;
 
     public function __construct()
     {
