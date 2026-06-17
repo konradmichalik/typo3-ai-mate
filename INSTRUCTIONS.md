@@ -54,6 +54,17 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
 - `typo3-deprecations` — runtime deprecation notices, deduplicated and grouped by
   message with counts (`loggingEnabled` flag — see below).
 
+## Output size
+
+Some tools cap large output and signal it with `_truncated: true` plus a total count, so a
+big result never floods the context. Treat a truncated result as a sample, not the whole
+picture, and re-query with a narrower filter:
+
+- `typo3-extension-scanner` — at most 200 `matches` per extension (`statistics.matchCount`
+  is the real total). If truncated, scan a single `extension=<key>` to focus.
+- `typo3-events` — at most 100 events (`eventCount` is the real total). Narrow with the
+  `event` class-substring filter.
+
 ## Planning a major upgrade (v13 → v14)
 
 Combine the three upgrade tools — the same building blocks as the backend upgrade
