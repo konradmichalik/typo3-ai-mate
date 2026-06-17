@@ -48,6 +48,7 @@ final class ExtensionScannerCommandTest extends FunctionalTestCase
         self::assertArrayHasKey('matchCount', $result['statistics']);
         self::assertArrayHasKey('matches', $result);
         // The fixture stays well under the cap, so the result is complete.
+        self::assertArrayHasKey('_truncated', $result);
         self::assertFalse($result['_truncated']);
     }
 
