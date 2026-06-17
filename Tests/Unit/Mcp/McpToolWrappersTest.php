@@ -123,6 +123,15 @@ final class McpToolWrappersTest extends TestCase
     }
 
     #[Test]
+    public function extensionScannerToolScansAllWhenNoExtensionGiven(): void
+    {
+        $result = (new ExtensionScannerTool($this->runner))->scan();
+
+        self::assertSame('typo3-ai-mate:upgrade:scan', $result['command']);
+        self::assertSame([], $result['args']);
+    }
+
+    #[Test]
     public function upgradeWizardsToolCallsTheWizardsCommand(): void
     {
         $result = (new UpgradeWizardsTool($this->runner))->list();

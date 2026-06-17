@@ -93,7 +93,7 @@ The MCP tools run in the **Mate process** (its own Symfony DI container, `Config
 | `typo3-middlewares` | List the resolved PSR-15 middleware order. |
 | `typo3-events` | List the resolved PSR-14 event listener registry. |
 | `typo3-upgrade-wizards` | List pending and completed upgrade wizards — outstanding DB/config migrations. |
-| `typo3-extension-scanner` | Statically scan an extension against the core breaking/deprecation matchers. |
+| `typo3-extension-scanner` | Statically scan an extension — or all non-core extensions — against the core breaking/deprecation matchers. |
 | `typo3-deprecations` | Report runtime deprecation notices, deduplicated and counted. |
 
 > [!NOTE]

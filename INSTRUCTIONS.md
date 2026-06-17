@@ -44,7 +44,8 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
 - `typo3-upgrade-wizards` — all upgrade wizards (pending/done) with status; which
   DB/config migrations are still outstanding. Read-only.
 - `typo3-extension-scanner` — static scan of an extension's PHP against the core
-  breaking/deprecation matchers (`extension=<key>`); where *your* code breaks.
+  breaking/deprecation matchers (`extension=<key>`); where *your* code breaks. Omit
+  `extension` to scan all non-core extensions (own + third-party) at once.
 - `typo3-deprecations` — runtime deprecation notices, deduplicated and grouped by
   message with counts (`loggingEnabled` flag — see below).
 
@@ -55,7 +56,8 @@ module — to reason from the installation's real state instead of the changelog
 
 1. `typo3-extension-scanner extension=<key>` — static analysis: which lines in your
    own code break / are deprecated in the installed target version (`message`,
-   `line`, `strong`/`weak` `indicator`). Biggest lever, runs headless.
+   `line`, `strong`/`weak` `indicator`). Biggest lever, runs headless. Omit
+   `extension` to sweep all non-core extensions in one call.
 2. `typo3-upgrade-wizards` — which DB/config migrations are still `AVAILABLE` vs
    `DONE`. Read-only; the assistant must not run wizards autonomously.
 3. `typo3-deprecations` — what actually logged a deprecation at runtime,

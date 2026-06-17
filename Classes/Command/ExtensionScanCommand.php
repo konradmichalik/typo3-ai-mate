@@ -83,23 +83,44 @@ final class ExtensionScanCommand extends AbstractJsonCommand
 
     protected function configure(): void
     {
-        $this->addArgument('extension', InputArgument::REQUIRED, 'Extension key to scan, e.g. my_ext');
+        $this->addArgument('extension', InputArgument::OPTIONAL, 'Extension key to scan, e.g. my_ext. Omit to scan all non-core extensions.');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $matcherConfigurations = $this->buildMatcherConfigurations($this->configFileBasenames());
         $extension = Cast::string($input->getArgument('extension'));
 
+        if ('' !== $extension) {
+            $result = $this->scanExtension($extension, $matcherConfigurations);
+
+            return $this->emit($output, $result, isset($result['error']) ? Command::FAILURE : Command::SUCCESS);
+        }
+
+        // No extension given: scan every active non-core extension.
+        $extensions = [];
+        foreach ($this->scannableExtensionKeys() as $key) {
+            $extensions[] = $this->scanExtension($key, $matcherConfigurations);
+        }
+
+        return $this->emit($output, ['extensions' => $extensions]);
+    }
+
+    /**
+     * @param list<array{class: class-string, configurationFile: string}> $matcherConfigurations
+     *
+     * @return array<string, mixed>
+     */
+    private function scanExtension(string $extension, array $matcherConfigurations): array
+    {
         try {
             $basePath = $this->packageManager->getPackage($extension)->getPackagePath();
         } catch (Throwable) {
-            return $this->emit($output, ['error' => sprintf('Unknown or inactive extension "%s".', $extension)], Command::FAILURE);
+            return ['extension' => $extension, 'error' => sprintf('Unknown or inactive extension "%s".', $extension)];
         }
         if (!is_dir($basePath)) {
-            return $this->emit($output, ['error' => sprintf('Extension path "%s" is not a directory.', $basePath)], Command::FAILURE);
+            return ['extension' => $extension, 'error' => sprintf('Extension path "%s" is not a directory.', $basePath)];
         }
-
-        $matcherConfigurations = $this->buildMatcherConfigurations($this->configFileBasenames());
 
         $matches = [];
         $effectiveCodeLines = 0;
@@ -121,7 +142,7 @@ final class ExtensionScanCommand extends AbstractJsonCommand
             }
         }
 
-        return $this->emit($output, [
+        return [
             'extension' => $extension,
             'statistics' => [
                 'effectiveCodeLines' => $effectiveCodeLines,
@@ -130,7 +151,26 @@ final class ExtensionScanCommand extends AbstractJsonCommand
                 'filesSkipped' => $filesSkipped,
             ],
             'matches' => $matches,
-        ]);
+        ];
+    }
+
+    /**
+     * Active non-core extensions (composer type "typo3-cms-extension"): the user's
+     * own plus third-party extensions, excluding the core system extensions
+     * (type "typo3-cms-framework") which are maintained upstream.
+     *
+     * @return list<string>
+     */
+    private function scannableExtensionKeys(): array
+    {
+        $keys = [];
+        foreach ($this->packageManager->getActivePackages() as $package) {
+            if ('typo3-cms-extension' === $package->getValueFromComposerManifest('type')) {
+                $keys[] = $package->getPackageKey();
+            }
+        }
+
+        return $keys;
     }
 
     /**
