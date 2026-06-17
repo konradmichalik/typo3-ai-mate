@@ -23,7 +23,7 @@ use function is_string;
 use function sprintf;
 
 /**
- * TcaDumpCommand.
+ * TcaCommand.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
@@ -31,7 +31,7 @@ use function sprintf;
     name: 'typo3-ai-mate:tca:dump',
     description: 'Resolved TCA of a table (trimmed) or the list of all table names as JSON.',
 )]
-final class TcaDumpCommand extends AbstractJsonCommand
+final class TcaCommand extends AbstractJsonCommand
 {
     /**
      * Reduce a full TCA table definition to the fields that matter for an

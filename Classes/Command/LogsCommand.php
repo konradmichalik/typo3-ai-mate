@@ -23,7 +23,7 @@ use function array_slice;
 use function is_string;
 
 /**
- * LogSearchCommand.
+ * LogsCommand.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
@@ -31,7 +31,7 @@ use function is_string;
     name: 'typo3-ai-mate:logs:search',
     description: 'Search the TYPO3 logs (level/component/request-id/query) and return matching entries as JSON.',
 )]
-final class LogSearchCommand extends AbstractJsonCommand
+final class LogsCommand extends AbstractJsonCommand
 {
     /**
      * PSR-3 severity order: lower number = more severe. A --level filter keeps

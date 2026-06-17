@@ -31,7 +31,7 @@ use function is_string;
 use function sprintf;
 
 /**
- * PageInfoCommand.
+ * PageCommand.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
@@ -39,7 +39,7 @@ use function sprintf;
     name: 'typo3-ai-mate:page:info',
     description: 'Page composition (content elements, backend layout) and cache signals as JSON.',
 )]
-final class PageInfoCommand extends AbstractJsonCommand
+final class PageCommand extends AbstractJsonCommand
 {
     public function __construct(
         private readonly ConnectionPool $connectionPool,

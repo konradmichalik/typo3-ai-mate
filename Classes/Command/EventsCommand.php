@@ -23,7 +23,7 @@ use TYPO3\CMS\Core\EventDispatcher\ListenerProvider;
 use function is_string;
 
 /**
- * EventListCommand.
+ * EventsCommand.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
@@ -31,7 +31,7 @@ use function is_string;
     name: 'typo3-ai-mate:events:list',
     description: 'Resolved PSR-14 event listener registry (event => listeners) as JSON.',
 )]
-final class EventListCommand extends AbstractJsonCommand
+final class EventsCommand extends AbstractJsonCommand
 {
     public function __construct(private readonly ListenerProvider $listenerProvider)
     {

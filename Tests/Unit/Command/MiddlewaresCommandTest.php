@@ -13,21 +13,21 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 
-use KonradMichalik\Typo3AiMate\Command\MiddlewareListCommand;
+use KonradMichalik\Typo3AiMate\Command\MiddlewaresCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
- * MiddlewareListCommandTest.
+ * MiddlewaresCommandTest.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
-final class MiddlewareListCommandTest extends TestCase
+final class MiddlewaresCommandTest extends TestCase
 {
     #[Test]
     public function mapMiddlewaresUnwrapsTheTargetFromAnArrayDefinition(): void
     {
-        $mapped = MiddlewareListCommand::mapMiddlewares([
+        $mapped = MiddlewaresCommand::mapMiddlewares([
             'typo3/cms-frontend/timetracker' => ['target' => 'TYPO3\\CMS\\Frontend\\Middleware\\TimeTrackerInitialization'],
         ]);
 
@@ -40,7 +40,7 @@ final class MiddlewareListCommandTest extends TestCase
     #[Test]
     public function mapMiddlewaresKeepsScalarValuesAsTheTarget(): void
     {
-        $mapped = MiddlewareListCommand::mapMiddlewares([
+        $mapped = MiddlewaresCommand::mapMiddlewares([
             'some/identifier' => 'Some\\Middleware\\ClassName',
         ]);
 
@@ -53,7 +53,7 @@ final class MiddlewareListCommandTest extends TestCase
     #[Test]
     public function mapMiddlewaresNullsAnArrayDefinitionWithoutTarget(): void
     {
-        $mapped = MiddlewareListCommand::mapMiddlewares([
+        $mapped = MiddlewaresCommand::mapMiddlewares([
             'broken/identifier' => ['before' => ['x']],
         ]);
 
@@ -64,7 +64,7 @@ final class MiddlewareListCommandTest extends TestCase
     #[Test]
     public function mapMiddlewaresNullsNonStringIdentifiers(): void
     {
-        $mapped = MiddlewareListCommand::mapMiddlewares([
+        $mapped = MiddlewaresCommand::mapMiddlewares([
             0 => 'Some\\Middleware',
         ]);
 

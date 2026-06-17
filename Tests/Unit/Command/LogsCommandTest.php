@@ -13,22 +13,22 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 
-use KonradMichalik\Typo3AiMate\Command\LogSearchCommand;
+use KonradMichalik\Typo3AiMate\Command\LogsCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
- * LogSearchCommandTest.
+ * LogsCommandTest.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
-final class LogSearchCommandTest extends TestCase
+final class LogsCommandTest extends TestCase
 {
-    private LogSearchCommand $command;
+    private LogsCommand $command;
 
     protected function setUp(): void
     {
-        $this->command = new LogSearchCommand();
+        $this->command = new LogsCommand();
     }
 
     #[Test]

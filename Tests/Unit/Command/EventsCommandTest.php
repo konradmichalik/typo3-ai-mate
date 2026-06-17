@@ -13,21 +13,21 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 
-use KonradMichalik\Typo3AiMate\Command\EventListCommand;
+use KonradMichalik\Typo3AiMate\Command\EventsCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
- * EventListCommandTest.
+ * EventsCommandTest.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
-final class EventListCommandTest extends TestCase
+final class EventsCommandTest extends TestCase
 {
     #[Test]
     public function mapListenersExtractsIdentifierServiceAndMethod(): void
     {
-        $mapped = EventListCommand::mapListeners([
+        $mapped = EventsCommand::mapListeners([
             'my-listener' => ['service' => 'My\\Listener', 'method' => 'onEvent'],
         ]);
 
@@ -40,7 +40,7 @@ final class EventListCommandTest extends TestCase
     #[Test]
     public function mapListenersDefaultsTheMethodToInvokeWhenMissing(): void
     {
-        $mapped = EventListCommand::mapListeners([
+        $mapped = EventsCommand::mapListeners([
             'invokable' => ['service' => 'My\\InvokableListener'],
         ]);
 
@@ -50,7 +50,7 @@ final class EventListCommandTest extends TestCase
     #[Test]
     public function mapListenersCoercesMissingServiceToAnEmptyString(): void
     {
-        $mapped = EventListCommand::mapListeners([
+        $mapped = EventsCommand::mapListeners([
             'partial' => ['method' => 'handle'],
         ]);
 
@@ -63,6 +63,6 @@ final class EventListCommandTest extends TestCase
     #[Test]
     public function mapListenersToleratesNonArrayInput(): void
     {
-        self::assertSame([], EventListCommand::mapListeners(null));
+        self::assertSame([], EventsCommand::mapListeners(null));
     }
 }

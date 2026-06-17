@@ -31,7 +31,7 @@ use function is_array;
 use function sprintf;
 
 /**
- * ExtensionScanCommand.
+ * ExtensionScannerCommand.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  * @license GPL-2.0-or-later
@@ -40,7 +40,7 @@ use function sprintf;
     name: 'typo3-ai-mate:upgrade:scan',
     description: 'Static scan of an extension against the core breaking/deprecation matchers as JSON.',
 )]
-final class ExtensionScanCommand extends AbstractJsonCommand
+final class ExtensionScannerCommand extends AbstractJsonCommand
 {
     private const MATCHER_NAMESPACE = 'TYPO3\\CMS\\Install\\ExtensionScanner\\Php\\Matcher\\';
     private const CONFIG_DIR = 'EXT:install/Configuration/ExtensionScanner/Php';

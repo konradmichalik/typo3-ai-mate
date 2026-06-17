@@ -24,7 +24,7 @@ use function is_array;
 use function is_string;
 
 /**
- * MiddlewareListCommand.
+ * MiddlewaresCommand.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
@@ -32,7 +32,7 @@ use function is_string;
     name: 'typo3-ai-mate:middlewares:list',
     description: 'Resolved PSR-15 middleware order of a stack (frontend|backend) as JSON.',
 )]
-final class MiddlewareListCommand extends AbstractJsonCommand
+final class MiddlewaresCommand extends AbstractJsonCommand
 {
     public function __construct(private readonly MiddlewareStackResolver $resolver)
     {
