@@ -38,6 +38,25 @@ final class EventListCommand extends AbstractJsonCommand
         parent::__construct();
     }
 
+    /**
+     * @return list<array<string, string>>
+     */
+    public static function mapListeners(mixed $listeners): array
+    {
+        $mapped = [];
+        foreach (Cast::array($listeners) as $identifier => $listener) {
+            $listener = Cast::array($listener);
+            $method = $listener['method'] ?? null;
+            $mapped[] = [
+                'identifier' => Cast::string($identifier),
+                'service' => Cast::string($listener['service'] ?? ''),
+                'method' => null === $method ? '__invoke' : Cast::string($method),
+            ];
+        }
+
+        return $mapped;
+    }
+
     protected function configure(): void
     {
         $this->addOption('event', null, InputOption::VALUE_REQUIRED, 'Filter by event class substring');
@@ -60,28 +79,9 @@ final class EventListCommand extends AbstractJsonCommand
                 continue;
             }
 
-            $events[] = ['event' => $eventClass, 'listeners' => $this->mapListeners($listeners)];
+            $events[] = ['event' => $eventClass, 'listeners' => self::mapListeners($listeners)];
         }
 
         return $this->emit($output, ['events' => $events]);
-    }
-
-    /**
-     * @return list<array<string, string>>
-     */
-    private function mapListeners(mixed $listeners): array
-    {
-        $mapped = [];
-        foreach (Cast::array($listeners) as $identifier => $listener) {
-            $listener = Cast::array($listener);
-            $method = $listener['method'] ?? null;
-            $mapped[] = [
-                'identifier' => Cast::string($identifier),
-                'service' => Cast::string($listener['service'] ?? ''),
-                'method' => null === $method ? '__invoke' : Cast::string($method),
-            ];
-        }
-
-        return $mapped;
     }
 }

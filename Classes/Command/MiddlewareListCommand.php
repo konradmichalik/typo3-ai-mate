@@ -39,6 +39,24 @@ final class MiddlewareListCommand extends AbstractJsonCommand
         parent::__construct();
     }
 
+    /**
+     * @param iterable<mixed, mixed> $resolved
+     *
+     * @return list<array{identifier: string|null, target: mixed}>
+     */
+    public static function mapMiddlewares(iterable $resolved): array
+    {
+        $middlewares = [];
+        foreach ($resolved as $identifier => $value) {
+            $middlewares[] = [
+                'identifier' => is_string($identifier) ? $identifier : null,
+                'target' => is_array($value) ? ($value['target'] ?? null) : $value,
+            ];
+        }
+
+        return $middlewares;
+    }
+
     protected function configure(): void
     {
         $this->addOption('stack', null, InputOption::VALUE_REQUIRED, 'frontend|backend', 'frontend');
@@ -54,14 +72,6 @@ final class MiddlewareListCommand extends AbstractJsonCommand
             return $this->emit($output, ['error' => $exception->getMessage()], Command::FAILURE);
         }
 
-        $middlewares = [];
-        foreach ($resolved as $identifier => $value) {
-            $middlewares[] = [
-                'identifier' => is_string($identifier) ? $identifier : null,
-                'target' => is_array($value) ? ($value['target'] ?? null) : $value,
-            ];
-        }
-
-        return $this->emit($output, ['stack' => $stack, 'middlewares' => $middlewares]);
+        return $this->emit($output, ['stack' => $stack, 'middlewares' => self::mapMiddlewares($resolved)]);
     }
 }

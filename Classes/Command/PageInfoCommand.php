@@ -49,6 +49,41 @@ final class PageInfoCommand extends AbstractJsonCommand
         parent::__construct();
     }
 
+    /**
+     * Match a page's content elements against the resolved page TypoScript to find
+     * which plugins render as USER_INT (uncached) — the most common cause of slow
+     * pages (tt_content.list.20.<signature> / tt_content.<CType> = USER_INT).
+     *
+     * @param array<mixed>               $setup           resolved page TypoScript
+     * @param list<array<string, mixed>> $contentElements
+     *
+     * @return list<string>
+     */
+    public static function matchUserIntPlugins(array $setup, array $contentElements): array
+    {
+        /** @var array<string, mixed> $ttContent */
+        $ttContent = is_array($setup['tt_content.'] ?? null) ? $setup['tt_content.'] : [];
+        /** @var array<string, mixed> $listConf */
+        $listConf = is_array($ttContent['list.'] ?? null) && is_array($ttContent['list.']['20.'] ?? null)
+            ? $ttContent['list.']['20.']
+            : [];
+
+        $userInt = [];
+        foreach ($contentElements as $element) {
+            $signature = $element['plugin'] ?? null;
+            if (is_string($signature) && ($listConf[$signature] ?? null) === 'USER_INT') {
+                $userInt[$signature] = true;
+                continue;
+            }
+            $cType = Cast::string($element['CType'] ?? '');
+            if (($ttContent[$cType] ?? null) === 'USER_INT') {
+                $userInt[$cType] = true;
+            }
+        }
+
+        return array_keys($userInt);
+    }
+
     protected function configure(): void
     {
         $this
@@ -189,26 +224,6 @@ final class PageInfoCommand extends AbstractJsonCommand
             return null;
         }
 
-        /** @var array<string, mixed> $ttContent */
-        $ttContent = is_array($setup['tt_content.'] ?? null) ? $setup['tt_content.'] : [];
-        /** @var array<string, mixed> $listConf */
-        $listConf = is_array($ttContent['list.'] ?? null) && is_array($ttContent['list.']['20.'] ?? null)
-            ? $ttContent['list.']['20.']
-            : [];
-
-        $userInt = [];
-        foreach ($contentElements as $element) {
-            $signature = $element['plugin'] ?? null;
-            if (is_string($signature) && ($listConf[$signature] ?? null) === 'USER_INT') {
-                $userInt[$signature] = true;
-                continue;
-            }
-            $cType = Cast::string($element['CType'] ?? '');
-            if (($ttContent[$cType] ?? null) === 'USER_INT') {
-                $userInt[$cType] = true;
-            }
-        }
-
-        return array_keys($userInt);
+        return self::matchUserIntPlugins($setup, $contentElements);
     }
 }

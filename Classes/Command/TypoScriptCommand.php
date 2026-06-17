@@ -42,6 +42,29 @@ final class TypoScriptCommand extends AbstractJsonCommand
         parent::__construct();
     }
 
+    /**
+     * Scope a resolved TypoScript array to a dotted path. The resolved tree uses
+     * trailing-dot keys for nested objects (e.g. lib. => [foo. => [...]]).
+     *
+     * @param array<mixed> $tree
+     */
+    public static function scope(array $tree, string $path): mixed
+    {
+        $segments = explode('.', trim($path, '.'));
+        $node = $tree;
+        foreach ($segments as $segment) {
+            if (is_array($node) && array_key_exists($segment.'.', $node)) {
+                $node = $node[$segment.'.'];
+            } elseif (is_array($node) && array_key_exists($segment, $node)) {
+                $node = $node[$segment];
+            } else {
+                return ['error' => sprintf('Path "%s" not found in resolved TypoScript.', $path)];
+            }
+        }
+
+        return $node;
+    }
+
     protected function configure(): void
     {
         $this
@@ -65,32 +88,9 @@ final class TypoScriptCommand extends AbstractJsonCommand
 
         $path = $input->getOption('path');
         if (is_string($path) && '' !== $path) {
-            $tree = $this->scope($tree, $path);
+            $tree = self::scope($tree, $path);
         }
 
         return $this->emit($output, $tree);
-    }
-
-    /**
-     * Scope a resolved TypoScript array to a dotted path. The resolved tree uses
-     * trailing-dot keys for nested objects (e.g. lib. => [foo. => [...]]).
-     *
-     * @param array<mixed> $tree
-     */
-    private function scope(array $tree, string $path): mixed
-    {
-        $segments = explode('.', trim($path, '.'));
-        $node = $tree;
-        foreach ($segments as $segment) {
-            if (is_array($node) && array_key_exists($segment.'.', $node)) {
-                $node = $node[$segment.'.'];
-            } elseif (is_array($node) && array_key_exists($segment, $node)) {
-                $node = $node[$segment];
-            } else {
-                return ['error' => sprintf('Path "%s" not found in resolved TypoScript.', $path)];
-            }
-        }
-
-        return $node;
     }
 }
