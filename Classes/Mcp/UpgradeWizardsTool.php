@@ -32,6 +32,6 @@ final readonly class UpgradeWizardsTool
     #[McpTool(name: 'typo3-upgrade-wizards', description: 'List all TYPO3 upgrade wizards (pending and done) with identifier, title, description and status — which DB/config migrations are still outstanding. Read-only; running a wizard is not exposed.')]
     public function list(): array
     {
-        return $this->typo3->json('typo3-ai-mate:upgrade:wizards');
+        return $this->typo3->jsonOrError('typo3-ai-mate:upgrade:wizards');
     }
 }

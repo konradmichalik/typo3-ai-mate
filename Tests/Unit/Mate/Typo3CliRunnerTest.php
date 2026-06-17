@@ -40,6 +40,7 @@ final class Typo3CliRunnerTest extends TestCase
                 case 'ok':       echo json_encode(['hello' => 'world', 'args' => array_slice($argv, 2)]); break;
                 case 'list':     echo json_encode(['a', 'b', 'c']); break;
                 case 'notjson':  echo 'this is not json'; break;
+                case 'warned':   echo "PHP Warning:  Undefined array key \"encryptionKey\" in HashService.php on line 43\n"; echo json_encode(['extension' => 'ext', 'matches' => []]); break;
                 case 'errfield': echo json_encode(['error' => 'something broke']); break;
                 case 'fail':     fwrite(STDERR, 'boom'); exit(1);
             }
@@ -71,6 +72,15 @@ final class Typo3CliRunnerTest extends TestCase
     }
 
     #[Test]
+    public function jsonToleratesPhpWarningsPrintedBeforeTheJsonDocument(): void
+    {
+        $result = (new Typo3CliRunner($this->rootDir))->json('warned');
+
+        self::assertSame('ext', $result['extension']);
+        self::assertSame([], $result['matches']);
+    }
+
+    #[Test]
     public function jsonThrowsOnInvalidJson(): void
     {
         $this->expectException(RuntimeException::class);
@@ -95,5 +105,23 @@ final class Typo3CliRunnerTest extends TestCase
         $this->expectExceptionMessageMatches('/failed \(exit 1\): boom/');
 
         (new Typo3CliRunner($this->rootDir))->json('fail');
+    }
+
+    #[Test]
+    public function jsonOrErrorReturnsDecodedDataOnSuccess(): void
+    {
+        $result = (new Typo3CliRunner($this->rootDir))->jsonOrError('ok');
+
+        self::assertSame('world', $result['hello']);
+    }
+
+    #[Test]
+    public function jsonOrErrorReturnsAnErrorEnvelopeInsteadOfThrowing(): void
+    {
+        $result = (new Typo3CliRunner($this->rootDir))->jsonOrError('fail');
+
+        self::assertArrayHasKey('error', $result);
+        self::assertIsString($result['error']);
+        self::assertStringContainsString('failed (exit 1): boom', $result['error']);
     }
 }

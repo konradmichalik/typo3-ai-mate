@@ -36,7 +36,7 @@ final readonly class LogsTool
         ?string $requestId = null,
         int $limit = 50,
     ): array {
-        return ['entries' => $this->typo3->json('typo3-ai-mate:logs:search', [], $this->options([
+        return ['entries' => $this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], $this->options([
             'query' => $query,
             'level' => $level,
             'component' => $component,
@@ -51,7 +51,7 @@ final readonly class LogsTool
     #[McpTool(name: 'typo3-logs-tail', description: 'Return the most recent TYPO3 log entries.')]
     public function tail(int $limit = 50): array
     {
-        return ['entries' => $this->typo3->json('typo3-ai-mate:logs:search', [], ['limit' => $limit])];
+        return ['entries' => $this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], ['limit' => $limit])];
     }
 
     /**
@@ -60,7 +60,7 @@ final readonly class LogsTool
     #[McpTool(name: 'typo3-logs-by-level', description: 'Return TYPO3 log entries at or above a minimum severity (e.g. error), optionally filtered by request-id.')]
     public function byLevel(string $level, ?string $requestId = null, int $limit = 50): array
     {
-        return ['entries' => $this->typo3->json('typo3-ai-mate:logs:search', [], $this->options([
+        return ['entries' => $this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], $this->options([
             'level' => $level,
             'request-id' => $requestId,
             'limit' => $limit,

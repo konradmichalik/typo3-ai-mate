@@ -31,6 +31,6 @@ final readonly class MiddlewaresTool
     #[McpTool(name: 'typo3-middlewares', description: 'Resolved PSR-15 middleware order of a stack (frontend|backend).')]
     public function list(string $stack = 'frontend'): array
     {
-        return $this->typo3->json('typo3-ai-mate:middlewares:list', [], ['stack' => $stack]);
+        return $this->typo3->jsonOrError('typo3-ai-mate:middlewares:list', [], ['stack' => $stack]);
     }
 }

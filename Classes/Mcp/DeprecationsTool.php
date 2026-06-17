@@ -32,6 +32,6 @@ final readonly class DeprecationsTool
     #[McpTool(name: 'typo3-deprecations', description: 'Runtime deprecation notices, deduplicated and grouped by message with occurrence counts. Reports loggingEnabled=false when the (default-disabled) deprecations log channel is off, so an empty list is not misread as "no deprecations".')]
     public function list(): array
     {
-        return $this->typo3->json('typo3-ai-mate:upgrade:deprecations');
+        return $this->typo3->jsonOrError('typo3-ai-mate:upgrade:deprecations');
     }
 }

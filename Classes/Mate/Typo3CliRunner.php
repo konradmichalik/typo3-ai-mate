@@ -43,7 +43,7 @@ final readonly class Typo3CliRunner
     {
         $output = $this->run($command, $arguments, $options);
 
-        $decoded = json_decode($output, true);
+        $decoded = $this->decodeJson($output);
         if (!is_array($decoded)) {
             throw new RuntimeException(sprintf('Command "%s" did not return valid JSON: %s', $command, $this->excerpt($output)), 1718000101);
         }
@@ -53,6 +53,26 @@ final readonly class Typo3CliRunner
         }
 
         return $decoded;
+    }
+
+    /**
+     * Like {@see json()}, but never throws: on failure it returns a structured
+     * {"error": "..."} envelope. The MCP tools use this so a command failure
+     * (bad bootstrap, missing argument, polluted output) surfaces to the
+     * assistant as a readable cause instead of an opaque protocol-level error.
+     *
+     * @param list<string|int>           $arguments
+     * @param array<string, scalar|bool> $options
+     *
+     * @return array<mixed>
+     */
+    public function jsonOrError(string $command, array $arguments = [], array $options = []): array
+    {
+        try {
+            return $this->json($command, $arguments, $options);
+        } catch (RuntimeException $exception) {
+            return ['error' => $exception->getMessage()];
+        }
     }
 
     /**
@@ -74,6 +94,29 @@ final readonly class Typo3CliRunner
         }
 
         return $process->getOutput();
+    }
+
+    /**
+     * Decode the command's stdout as JSON, tolerating leading noise. The booted
+     * TYPO3 may print PHP warnings, notices or deprecations (e.g. a missing
+     * encryptionKey) before the JSON document — those would otherwise corrupt the
+     * stream and surface as an opaque MCP error. Our commands emit a single JSON
+     * document last, so we retry from its first `{`/`[` if the raw decode fails.
+     */
+    private function decodeJson(string $output): mixed
+    {
+        $decoded = json_decode($output, true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        // Retry from the first `{`/`[`, skipping any leading noise.
+        $offsets = array_filter(
+            [strpos($output, '{'), strpos($output, '[')],
+            static fn (int|false $offset): bool => false !== $offset,
+        );
+
+        return [] === $offsets ? null : json_decode(substr($output, min($offsets)), true);
     }
 
     /**

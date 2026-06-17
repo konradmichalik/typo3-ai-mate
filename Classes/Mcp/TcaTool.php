@@ -33,9 +33,9 @@ final readonly class TcaTool
     {
         if ($list || null === $table || '' === $table) {
             // Wrap the list in an object: MCP structuredContent must be a record, not a bare array.
-            return ['tables' => $this->typo3->json('typo3-ai-mate:tca:dump', [], ['list' => true])];
+            return ['tables' => $this->typo3->jsonOrError('typo3-ai-mate:tca:dump', [], ['list' => true])];
         }
 
-        return $this->typo3->json('typo3-ai-mate:tca:dump', [$table]);
+        return $this->typo3->jsonOrError('typo3-ai-mate:tca:dump', [$table]);
     }
 }

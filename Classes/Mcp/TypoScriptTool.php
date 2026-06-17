@@ -36,6 +36,6 @@ final readonly class TypoScriptTool
             $options['path'] = $path;
         }
 
-        return $this->typo3->json('typo3-ai-mate:typoscript:dump', [$pageId], $options);
+        return $this->typo3->jsonOrError('typo3-ai-mate:typoscript:dump', [$pageId], $options);
     }
 }

@@ -34,6 +34,6 @@ final readonly class EventsTool
     {
         $options = null !== $event && '' !== $event ? ['event' => $event] : [];
 
-        return $this->typo3->json('typo3-ai-mate:events:list', [], $options);
+        return $this->typo3->jsonOrError('typo3-ai-mate:events:list', [], $options);
     }
 }
