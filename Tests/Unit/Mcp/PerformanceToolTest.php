@@ -13,10 +13,10 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
+use KonradMichalik\Typo3AiMate\Mate\ProfileProvider;
 use KonradMichalik\Typo3AiMate\Mcp\PerformanceTool;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
 /**
  * PerformanceToolTest.
@@ -25,6 +25,8 @@ use Symfony\AI\Mate\Encoding\ResponseEncoder;
  */
 final class PerformanceToolTest extends TestCase
 {
+    use DecodesResponses;
+
     private string $rootDir;
     private string $profilesDir;
 
@@ -52,30 +54,29 @@ final class PerformanceToolTest extends TestCase
     }
 
     #[Test]
-    public function latestReturnsTheNewestProfile(): void
+    public function latestReturnsASummaryOfTheNewestProfileWithResourceUri(): void
     {
-        $profile = $this->decode((new PerformanceTool($this->rootDir))->latest());
+        $summary = $this->decode($this->tool()->latest());
 
-        self::assertSame('ccc', $profile['token']);
-        self::assertSame('/error', $profile['url']);
-        self::assertSame(500, $profile['status']);
+        self::assertSame('ccc', $summary['token']);
+        self::assertSame('/error', $summary['url']);
+        self::assertSame(500, $summary['status']);
+        self::assertSame('typo3-profiler://profile/ccc', $summary['resource_uri']);
     }
 
     #[Test]
     public function latestReportsAnErrorWhenNoProfilesExist(): void
     {
-        $empty = sys_get_temp_dir().'/typo3-ai-mate-empty-'.bin2hex(random_bytes(8));
-        $result = $this->decode((new PerformanceTool($empty))->latest());
+        $empty = new PerformanceTool(new ProfileProvider(sys_get_temp_dir().'/typo3-ai-mate-empty-'.bin2hex(random_bytes(8))));
 
-        self::assertArrayHasKey('error', $result);
+        self::assertArrayHasKey('error', $this->decode($empty->latest()));
     }
 
     #[Test]
-    public function listReturnsSummariesNewestFirst(): void
+    public function listReturnsSummariesNewestFirstEachWithAResourceUri(): void
     {
-        $list = $this->profiles((new PerformanceTool($this->rootDir))->list());
+        $list = $this->profiles($this->tool()->list());
 
-        self::assertCount(3, $list);
         self::assertSame(['ccc', 'bbb', 'aaa'], array_column($list, 'token'));
 
         $slow = $list[1];
@@ -86,12 +87,13 @@ final class PerformanceToolTest extends TestCase
         self::assertSame(30, $slow['query_count']);
         self::assertSame(1, $slow['duplicate_queries']);
         self::assertSame(['id' => 42, 'type' => 0], $slow['page']);
+        self::assertSame('typo3-profiler://profile/bbb', $slow['resource_uri']);
     }
 
     #[Test]
     public function listRespectsTheLimit(): void
     {
-        $list = $this->profiles((new PerformanceTool($this->rootDir))->list(1));
+        $list = $this->profiles($this->tool()->list(1));
 
         self::assertCount(1, $list);
         self::assertIsArray($list[0]);
@@ -101,7 +103,7 @@ final class PerformanceToolTest extends TestCase
     #[Test]
     public function searchFiltersByUrlSubstring(): void
     {
-        $matches = $this->profiles((new PerformanceTool($this->rootDir))->search('/slow'));
+        $matches = $this->profiles($this->tool()->search('/slow'));
 
         self::assertCount(1, $matches);
         self::assertIsArray($matches[0]);
@@ -111,7 +113,7 @@ final class PerformanceToolTest extends TestCase
     #[Test]
     public function searchFiltersByStatus(): void
     {
-        $matches = $this->profiles((new PerformanceTool($this->rootDir))->search(null, 500));
+        $matches = $this->profiles($this->tool()->search(null, 500));
 
         self::assertCount(1, $matches);
         self::assertIsArray($matches[0]);
@@ -119,56 +121,26 @@ final class PerformanceToolTest extends TestCase
     }
 
     #[Test]
-    public function getReturnsTheFullProfileByToken(): void
+    public function getReturnsASummaryByTokenWithResourceUri(): void
     {
-        $profile = $this->decode((new PerformanceTool($this->rootDir))->get('bbb'));
+        $summary = $this->decode($this->tool()->get('bbb'));
 
-        self::assertSame('bbb', $profile['token']);
-        self::assertSame('/slow', $profile['url']);
-        self::assertArrayHasKey('duplicate_queries', $profile);
+        self::assertSame('bbb', $summary['token']);
+        self::assertSame('/slow', $summary['url']);
+        self::assertSame('typo3-profiler://profile/bbb', $summary['resource_uri']);
     }
 
     #[Test]
     public function getReportsAnErrorForUnknownToken(): void
     {
-        self::assertArrayHasKey('error', $this->decode((new PerformanceTool($this->rootDir))->get('does-not-exist')));
+        self::assertArrayHasKey('error', $this->decode($this->tool()->get('does-not-exist')));
     }
 
     #[Test]
-    public function getRejectsInvalidTokens(): void
+    public function getReportsAnErrorForAnInvalidToken(): void
     {
-        $result = $this->decode((new PerformanceTool($this->rootDir))->get('../../etc/passwd'));
-
-        self::assertSame('Invalid token.', $result['error'] ?? null);
-    }
-
-    #[Test]
-    public function fullProfileIsFlaggedWhenItsSchemaVersionIsUnsupported(): void
-    {
-        $this->writeProfile('zzz', ['url' => '/v', 'status' => 200], 1_000_000_400, 99);
-
-        $profile = $this->decode((new PerformanceTool($this->rootDir))->get('zzz'));
-
-        self::assertArrayHasKey('_schema_warning', $profile);
-    }
-
-    #[Test]
-    public function supportedSchemaVersionProducesNoWarning(): void
-    {
-        $profile = $this->decode((new PerformanceTool($this->rootDir))->get('bbb'));
-
-        self::assertArrayNotHasKey('_schema_warning', $profile);
-    }
-
-    /**
-     * @return array<mixed>
-     */
-    private function decode(string $response): array
-    {
-        $data = ResponseEncoder::decode($response);
-        self::assertIsArray($data);
-
-        return $data;
+        // The profiler's reader rejects traversal-unsafe tokens -> treated as not found.
+        self::assertArrayHasKey('error', $this->decode($this->tool()->get('../../etc/passwd')));
     }
 
     /**
@@ -180,6 +152,11 @@ final class PerformanceToolTest extends TestCase
         self::assertIsArray($profiles);
 
         return $profiles;
+    }
+
+    private function tool(): PerformanceTool
+    {
+        return new PerformanceTool(new ProfileProvider($this->rootDir));
     }
 
     /**

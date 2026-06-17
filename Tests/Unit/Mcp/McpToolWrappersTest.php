@@ -17,7 +17,6 @@ use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
 use KonradMichalik\Typo3AiMate\Mcp\{DeprecationsTool, EventsTool, ExtensionScannerTool, LogsTool, MiddlewaresTool, PageTool, TcaTool, TypoScriptTool, UpgradeWizardsTool};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
 /**
  * McpToolWrappersTest.
@@ -26,6 +25,8 @@ use Symfony\AI\Mate\Encoding\ResponseEncoder;
  */
 final class McpToolWrappersTest extends TestCase
 {
+    use DecodesResponses;
+
     private string $rootDir;
     private Typo3CliRunner $runner;
 
@@ -175,17 +176,6 @@ final class McpToolWrappersTest extends TestCase
 
         self::assertSame('typo3-ai-mate:logs:search', $entries['command']);
         self::assertSame(['--limit', '10'], $entries['args']);
-    }
-
-    /**
-     * @return array<mixed>
-     */
-    private function decode(string $response): array
-    {
-        $data = ResponseEncoder::decode($response);
-        self::assertIsArray($data);
-
-        return $data;
     }
 
     /**
