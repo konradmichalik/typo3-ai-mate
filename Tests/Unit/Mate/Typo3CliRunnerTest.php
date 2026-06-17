@@ -33,18 +33,18 @@ final class Typo3CliRunnerTest extends TestCase
         mkdir($this->rootDir.'/vendor/bin', 0777, true);
 
         // Fake CLI: branches on the first argument (the command name).
-        $script = <<<'PHP'
-            <?php
-            $command = $argv[1] ?? '';
-            switch ($command) {
-                case 'ok':       echo json_encode(['hello' => 'world', 'args' => array_slice($argv, 2)]); break;
-                case 'list':     echo json_encode(['a', 'b', 'c']); break;
-                case 'notjson':  echo 'this is not json'; break;
-                case 'warned':   echo "PHP Warning:  Undefined array key \"encryptionKey\" in HashService.php on line 43\n"; echo json_encode(['extension' => 'ext', 'matches' => []]); break;
-                case 'errfield': echo json_encode(['error' => 'something broke']); break;
-                case 'fail':     fwrite(STDERR, 'boom'); exit(1);
-            }
-            PHP;
+        $script = <<<'PHP_WRAP'
+        <?php
+        $command = $argv[1] ?? '';
+        switch ($command) {
+            case 'ok':       echo json_encode(['hello' => 'world', 'args' => array_slice($argv, 2)]); break;
+            case 'list':     echo json_encode(['a', 'b', 'c']); break;
+            case 'notjson':  echo 'this is not json'; break;
+            case 'warned':   echo "PHP Warning:  Undefined array key \"encryptionKey\" in HashService.php on line 43\n"; echo json_encode(['extension' => 'ext', 'matches' => []]); break;
+            case 'errfield': echo json_encode(['error' => 'something broke']); break;
+            case 'fail':     fwrite(STDERR, 'boom'); exit(1);
+        }
+        PHP_WRAP;
         file_put_contents($this->rootDir.'/vendor/bin/typo3', $script);
     }
 
