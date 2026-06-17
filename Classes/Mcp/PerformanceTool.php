@@ -14,10 +14,10 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Mcp;
 
 use KonradMichalik\Typo3AiMate\Support\Cast;
+use KonradMichalik\Typo3RequestProfiler\Profiling\ProfileReader;
 use Mcp\Capability\Attribute\McpTool;
 use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
-use function array_slice;
 use function count;
 use function is_array;
 use function sprintf;
@@ -29,31 +29,32 @@ use function sprintf;
  */
 final readonly class PerformanceTool
 {
-    public function __construct(private string $rootDir) {}
+    private const SUPPORTED_SCHEMA_VERSION = 1;
+
+    private ProfileReader $reader;
+
+    public function __construct(string $rootDir)
+    {
+        // The profiler owns the read API and the schema; we only supply the
+        // artifact directory (boot-free, framework-agnostic reader).
+        $this->reader = new ProfileReader($rootDir.'/var/log/profiles');
+    }
 
     #[McpTool(name: 'typo3-profiler-latest', description: 'Most recent request profile (SQL/N+1/cache/timing + page.id). Primary tool for a "slow page".')]
     public function latest(): string
     {
-        $files = $this->profileFiles();
-        $latest = end($files);
-        if (false === $latest) {
+        $profiles = $this->reader->latest(1);
+        if ([] === $profiles) {
             return ResponseEncoder::encode(['error' => 'No profiles found. Trigger a frontend request in the Development context first.']);
         }
 
-        return ResponseEncoder::encode($this->read($latest) ?? ['error' => 'Latest profile could not be read.']);
+        return ResponseEncoder::encode($this->annotate($profiles[0]));
     }
 
     #[McpTool(name: 'typo3-profiler-list', description: 'List the most recent request profiles as compact summaries (token, url, status, timing, queries, cache).')]
     public function list(int $limit = 20): string
     {
-        $files = array_reverse($this->profileFiles());
-        $summaries = [];
-        foreach (array_slice($files, 0, max(1, $limit)) as $file) {
-            $profile = $this->read($file);
-            if (null !== $profile) {
-                $summaries[] = $this->summarize($profile);
-            }
-        }
+        $summaries = array_map($this->summarize(...), $this->reader->latest(max(1, $limit)));
 
         // Label the list so the AI gets a named field instead of a bare top-level array.
         return ResponseEncoder::encode(['profiles' => $summaries]);
@@ -62,13 +63,8 @@ final readonly class PerformanceTool
     #[McpTool(name: 'typo3-profiler-search', description: 'Search request profiles by url substring and/or HTTP status; returns matching summaries, newest first.')]
     public function search(?string $url = null, ?int $status = null, int $limit = 20): string
     {
-        $files = array_reverse($this->profileFiles());
         $matches = [];
-        foreach ($files as $file) {
-            $profile = $this->read($file);
-            if (null === $profile) {
-                continue;
-            }
+        foreach ($this->reader->all() as $profile) {
             if (null !== $url && '' !== $url && !str_contains(Cast::string($profile['url'] ?? ''), $url)) {
                 continue;
             }
@@ -92,41 +88,34 @@ final readonly class PerformanceTool
             return ResponseEncoder::encode(['error' => 'Invalid token.']);
         }
 
-        return ResponseEncoder::encode($this->read($this->directory().'/'.$token.'.json')
-            ?? ['error' => sprintf('Profile "%s" not found.', $token)]);
-    }
+        $profile = $this->reader->byToken($token);
 
-    private function directory(): string
-    {
-        return $this->rootDir.'/var/log/profiles';
-    }
-
-    /**
-     * @return list<string> profile files sorted oldest -> newest
-     */
-    private function profileFiles(): array
-    {
-        $files = glob($this->directory().'/*.json') ?: [];
-        usort($files, static fn (string $a, string $b): int => filemtime($a) <=> filemtime($b));
-
-        return $files;
+        return ResponseEncoder::encode(null === $profile
+            ? ['error' => sprintf('Profile "%s" not found.', $token)]
+            : $this->annotate($profile));
     }
 
     /**
-     * @return array<mixed>|null
+     * Flag a profile whose schema version the tool was not written against, so the
+     * assistant knows the field layout may have drifted rather than silently
+     * misreading it.
+     *
+     * @param array<string, mixed> $profile
+     *
+     * @return array<string, mixed>
      */
-    private function read(string $file): ?array
+    private function annotate(array $profile): array
     {
-        if (!is_file($file)) {
-            return null;
+        $version = $profile['schemaVersion'] ?? null;
+        if (self::SUPPORTED_SCHEMA_VERSION !== $version) {
+            $profile['_schema_warning'] = sprintf(
+                'Profile schemaVersion %s differs from the supported version %d; some fields may be misinterpreted.',
+                null === $version ? 'is missing' : '"'.Cast::string($version).'"',
+                self::SUPPORTED_SCHEMA_VERSION,
+            );
         }
-        $contents = file_get_contents($file);
-        if (false === $contents) {
-            return null;
-        }
-        $decoded = json_decode($contents, true);
 
-        return is_array($decoded) ? $decoded : null;
+        return $profile;
     }
 
     /**

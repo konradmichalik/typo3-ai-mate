@@ -142,6 +142,24 @@ final class PerformanceToolTest extends TestCase
         self::assertSame('Invalid token.', $result['error'] ?? null);
     }
 
+    #[Test]
+    public function fullProfileIsFlaggedWhenItsSchemaVersionIsUnsupported(): void
+    {
+        $this->writeProfile('zzz', ['url' => '/v', 'status' => 200], 1_000_000_400, 99);
+
+        $profile = $this->decode((new PerformanceTool($this->rootDir))->get('zzz'));
+
+        self::assertArrayHasKey('_schema_warning', $profile);
+    }
+
+    #[Test]
+    public function supportedSchemaVersionProducesNoWarning(): void
+    {
+        $profile = $this->decode((new PerformanceTool($this->rootDir))->get('bbb'));
+
+        self::assertArrayNotHasKey('_schema_warning', $profile);
+    }
+
     /**
      * @return array<mixed>
      */
@@ -167,10 +185,14 @@ final class PerformanceToolTest extends TestCase
     /**
      * @param array<string, mixed> $data
      */
-    private function writeProfile(string $token, array $data, int $mtime): void
+    private function writeProfile(string $token, array $data, int $mtime, ?int $schemaVersion = 1): void
     {
+        $base = ['token' => $token, 'time' => '2026-06-15T10:00:00+00:00'];
+        if (null !== $schemaVersion) {
+            $base['schemaVersion'] = $schemaVersion;
+        }
         $file = $this->profilesDir.'/'.$token.'.json';
-        file_put_contents($file, json_encode(['token' => $token, 'time' => '2026-06-15T10:00:00+00:00'] + $data, \JSON_THROW_ON_ERROR));
+        file_put_contents($file, json_encode($base + $data, \JSON_THROW_ON_ERROR));
         touch($file, $mtime);
     }
 }
