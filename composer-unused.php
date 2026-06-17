@@ -14,12 +14,16 @@ declare(strict_types=1);
 use ComposerUnused\ComposerUnused\Configuration\{Configuration, NamedFilter};
 
 return static function (Configuration $config): Configuration {
-    // Both dependencies are used at runtime but expose no PHP symbols this package
-    // references, so composer-unused cannot detect the link — they are used on purpose:
+    // These dependencies are used at runtime but expose no PHP symbols this package
+    // references directly, so composer-unused cannot detect the link — they are
+    // required on purpose:
     //   * symfony/ai-mate — the host framework; provides the `mate` binary and loads
     //     our MCP tools via the extra.ai-mate declaration.
     //   * typo3-request-profiler — its JSON profiles are read by the typo3-profiler-* tools.
+    //   * helgesverre/toon — used at runtime by ai-mate's ResponseEncoder to encode
+    //     tool responses as TOON (token-efficient); never referenced directly.
     return $config
         ->addNamedFilter(NamedFilter::fromString('symfony/ai-mate'))
-        ->addNamedFilter(NamedFilter::fromString('konradmichalik/typo3-request-profiler'));
+        ->addNamedFilter(NamedFilter::fromString('konradmichalik/typo3-request-profiler'))
+        ->addNamedFilter(NamedFilter::fromString('helgesverre/toon'));
 };

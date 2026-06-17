@@ -15,6 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
 use Mcp\Capability\Attribute\McpTool;
+use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
 /**
  * TypoScriptTool.
@@ -25,17 +26,14 @@ final readonly class TypoScriptTool
 {
     public function __construct(private Typo3CliRunner $typo3) {}
 
-    /**
-     * @return array<mixed>
-     */
     #[McpTool(name: 'typo3-typoscript', description: 'Resolved frontend TypoScript (setup|constants) of a page. Scope large output with a dotted path, e.g. lib.foo.')]
-    public function dump(int $pageId, string $type = 'setup', ?string $path = null): array
+    public function dump(int $pageId, string $type = 'setup', ?string $path = null): string
     {
         $options = ['type' => $type];
         if (null !== $path && '' !== $path) {
             $options['path'] = $path;
         }
 
-        return $this->typo3->jsonOrError('typo3-ai-mate:typoscript:dump', [$pageId], $options);
+        return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:typoscript:dump', [$pageId], $options));
     }
 }

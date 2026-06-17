@@ -16,6 +16,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 use KonradMichalik\Typo3AiMate\Mcp\PerformanceTool;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
 /**
  * PerformanceToolTest.
@@ -53,7 +54,7 @@ final class PerformanceToolTest extends TestCase
     #[Test]
     public function latestReturnsTheNewestProfile(): void
     {
-        $profile = (new PerformanceTool($this->rootDir))->latest();
+        $profile = $this->decode((new PerformanceTool($this->rootDir))->latest());
 
         self::assertSame('ccc', $profile['token']);
         self::assertSame('/error', $profile['url']);
@@ -64,7 +65,7 @@ final class PerformanceToolTest extends TestCase
     public function latestReportsAnErrorWhenNoProfilesExist(): void
     {
         $empty = sys_get_temp_dir().'/typo3-ai-mate-empty-'.bin2hex(random_bytes(8));
-        $result = (new PerformanceTool($empty))->latest();
+        $result = $this->decode((new PerformanceTool($empty))->latest());
 
         self::assertArrayHasKey('error', $result);
     }
@@ -72,12 +73,13 @@ final class PerformanceToolTest extends TestCase
     #[Test]
     public function listReturnsSummariesNewestFirst(): void
     {
-        $list = (new PerformanceTool($this->rootDir))->list()['profiles'];
+        $list = $this->profiles((new PerformanceTool($this->rootDir))->list());
 
         self::assertCount(3, $list);
         self::assertSame(['ccc', 'bbb', 'aaa'], array_column($list, 'token'));
 
         $slow = $list[1];
+        self::assertIsArray($slow);
         self::assertSame('/slow', $slow['url']);
         self::assertFalse($slow['cache_hit']);
         self::assertSame(500, $slow['total_ms'] ?? null);
@@ -89,34 +91,37 @@ final class PerformanceToolTest extends TestCase
     #[Test]
     public function listRespectsTheLimit(): void
     {
-        $list = (new PerformanceTool($this->rootDir))->list(1)['profiles'];
+        $list = $this->profiles((new PerformanceTool($this->rootDir))->list(1));
 
         self::assertCount(1, $list);
+        self::assertIsArray($list[0]);
         self::assertSame('ccc', $list[0]['token']);
     }
 
     #[Test]
     public function searchFiltersByUrlSubstring(): void
     {
-        $matches = (new PerformanceTool($this->rootDir))->search('/slow')['profiles'];
+        $matches = $this->profiles((new PerformanceTool($this->rootDir))->search('/slow'));
 
         self::assertCount(1, $matches);
+        self::assertIsArray($matches[0]);
         self::assertSame('bbb', $matches[0]['token']);
     }
 
     #[Test]
     public function searchFiltersByStatus(): void
     {
-        $matches = (new PerformanceTool($this->rootDir))->search(null, 500)['profiles'];
+        $matches = $this->profiles((new PerformanceTool($this->rootDir))->search(null, 500));
 
         self::assertCount(1, $matches);
+        self::assertIsArray($matches[0]);
         self::assertSame('ccc', $matches[0]['token']);
     }
 
     #[Test]
     public function getReturnsTheFullProfileByToken(): void
     {
-        $profile = (new PerformanceTool($this->rootDir))->get('bbb');
+        $profile = $this->decode((new PerformanceTool($this->rootDir))->get('bbb'));
 
         self::assertSame('bbb', $profile['token']);
         self::assertSame('/slow', $profile['url']);
@@ -126,15 +131,37 @@ final class PerformanceToolTest extends TestCase
     #[Test]
     public function getReportsAnErrorForUnknownToken(): void
     {
-        self::assertArrayHasKey('error', (new PerformanceTool($this->rootDir))->get('does-not-exist'));
+        self::assertArrayHasKey('error', $this->decode((new PerformanceTool($this->rootDir))->get('does-not-exist')));
     }
 
     #[Test]
     public function getRejectsInvalidTokens(): void
     {
-        $result = (new PerformanceTool($this->rootDir))->get('../../etc/passwd');
+        $result = $this->decode((new PerformanceTool($this->rootDir))->get('../../etc/passwd'));
 
         self::assertSame('Invalid token.', $result['error'] ?? null);
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    private function decode(string $response): array
+    {
+        $data = ResponseEncoder::decode($response);
+        self::assertIsArray($data);
+
+        return $data;
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    private function profiles(string $response): array
+    {
+        $profiles = $this->decode($response)['profiles'];
+        self::assertIsArray($profiles);
+
+        return $profiles;
     }
 
     /**

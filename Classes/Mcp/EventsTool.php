@@ -15,6 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
 use Mcp\Capability\Attribute\McpTool;
+use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
 /**
  * EventsTool.
@@ -26,14 +27,11 @@ final readonly class EventsTool
 {
     public function __construct(private Typo3CliRunner $typo3) {}
 
-    /**
-     * @return array<mixed>
-     */
     #[McpTool(name: 'typo3-events', description: 'Resolved PSR-14 event listener registry (which listeners fire for which event), optionally filtered by event class substring.')]
-    public function list(?string $event = null): array
+    public function list(?string $event = null): string
     {
         $options = null !== $event && '' !== $event ? ['event' => $event] : [];
 
-        return $this->typo3->jsonOrError('typo3-ai-mate:events:list', [], $options);
+        return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:events:list', [], $options));
     }
 }

@@ -15,6 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
 use Mcp\Capability\Attribute\McpTool;
+use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
 /**
  * PageTool.
@@ -25,15 +26,12 @@ final readonly class PageTool
 {
     public function __construct(private Typo3CliRunner $typo3) {}
 
-    /**
-     * @return array<mixed>
-     */
     #[McpTool(name: 'typo3-page', description: 'Page composition (content elements incl. CType/plugin, backend layout) plus cache signals and USER_INT plugins. Expand a profile page.id.')]
-    public function info(?int $pageId = null, ?string $url = null): array
+    public function info(?int $pageId = null, ?string $url = null): string
     {
         $arguments = null !== $pageId ? [$pageId] : [];
         $options = null !== $url && '' !== $url ? ['url' => $url] : [];
 
-        return $this->typo3->jsonOrError('typo3-ai-mate:page:info', $arguments, $options);
+        return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:page:info', $arguments, $options));
     }
 }
