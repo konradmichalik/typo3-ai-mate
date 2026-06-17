@@ -7,17 +7,21 @@ actually computed, not what the code might do.
 ## Diagnose instead of guessing
 
 **"This page is slow":**
-1. `typo3-profiler-latest` — see timing, query count, `duplicate_queries` (N+1),
-   `cache.hit`/`cacheable`, and the `page.id`.
-2. `typo3-page` with that `page.id` — see the content elements and which plugins
+1. `typo3-profiler-latest` — a compact summary: timing, `query_count`, `duplicate_queries`
+   count (N+1), `cache_hit`, the `page.id` and a `resource_uri`.
+2. For the raw SQL / per-section detail, read the profile as a resource:
+   `typo3-profiler://profile/<token>` (full) or `typo3-profiler://profile/<token>/queries`
+   (a single section).
+3. `typo3-page` with that `page.id` — see the content elements and which plugins
    are `USER_INT` (uncached). Attribute the N+1 / cache miss to a concrete element.
-3. Optionally `typo3-typoscript pageId=<id> path=...` to inspect the plugin's setup.
+4. Optionally `typo3-typoscript pageId=<id> path=...` to inspect the plugin's setup.
 
 **"This page errors":**
 1. `typo3-logs-search query="..."` (or `typo3-logs-by-level level=error`) — find
    the exception, class and stack trace.
-2. Use the entry's `request_id` to fetch the matching profile
-   (`typo3-profiler-get token=<request_id>`) and page (`typo3-page`).
+2. Use the entry's `request_id` to fetch the matching profile summary
+   (`typo3-profiler-get token=<request_id>`, then read `typo3-profiler://profile/<request_id>`
+   for the full data) and page (`typo3-page`).
 
 ## Correlation anchor: `request_id`
 
@@ -32,9 +36,10 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
 
 ## Tools
 
-- `typo3-profiler-latest` / `-list` / `-search` / `-get` — request profiles
-  (requires the `typo3-request-profiler` extension installed and a triggered FE
-  request in the Development context).
+- `typo3-profiler-latest` / `-list` / `-search` / `-get` — request profiles as compact
+  summaries, each with a `resource_uri`; read the full profile or a single section via the
+  `typo3-profiler://profile/{token}[/{section}]` resources. (Requires the
+  `typo3-request-profiler` extension and a triggered FE request in the Development context.)
 - `typo3-page` — page composition + cache signals (expand a profile `page.id`).
 - `typo3-logs-search` / `-tail` / `-by-level` — TYPO3 logs.
 - `typo3-tca` — resolved (trimmed) TCA of a table, or all table names.
@@ -48,6 +53,17 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
   `extension` to scan all non-core extensions (own + third-party) at once.
 - `typo3-deprecations` — runtime deprecation notices, deduplicated and grouped by
   message with counts (`loggingEnabled` flag — see below).
+
+## Output size
+
+Some tools cap large output and signal it with `_truncated: true` plus a total count, so a
+big result never floods the context. Treat a truncated result as a sample, not the whole
+picture, and re-query with a narrower filter:
+
+- `typo3-extension-scanner` — at most 200 `matches` per extension (`statistics.matchCount`
+  is the real total). If truncated, scan a single `extension=<key>` to focus.
+- `typo3-events` — at most 100 events (`eventCount` is the real total). Narrow with the
+  `event` class-substring filter.
 
 ## Planning a major upgrade (v13 → v14)
 
@@ -65,34 +81,3 @@ module — to reason from the installation's real state instead of the changelog
    `deprecations` log channel is off (the default) — an empty list means "not
    measured", **not** "no deprecations". Enable
    `[LOG][TYPO3][CMS][deprecations][writerConfiguration]` to collect data.
-
-## Adding your own TYPO3 tool
-
-Two native ai-mate ways — both can reuse the shared, public `Typo3CliRunner`
-service (it shells out to `vendor/bin/typo3`, sets `TYPO3_CONTEXT=Development`,
-and parses stdout JSON):
-
-**A) Project-local** — drop a `#[McpTool]` class into `mate/src` (`App\Mate\`),
-then `composer dump-autoload`. For one-off, project-specific tools.
-
-**B) Reusable** — ship a Composer package with `extra.ai-mate`, then
-`vendor/bin/mate discover`. For cross-project tools.
-
-Recipe: (1) a TYPO3 console command that prints **raw JSON**, (2) a `#[McpTool]`
-class that injects `Typo3CliRunner` and wraps it:
-
-```php
-use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use Mcp\Capability\Attribute\McpTool;
-
-final class MyCustomTool
-{
-    public function __construct(private Typo3CliRunner $typo3) {}
-
-    #[McpTool(name: 'typo3-my-thing', description: '…')]
-    public function run(int $pageId): array
-    {
-        return $this->typo3->json('myext:something', [$pageId]); // shells out, parses JSON
-    }
-}
-```

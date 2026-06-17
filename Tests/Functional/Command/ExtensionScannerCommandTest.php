@@ -13,19 +13,19 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Functional\Command;
 
-use KonradMichalik\Typo3AiMate\Command\ExtensionScanCommand;
+use KonradMichalik\Typo3AiMate\Command\ExtensionScannerCommand;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\Package\PackageManager;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
- * ExtensionScanCommandTest.
+ * ExtensionScannerCommandTest.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  * @license GPL-2.0-or-later
  */
-final class ExtensionScanCommandTest extends FunctionalTestCase
+final class ExtensionScannerCommandTest extends FunctionalTestCase
 {
     protected array $coreExtensionsToLoad = [
         'install',
@@ -45,7 +45,11 @@ final class ExtensionScanCommandTest extends FunctionalTestCase
         self::assertSame('scanner_fixture', $result['extension']);
         self::assertArrayHasKey('statistics', $result);
         self::assertGreaterThanOrEqual(1, $result['statistics']['filesScanned']);
+        self::assertArrayHasKey('matchCount', $result['statistics']);
         self::assertArrayHasKey('matches', $result);
+        // The fixture stays well under the cap, so the result is complete.
+        self::assertArrayHasKey('_truncated', $result);
+        self::assertFalse($result['_truncated']);
     }
 
     #[Test]
@@ -74,7 +78,7 @@ final class ExtensionScanCommandTest extends FunctionalTestCase
      */
     private function runScan(string $extension): array
     {
-        $command = new ExtensionScanCommand($this->get(PackageManager::class));
+        $command = new ExtensionScannerCommand($this->get(PackageManager::class));
         $tester = new CommandTester($command);
         $exitCode = $tester->execute(['extension' => $extension]);
 

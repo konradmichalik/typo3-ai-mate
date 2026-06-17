@@ -15,6 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
 use Mcp\Capability\Attribute\McpTool;
+use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
 /**
  * LogsTool.
@@ -25,46 +26,37 @@ final readonly class LogsTool
 {
     public function __construct(private Typo3CliRunner $typo3) {}
 
-    /**
-     * @return array{entries: array<mixed>}
-     */
-    #[McpTool(name: 'typo3-logs-search', description: 'Full-text search the TYPO3 logs with optional level/component/request-id filters.')]
+    #[McpTool(name: 'typo3-logs-search', title: 'TYPO3 Log Search', description: 'Full-text search the TYPO3 logs with optional level/component/request-id filters.')]
     public function search(
         ?string $query = null,
         ?string $level = null,
         ?string $component = null,
         ?string $requestId = null,
         int $limit = 50,
-    ): array {
-        return ['entries' => $this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], $this->options([
+    ): string {
+        return ResponseEncoder::encode(['entries' => $this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], $this->options([
             'query' => $query,
             'level' => $level,
             'component' => $component,
             'request-id' => $requestId,
             'limit' => $limit,
-        ]))];
+        ]))]);
     }
 
-    /**
-     * @return array{entries: array<mixed>}
-     */
-    #[McpTool(name: 'typo3-logs-tail', description: 'Return the most recent TYPO3 log entries.')]
-    public function tail(int $limit = 50): array
+    #[McpTool(name: 'typo3-logs-tail', title: 'TYPO3 Log Tail', description: 'Return the most recent TYPO3 log entries.')]
+    public function tail(int $limit = 50): string
     {
-        return ['entries' => $this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], ['limit' => $limit])];
+        return ResponseEncoder::encode(['entries' => $this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], ['limit' => $limit])]);
     }
 
-    /**
-     * @return array{entries: array<mixed>}
-     */
-    #[McpTool(name: 'typo3-logs-by-level', description: 'Return TYPO3 log entries at or above a minimum severity (e.g. error), optionally filtered by request-id.')]
-    public function byLevel(string $level, ?string $requestId = null, int $limit = 50): array
+    #[McpTool(name: 'typo3-logs-by-level', title: 'TYPO3 Logs by Level', description: 'Return TYPO3 log entries at or above a minimum severity (e.g. error), optionally filtered by request-id.')]
+    public function byLevel(string $level, ?string $requestId = null, int $limit = 50): string
     {
-        return ['entries' => $this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], $this->options([
+        return ResponseEncoder::encode(['entries' => $this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], $this->options([
             'level' => $level,
             'request-id' => $requestId,
             'limit' => $limit,
-        ]))];
+        ]))]);
     }
 
     /**

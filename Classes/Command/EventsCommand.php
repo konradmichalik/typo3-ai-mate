@@ -20,10 +20,12 @@ use Symfony\Component\Console\Input\{InputInterface, InputOption};
 use Symfony\Component\Console\Output\OutputInterface;
 use TYPO3\CMS\Core\EventDispatcher\ListenerProvider;
 
+use function array_slice;
+use function count;
 use function is_string;
 
 /**
- * EventListCommand.
+ * EventsCommand.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
@@ -31,8 +33,10 @@ use function is_string;
     name: 'typo3-ai-mate:events:list',
     description: 'Resolved PSR-14 event listener registry (event => listeners) as JSON.',
 )]
-final class EventListCommand extends AbstractJsonCommand
+final class EventsCommand extends AbstractJsonCommand
 {
+    private const MAX_EVENTS = 100;
+
     public function __construct(private readonly ListenerProvider $listenerProvider)
     {
         parent::__construct();
@@ -82,6 +86,13 @@ final class EventListCommand extends AbstractJsonCommand
             $events[] = ['event' => $eventClass, 'listeners' => self::mapListeners($listeners)];
         }
 
-        return $this->emit($output, ['events' => $events]);
+        $eventCount = count($events);
+        $truncated = $eventCount > self::MAX_EVENTS;
+
+        return $this->emit($output, [
+            'events' => $truncated ? array_slice($events, 0, self::MAX_EVENTS) : $events,
+            'eventCount' => $eventCount,
+            '_truncated' => $truncated,
+        ]);
     }
 }

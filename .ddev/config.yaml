@@ -1,7 +1,7 @@
 name: typo3-ai-mate
 type: php
 docroot: .Build
-php_version: "8.3"
+php_version: "8.2"
 webserver_type: apache-fpm
 database:
   type: mariadb

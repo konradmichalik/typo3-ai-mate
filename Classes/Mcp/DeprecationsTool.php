@@ -15,6 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
 use Mcp\Capability\Attribute\McpTool;
+use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
 /**
  * DeprecationsTool.
@@ -26,12 +27,9 @@ final readonly class DeprecationsTool
 {
     public function __construct(private Typo3CliRunner $typo3) {}
 
-    /**
-     * @return array<mixed>
-     */
-    #[McpTool(name: 'typo3-deprecations', description: 'Runtime deprecation notices, deduplicated and grouped by message with occurrence counts. Reports loggingEnabled=false when the (default-disabled) deprecations log channel is off, so an empty list is not misread as "no deprecations".')]
-    public function list(): array
+    #[McpTool(name: 'typo3-deprecations', title: 'TYPO3 Deprecations', description: 'Runtime deprecation notices, deduplicated and grouped by message with occurrence counts. Reports loggingEnabled=false when the (default-disabled) deprecations log channel is off, so an empty list is not misread as "no deprecations".')]
+    public function list(): string
     {
-        return $this->typo3->jsonOrError('typo3-ai-mate:upgrade:deprecations');
+        return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:upgrade:deprecations'));
     }
 }

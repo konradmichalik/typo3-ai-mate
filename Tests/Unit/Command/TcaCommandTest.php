@@ -13,21 +13,21 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 
-use KonradMichalik\Typo3AiMate\Command\TcaDumpCommand;
+use KonradMichalik\Typo3AiMate\Command\TcaCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
- * TcaDumpCommandTest.
+ * TcaCommandTest.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
-final class TcaDumpCommandTest extends TestCase
+final class TcaCommandTest extends TestCase
 {
     #[Test]
     public function extractTableKeepsOnlyTheRelevantCtrlKeys(): void
     {
-        $result = (new TcaDumpCommand())->extractTable([
+        $result = (new TcaCommand())->extractTable([
             'ctrl' => [
                 'title' => 'Content',
                 'label' => 'header',
@@ -48,7 +48,7 @@ final class TcaDumpCommandTest extends TestCase
     #[Test]
     public function extractTableTrimsColumnsAndDropsNullValues(): void
     {
-        $result = (new TcaDumpCommand())->extractTable([
+        $result = (new TcaCommand())->extractTable([
             'ctrl' => [],
             'columns' => [
                 'header' => [
@@ -77,7 +77,7 @@ final class TcaDumpCommandTest extends TestCase
     #[Test]
     public function extractTableToleratesMissingCtrlAndColumns(): void
     {
-        $result = (new TcaDumpCommand())->extractTable([]);
+        $result = (new TcaCommand())->extractTable([]);
 
         self::assertSame(['ctrl' => [], 'columns' => []], $result);
     }

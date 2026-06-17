@@ -13,12 +13,10 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Mcp;
 
-use KonradMichalik\Typo3AiMate\Support\Cast;
+use KonradMichalik\Typo3AiMate\Mate\ProfileProvider;
 use Mcp\Capability\Attribute\McpTool;
+use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
-use function array_slice;
-use function count;
-use function is_array;
 use function sprintf;
 
 /**
@@ -28,139 +26,39 @@ use function sprintf;
  */
 final readonly class PerformanceTool
 {
-    public function __construct(private string $rootDir) {}
+    public function __construct(private ProfileProvider $profiles) {}
 
-    /**
-     * @return array<mixed>
-     */
-    #[McpTool(name: 'typo3-profiler-latest', description: 'Most recent request profile (SQL/N+1/cache/timing + page.id). Primary tool for a "slow page".')]
-    public function latest(): array
+    #[McpTool(name: 'typo3-profiler-latest', title: 'TYPO3 Profiler: Latest', description: 'Compact summary of the most recent request profile (timing, query count, N+1, cache, page.id) plus a resource_uri to read the full profile. Primary tool for a "slow page".')]
+    public function latest(): string
     {
-        $files = $this->profileFiles();
-        $latest = end($files);
-        if (false === $latest) {
-            return ['error' => 'No profiles found. Trigger a frontend request in the Development context first.'];
-        }
+        $profile = $this->profiles->rawLatest();
 
-        return $this->read($latest) ?? ['error' => 'Latest profile could not be read.'];
+        return ResponseEncoder::encode(null === $profile
+            ? ['error' => 'No profiles found. Trigger a frontend request in the Development context first.']
+            : $this->profiles->summarize($profile));
     }
 
-    /**
-     * @return array{profiles: list<array<string, mixed>>}
-     */
-    #[McpTool(name: 'typo3-profiler-list', description: 'List the most recent request profiles as compact summaries (token, url, status, timing, queries, cache).')]
-    public function list(int $limit = 20): array
+    #[McpTool(name: 'typo3-profiler-list', title: 'TYPO3 Profiler: List', description: 'List the most recent request profiles as compact summaries (token, url, status, timing, queries, cache), each with a resource_uri for the full profile.')]
+    public function list(int $limit = 20): string
     {
-        $files = array_reverse($this->profileFiles());
-        $summaries = [];
-        foreach (array_slice($files, 0, max(1, $limit)) as $file) {
-            $profile = $this->read($file);
-            if (null !== $profile) {
-                $summaries[] = $this->summarize($profile);
-            }
-        }
-
-        // Wrap the list in an object: MCP structuredContent must be a record, not a bare array.
-        return ['profiles' => $summaries];
+        // Label the list so the AI gets a named field instead of a bare top-level array.
+        return ResponseEncoder::encode(['profiles' => $this->profiles->summaries($limit)]);
     }
 
-    /**
-     * @return array{profiles: list<array<string, mixed>>}
-     */
-    #[McpTool(name: 'typo3-profiler-search', description: 'Search request profiles by url substring and/or HTTP status; returns matching summaries, newest first.')]
-    public function search(?string $url = null, ?int $status = null, int $limit = 20): array
+    #[McpTool(name: 'typo3-profiler-search', title: 'TYPO3 Profiler: Search', description: 'Search request profiles by url substring and/or HTTP status; returns matching summaries (with resource_uri), newest first.')]
+    public function search(?string $url = null, ?int $status = null, int $limit = 20): string
     {
-        $files = array_reverse($this->profileFiles());
-        $matches = [];
-        foreach ($files as $file) {
-            $profile = $this->read($file);
-            if (null === $profile) {
-                continue;
-            }
-            if (null !== $url && '' !== $url && !str_contains(Cast::string($profile['url'] ?? ''), $url)) {
-                continue;
-            }
-            if (null !== $status && Cast::int($profile['status'] ?? 0) !== $status) {
-                continue;
-            }
-            $matches[] = $this->summarize($profile);
-            if (count($matches) >= max(1, $limit)) {
-                break;
-            }
-        }
-
-        // Wrap the list in an object: MCP structuredContent must be a record, not a bare array.
-        return ['profiles' => $matches];
+        // Label the list so the AI gets a named field instead of a bare top-level array.
+        return ResponseEncoder::encode(['profiles' => $this->profiles->search($url, $status, $limit)]);
     }
 
-    /**
-     * @return array<mixed>
-     */
-    #[McpTool(name: 'typo3-profiler-get', description: 'Get a single full request profile by its token (= request_id, correlates with logs).')]
-    public function get(string $token): array
+    #[McpTool(name: 'typo3-profiler-get', title: 'TYPO3 Profiler: Get', description: 'Compact summary of a single request profile by its token (= request_id, correlates with logs), plus a resource_uri to read the full profile.')]
+    public function get(string $token): string
     {
-        if (1 !== preg_match('/^[A-Za-z0-9_-]+$/', $token)) {
-            return ['error' => 'Invalid token.'];
-        }
+        $profile = $this->profiles->rawByToken($token);
 
-        return $this->read($this->directory().'/'.$token.'.json')
-            ?? ['error' => sprintf('Profile "%s" not found.', $token)];
-    }
-
-    private function directory(): string
-    {
-        return $this->rootDir.'/var/log/profiles';
-    }
-
-    /**
-     * @return list<string> profile files sorted oldest -> newest
-     */
-    private function profileFiles(): array
-    {
-        $files = glob($this->directory().'/*.json') ?: [];
-        usort($files, static fn (string $a, string $b): int => filemtime($a) <=> filemtime($b));
-
-        return $files;
-    }
-
-    /**
-     * @return array<mixed>|null
-     */
-    private function read(string $file): ?array
-    {
-        if (!is_file($file)) {
-            return null;
-        }
-        $contents = file_get_contents($file);
-        if (false === $contents) {
-            return null;
-        }
-        $decoded = json_decode($contents, true);
-
-        return is_array($decoded) ? $decoded : null;
-    }
-
-    /**
-     * @param array<mixed> $profile
-     *
-     * @return array<string, mixed>
-     */
-    private function summarize(array $profile): array
-    {
-        $cache = is_array($profile['cache'] ?? null) ? $profile['cache'] : [];
-        $timing = is_array($profile['timing'] ?? null) ? $profile['timing'] : [];
-        $queries = is_array($profile['queries'] ?? null) ? $profile['queries'] : [];
-
-        return [
-            'token' => $profile['token'] ?? null,
-            'time' => $profile['time'] ?? null,
-            'url' => $profile['url'] ?? null,
-            'status' => $profile['status'] ?? null,
-            'page' => $profile['page'] ?? null,
-            'cache_hit' => $cache['hit'] ?? null,
-            'total_ms' => $timing['total_ms'] ?? null,
-            'query_count' => $queries['count'] ?? null,
-            'duplicate_queries' => count(is_array($profile['duplicate_queries'] ?? null) ? $profile['duplicate_queries'] : []),
-        ];
+        return ResponseEncoder::encode(null === $profile
+            ? ['error' => sprintf('Profile "%s" not found.', $token)]
+            : $this->profiles->summarize($profile));
     }
 }

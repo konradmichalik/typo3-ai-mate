@@ -13,16 +13,16 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 
-use KonradMichalik\Typo3AiMate\Command\PageInfoCommand;
+use KonradMichalik\Typo3AiMate\Command\PageCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
- * PageInfoCommandTest.
+ * PageCommandTest.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  */
-final class PageInfoCommandTest extends TestCase
+final class PageCommandTest extends TestCase
 {
     #[Test]
     public function matchUserIntPluginsDetectsAListPluginSignature(): void
@@ -33,7 +33,7 @@ final class PageInfoCommandTest extends TestCase
             ['CType' => 'text', 'plugin' => null],
         ];
 
-        self::assertSame(['news_pi1'], PageInfoCommand::matchUserIntPlugins($setup, $contentElements));
+        self::assertSame(['news_pi1'], PageCommand::matchUserIntPlugins($setup, $contentElements));
     }
 
     #[Test]
@@ -42,7 +42,7 @@ final class PageInfoCommandTest extends TestCase
         $setup = ['tt_content.' => ['my_element' => 'USER_INT']];
         $contentElements = [['CType' => 'my_element', 'plugin' => null]];
 
-        self::assertSame(['my_element'], PageInfoCommand::matchUserIntPlugins($setup, $contentElements));
+        self::assertSame(['my_element'], PageCommand::matchUserIntPlugins($setup, $contentElements));
     }
 
     #[Test]
@@ -54,7 +54,7 @@ final class PageInfoCommandTest extends TestCase
             ['CType' => 'list', 'plugin' => 'news_pi1'],
         ];
 
-        self::assertSame(['news_pi1'], PageInfoCommand::matchUserIntPlugins($setup, $contentElements));
+        self::assertSame(['news_pi1'], PageCommand::matchUserIntPlugins($setup, $contentElements));
     }
 
     #[Test]
@@ -63,12 +63,12 @@ final class PageInfoCommandTest extends TestCase
         $setup = ['tt_content.' => ['list.' => ['20.' => ['news_pi1' => 'USER']]]];
         $contentElements = [['CType' => 'list', 'plugin' => 'news_pi1']];
 
-        self::assertSame([], PageInfoCommand::matchUserIntPlugins($setup, $contentElements));
+        self::assertSame([], PageCommand::matchUserIntPlugins($setup, $contentElements));
     }
 
     #[Test]
     public function matchUserIntPluginsToleratesAbsentTypoScriptStructures(): void
     {
-        self::assertSame([], PageInfoCommand::matchUserIntPlugins([], [['CType' => 'text', 'plugin' => null]]));
+        self::assertSame([], PageCommand::matchUserIntPlugins([], [['CType' => 'text', 'plugin' => null]]));
     }
 }

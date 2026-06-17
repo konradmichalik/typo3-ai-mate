@@ -13,24 +13,24 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 
-use KonradMichalik\Typo3AiMate\Command\ExtensionScanCommand;
+use KonradMichalik\Typo3AiMate\Command\ExtensionScannerCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use TYPO3\CMS\Core\Package\PackageManager;
 
 /**
- * ExtensionScanCommandTest.
+ * ExtensionScannerCommandTest.
  *
  * @author Konrad Michalik <km@move-elevator.de>
  * @license GPL-2.0-or-later
  */
-final class ExtensionScanCommandTest extends TestCase
+final class ExtensionScannerCommandTest extends TestCase
 {
-    private ExtensionScanCommand $command;
+    private ExtensionScannerCommand $command;
 
     protected function setUp(): void
     {
-        $this->command = new ExtensionScanCommand(
+        $this->command = new ExtensionScannerCommand(
             self::createStub(PackageManager::class),
         );
     }

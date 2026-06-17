@@ -11,8 +11,8 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{DeprecationsTool, EventsTool, ExtensionScannerTool, LogsTool, MiddlewaresTool, PageTool, PerformanceTool, TcaTool, TypoScriptTool, UpgradeWizardsTool};
+use KonradMichalik\Typo3AiMate\Mate\{ProfileProvider, Typo3CliRunner};
+use KonradMichalik\Typo3AiMate\Mcp\{DeprecationsTool, EventsTool, ExtensionScannerTool, LogsTool, MiddlewaresTool, PageTool, PerformanceTool, ProfileResource, TcaTool, TypoScriptTool, UpgradeWizardsTool};
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 /*
@@ -45,7 +45,10 @@ return static function (ContainerConfigurator $container): void {
     $services->set(ExtensionScannerTool::class);
     $services->set(DeprecationsTool::class);
 
-    // Profiler artifact reader needs the project root to locate var/log/profiles.
-    $services->set(PerformanceTool::class)
+    // Shared profile access needs the project root to locate var/log/profiles;
+    // the profiler tools and the profile resource autowire it.
+    $services->set(ProfileProvider::class)
         ->arg('$rootDir', '%mate.root_dir%');
+    $services->set(PerformanceTool::class);
+    $services->set(ProfileResource::class);
 };

@@ -15,6 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
 use Mcp\Capability\Attribute\McpTool;
+use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
 /**
  * UpgradeWizardsTool.
@@ -26,12 +27,9 @@ final readonly class UpgradeWizardsTool
 {
     public function __construct(private Typo3CliRunner $typo3) {}
 
-    /**
-     * @return array<mixed>
-     */
-    #[McpTool(name: 'typo3-upgrade-wizards', description: 'List all TYPO3 upgrade wizards (pending and done) with identifier, title, description and status — which DB/config migrations are still outstanding. Read-only; running a wizard is not exposed.')]
-    public function list(): array
+    #[McpTool(name: 'typo3-upgrade-wizards', title: 'TYPO3 Upgrade Wizards', description: 'List all TYPO3 upgrade wizards (pending and done) with identifier, title, description and status — which DB/config migrations are still outstanding. Read-only; running a wizard is not exposed.')]
+    public function list(): string
     {
-        return $this->typo3->jsonOrError('typo3-ai-mate:upgrade:wizards');
+        return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:upgrade:wizards'));
     }
 }
