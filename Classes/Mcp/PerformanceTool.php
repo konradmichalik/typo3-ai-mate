@@ -55,7 +55,7 @@ final readonly class PerformanceTool
             }
         }
 
-        // Wrap the list in an object: MCP structuredContent must be a record, not a bare array.
+        // Label the list so the AI gets a named field instead of a bare top-level array.
         return ResponseEncoder::encode(['profiles' => $summaries]);
     }
 
@@ -81,7 +81,7 @@ final readonly class PerformanceTool
             }
         }
 
-        // Wrap the list in an object: MCP structuredContent must be a record, not a bare array.
+        // Label the list so the AI gets a named field instead of a bare top-level array.
         return ResponseEncoder::encode(['profiles' => $matches]);
     }
 

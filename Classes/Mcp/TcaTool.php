@@ -30,7 +30,7 @@ final readonly class TcaTool
     public function dump(?string $table = null, bool $list = false): string
     {
         if ($list || null === $table || '' === $table) {
-            // Wrap the list in an object: MCP structuredContent must be a record, not a bare array.
+            // Label the list so the AI gets a named field instead of a bare top-level array.
             return ResponseEncoder::encode(['tables' => $this->typo3->jsonOrError('typo3-ai-mate:tca:dump', [], ['list' => true])]);
         }
 
