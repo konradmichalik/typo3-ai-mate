@@ -27,6 +27,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Install\ExtensionScanner\CodeScannerInterface;
 use TYPO3\CMS\Install\ExtensionScanner\Php\{CodeStatistics, GeneratorClassesResolver, MatcherFactory};
 
+use function array_slice;
+use function count;
 use function is_array;
 use function sprintf;
 
@@ -44,6 +46,7 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
 {
     private const MATCHER_NAMESPACE = 'TYPO3\\CMS\\Install\\ExtensionScanner\\Php\\Matcher\\';
     private const CONFIG_DIR = 'EXT:install/Configuration/ExtensionScanner/Php';
+    private const MAX_MATCHES = 200;
 
     public function __construct(private readonly PackageManager $packageManager)
     {
@@ -142,6 +145,9 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
             }
         }
 
+        $matchCount = count($matches);
+        $truncated = $matchCount > self::MAX_MATCHES;
+
         return [
             'extension' => $extension,
             'statistics' => [
@@ -149,8 +155,10 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
                 'ignoredLines' => $ignoredLines,
                 'filesScanned' => $filesScanned,
                 'filesSkipped' => $filesSkipped,
+                'matchCount' => $matchCount,
             ],
-            'matches' => $matches,
+            'matches' => $truncated ? array_slice($matches, 0, self::MAX_MATCHES) : $matches,
+            '_truncated' => $truncated,
         ];
     }
 

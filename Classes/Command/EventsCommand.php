@@ -20,6 +20,8 @@ use Symfony\Component\Console\Input\{InputInterface, InputOption};
 use Symfony\Component\Console\Output\OutputInterface;
 use TYPO3\CMS\Core\EventDispatcher\ListenerProvider;
 
+use function array_slice;
+use function count;
 use function is_string;
 
 /**
@@ -33,6 +35,8 @@ use function is_string;
 )]
 final class EventsCommand extends AbstractJsonCommand
 {
+    private const MAX_EVENTS = 100;
+
     public function __construct(private readonly ListenerProvider $listenerProvider)
     {
         parent::__construct();
@@ -82,6 +86,13 @@ final class EventsCommand extends AbstractJsonCommand
             $events[] = ['event' => $eventClass, 'listeners' => self::mapListeners($listeners)];
         }
 
-        return $this->emit($output, ['events' => $events]);
+        $eventCount = count($events);
+        $truncated = $eventCount > self::MAX_EVENTS;
+
+        return $this->emit($output, [
+            'events' => $truncated ? array_slice($events, 0, self::MAX_EVENTS) : $events,
+            'eventCount' => $eventCount,
+            '_truncated' => $truncated,
+        ]);
     }
 }

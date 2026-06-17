@@ -45,7 +45,10 @@ final class ExtensionScannerCommandTest extends FunctionalTestCase
         self::assertSame('scanner_fixture', $result['extension']);
         self::assertArrayHasKey('statistics', $result);
         self::assertGreaterThanOrEqual(1, $result['statistics']['filesScanned']);
+        self::assertArrayHasKey('matchCount', $result['statistics']);
         self::assertArrayHasKey('matches', $result);
+        // The fixture stays well under the cap, so the result is complete.
+        self::assertFalse($result['_truncated']);
     }
 
     #[Test]
