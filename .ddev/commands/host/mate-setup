@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+## Description: Register the typo3-* MCP tools in an instance (composer plugin + mate init/discover)
+## Usage: mate-setup [13|14]
+## Example: "ddev mate-setup" (all installed instances) or "ddev mate-setup 13"
+
+set -euo pipefail
+
+# The multi-version add-on regenerates its install scripts, so the project-specific
+# Mate wiring lives here instead: allow the ai-mate composer plugin, then scaffold
+# the workspace and discover the tools — without this `mate serve` finds no tools
+# ("No valid discovery directories"). Run once after `ddev install`.
+setup_one() {
+  local version="$1"
+  local instance="/var/www/html/.Build/${version}"
+
+  if ! ddev exec test -f "${instance}/vendor/bin/mate" 2>/dev/null; then
+    printf "  \033[33m–\033[0m v%s not installed (run 'ddev install %s' first), skipping\n" "${version}" "${version}"
+    return 0
+  fi
+
+  # `composer install` re-runs the ai-mate composer plugin (deps already resolved
+  # from the lock file, so this is fast); `mate init`/`discover` then register the
+  # typo3-* tools for `mate serve`.
+  ddev exec bash -c "cd ${instance} \
+    && composer config --no-interaction allow-plugins.symfony/ai-mate-composer-plugin true \
+    && composer install -n \
+    && ./vendor/bin/mate init -n \
+    && ./vendor/bin/mate discover -n" >/dev/null
+
+  printf "  \033[32m✔\033[0m v%s MCP tools registered\n" "${version}"
+}
+
+if [ "$#" -gt 0 ]; then
+  versions=("$1")
+else
+  versions=(13 14)
+fi
+
+printf "Registering typo3-ai-mate MCP tools\n"
+for version in "${versions[@]}"; do
+  setup_one "${version}"
+done

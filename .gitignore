@@ -21,6 +21,7 @@
 /.ddev/commands/host/*
 !/.ddev/commands/host/mcp-inspect
 !/.ddev/commands/host/mcp-smoke
+!/.ddev/commands/host/mate-setup
 
 # php-cs-fixer cache (created when running CGL config from repo root)
 .php-cs-fixer.cache

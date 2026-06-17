@@ -22,10 +22,18 @@ composer install
 ddev add-on get konradmichalik/ddev-typo3-multi-version-extension
 ddev restart
 ddev install all
+
+# Register the typo3-* MCP tools in each instance (composer plugin + mate discover)
+ddev mate-setup
 ```
 
 `ddev install all` provisions TYPO3 v13 and v14 under `.Build/`, symlinks this
 extension and the demo sitepackage, and imports `Tests/Acceptance/Fixtures/data.xml`.
+
+`ddev mate-setup` then allows the ai-mate composer plugin and runs
+`mate init` / `mate discover` in each instance, so `mate serve` (and the
+`mcp-inspect` / `mcp-smoke` commands) expose the tools. Re-run it after a fresh
+`ddev install`, since the add-on rebuilds the instance from scratch.
 
 ## Exercising the request profiler flow
 
