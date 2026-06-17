@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mate;
 
 use KonradMichalik\Typo3AiMate\Mate\ProfileProvider;
+use KonradMichalik\Typo3AiMate\Tests\Unit\ProfileFixtures;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -24,14 +25,11 @@ use PHPUnit\Framework\TestCase;
  */
 final class ProfileProviderTest extends TestCase
 {
-    private string $rootDir;
-    private string $profilesDir;
+    use ProfileFixtures;
 
     protected function setUp(): void
     {
-        $this->rootDir = sys_get_temp_dir().'/typo3-ai-mate-prov-'.bin2hex(random_bytes(8));
-        $this->profilesDir = $this->rootDir.'/var/log/profiles';
-        mkdir($this->profilesDir, 0777, true);
+        $this->initProfilesDir('typo3-ai-mate-prov-');
 
         $this->writeProfile('aaa', ['url' => '/', 'status' => 200], 1_000_000_100);
         $this->writeProfile('bbb', ['url' => '/slow', 'status' => 200, 'cache' => ['hit' => false], 'timing' => ['total_ms' => 500], 'queries' => ['count' => 30], 'page' => ['id' => 42], 'duplicate_queries' => [['sql' => 'X', 'count' => 25]]], 1_000_000_200);
@@ -40,13 +38,7 @@ final class ProfileProviderTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (glob($this->profilesDir.'/*.json') ?: [] as $file) {
-            @unlink($file);
-        }
-        @rmdir($this->profilesDir);
-        @rmdir($this->rootDir.'/var/log');
-        @rmdir($this->rootDir.'/var');
-        @rmdir($this->rootDir);
+        $this->cleanupProfilesDir();
     }
 
     #[Test]
@@ -122,19 +114,5 @@ final class ProfileProviderTest extends TestCase
     public function resourceUriUsesTheProfilerScheme(): void
     {
         self::assertSame('typo3-profiler://profile/abc123', (new ProfileProvider($this->rootDir))->resourceUri('abc123'));
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    private function writeProfile(string $token, array $data, int $mtime, ?int $schemaVersion = 1): void
-    {
-        $base = ['token' => $token, 'time' => '2026-06-15T10:00:00+00:00'];
-        if (null !== $schemaVersion) {
-            $base['schemaVersion'] = $schemaVersion;
-        }
-        $file = $this->profilesDir.'/'.$token.'.json';
-        file_put_contents($file, json_encode($base + $data, \JSON_THROW_ON_ERROR));
-        touch($file, $mtime);
     }
 }

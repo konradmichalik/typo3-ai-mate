@@ -15,6 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\ProfileProvider;
 use KonradMichalik\Typo3AiMate\Mcp\ProfileResource;
+use KonradMichalik\Typo3AiMate\Tests\Unit\ProfileFixtures;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -26,15 +27,11 @@ use PHPUnit\Framework\TestCase;
 final class ProfileResourceTest extends TestCase
 {
     use DecodesResponses;
-
-    private string $rootDir;
-    private string $profilesDir;
+    use ProfileFixtures;
 
     protected function setUp(): void
     {
-        $this->rootDir = sys_get_temp_dir().'/typo3-ai-mate-res-'.bin2hex(random_bytes(8));
-        $this->profilesDir = $this->rootDir.'/var/log/profiles';
-        mkdir($this->profilesDir, 0777, true);
+        $this->initProfilesDir('typo3-ai-mate-res-');
 
         $this->writeProfile('bbb', ['url' => '/slow', 'queries' => ['count' => 30], 'duplicate_queries' => [['sql' => 'X']]], 1);
         $this->writeProfile('ddd', ['url' => '/old'], 1, 99);
@@ -42,13 +39,7 @@ final class ProfileResourceTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (glob($this->profilesDir.'/*.json') ?: [] as $file) {
-            @unlink($file);
-        }
-        @rmdir($this->profilesDir);
-        @rmdir($this->rootDir.'/var/log');
-        @rmdir($this->rootDir.'/var');
-        @rmdir($this->rootDir);
+        $this->cleanupProfilesDir();
     }
 
     #[Test]
@@ -104,19 +95,5 @@ final class ProfileResourceTest extends TestCase
     private function resource(): ProfileResource
     {
         return new ProfileResource(new ProfileProvider($this->rootDir));
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    private function writeProfile(string $token, array $data, int $mtime, ?int $schemaVersion = 1): void
-    {
-        $base = ['token' => $token, 'time' => '2026-06-15T10:00:00+00:00'];
-        if (null !== $schemaVersion) {
-            $base['schemaVersion'] = $schemaVersion;
-        }
-        $file = $this->profilesDir.'/'.$token.'.json';
-        file_put_contents($file, json_encode($base + $data, \JSON_THROW_ON_ERROR));
-        touch($file, $mtime);
     }
 }

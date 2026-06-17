@@ -15,6 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\ProfileProvider;
 use KonradMichalik\Typo3AiMate\Mcp\PerformanceTool;
+use KonradMichalik\Typo3AiMate\Tests\Unit\ProfileFixtures;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -26,15 +27,11 @@ use PHPUnit\Framework\TestCase;
 final class PerformanceToolTest extends TestCase
 {
     use DecodesResponses;
-
-    private string $rootDir;
-    private string $profilesDir;
+    use ProfileFixtures;
 
     protected function setUp(): void
     {
-        $this->rootDir = sys_get_temp_dir().'/typo3-ai-mate-perf-'.bin2hex(random_bytes(8));
-        $this->profilesDir = $this->rootDir.'/var/log/profiles';
-        mkdir($this->profilesDir, 0777, true);
+        $this->initProfilesDir('typo3-ai-mate-perf-');
 
         // Three profiles with increasing mtime so order is deterministic.
         $this->writeProfile('aaa', ['url' => '/', 'status' => 200, 'cache' => ['hit' => true], 'timing' => ['total_ms' => 10], 'queries' => ['count' => 2]], 1_000_000_100);
@@ -44,13 +41,7 @@ final class PerformanceToolTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (glob($this->profilesDir.'/*.json') ?: [] as $file) {
-            @unlink($file);
-        }
-        @rmdir($this->profilesDir);
-        @rmdir($this->rootDir.'/var/log');
-        @rmdir($this->rootDir.'/var');
-        @rmdir($this->rootDir);
+        $this->cleanupProfilesDir();
     }
 
     #[Test]
@@ -157,19 +148,5 @@ final class PerformanceToolTest extends TestCase
     private function tool(): PerformanceTool
     {
         return new PerformanceTool(new ProfileProvider($this->rootDir));
-    }
-
-    /**
-     * @param array<string, mixed> $data
-     */
-    private function writeProfile(string $token, array $data, int $mtime, ?int $schemaVersion = 1): void
-    {
-        $base = ['token' => $token, 'time' => '2026-06-15T10:00:00+00:00'];
-        if (null !== $schemaVersion) {
-            $base['schemaVersion'] = $schemaVersion;
-        }
-        $file = $this->profilesDir.'/'.$token.'.json';
-        file_put_contents($file, json_encode($base + $data, \JSON_THROW_ON_ERROR));
-        touch($file, $mtime);
     }
 }
