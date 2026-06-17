@@ -65,34 +65,3 @@ module — to reason from the installation's real state instead of the changelog
    `deprecations` log channel is off (the default) — an empty list means "not
    measured", **not** "no deprecations". Enable
    `[LOG][TYPO3][CMS][deprecations][writerConfiguration]` to collect data.
-
-## Adding your own TYPO3 tool
-
-Two native ai-mate ways — both can reuse the shared, public `Typo3CliRunner`
-service (it shells out to `vendor/bin/typo3`, sets `TYPO3_CONTEXT=Development`,
-and parses stdout JSON):
-
-**A) Project-local** — drop a `#[McpTool]` class into `mate/src` (`App\Mate\`),
-then `composer dump-autoload`. For one-off, project-specific tools.
-
-**B) Reusable** — ship a Composer package with `extra.ai-mate`, then
-`vendor/bin/mate discover`. For cross-project tools.
-
-Recipe: (1) a TYPO3 console command that prints **raw JSON**, (2) a `#[McpTool]`
-class that injects `Typo3CliRunner` and wraps it:
-
-```php
-use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use Mcp\Capability\Attribute\McpTool;
-
-final class MyCustomTool
-{
-    public function __construct(private Typo3CliRunner $typo3) {}
-
-    #[McpTool(name: 'typo3-my-thing', description: '…')]
-    public function run(int $pageId): array
-    {
-        return $this->typo3->json('myext:something', [$pageId]); // shells out, parses JSON
-    }
-}
-```
