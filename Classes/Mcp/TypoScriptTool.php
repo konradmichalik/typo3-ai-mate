@@ -26,7 +26,7 @@ final readonly class TypoScriptTool
 {
     public function __construct(private Typo3CliRunner $typo3) {}
 
-    #[McpTool(name: 'typo3-typoscript', description: 'Resolved frontend TypoScript (setup|constants) of a page. Scope large output with a dotted path, e.g. lib.foo.')]
+    #[McpTool(name: 'typo3-typoscript', title: 'TYPO3 TypoScript', description: 'Resolved frontend TypoScript (setup|constants) of a page. Scope large output with a dotted path, e.g. lib.foo.')]
     public function dump(int $pageId, string $type = 'setup', ?string $path = null): string
     {
         $options = ['type' => $type];

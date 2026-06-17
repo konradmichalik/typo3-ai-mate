@@ -26,7 +26,7 @@ final readonly class TcaTool
 {
     public function __construct(private Typo3CliRunner $typo3) {}
 
-    #[McpTool(name: 'typo3-tca', description: 'Resolved (trimmed) TCA of a table, or the list of all TCA table names when no table is given.')]
+    #[McpTool(name: 'typo3-tca', title: 'TYPO3 TCA', description: 'Resolved (trimmed) TCA of a table, or the list of all TCA table names when no table is given.')]
     public function dump(?string $table = null, bool $list = false): string
     {
         if ($list || null === $table || '' === $table) {

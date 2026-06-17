@@ -26,7 +26,7 @@ final readonly class PageTool
 {
     public function __construct(private Typo3CliRunner $typo3) {}
 
-    #[McpTool(name: 'typo3-page', description: 'Page composition (content elements incl. CType/plugin, backend layout) plus cache signals and USER_INT plugins. Expand a profile page.id.')]
+    #[McpTool(name: 'typo3-page', title: 'TYPO3 Page Composition', description: 'Page composition (content elements incl. CType/plugin, backend layout) plus cache signals and USER_INT plugins. Expand a profile page.id.')]
     public function info(?int $pageId = null, ?string $url = null): string
     {
         $arguments = null !== $pageId ? [$pageId] : [];

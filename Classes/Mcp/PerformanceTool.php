@@ -28,7 +28,7 @@ final readonly class PerformanceTool
 {
     public function __construct(private ProfileProvider $profiles) {}
 
-    #[McpTool(name: 'typo3-profiler-latest', description: 'Compact summary of the most recent request profile (timing, query count, N+1, cache, page.id) plus a resource_uri to read the full profile. Primary tool for a "slow page".')]
+    #[McpTool(name: 'typo3-profiler-latest', title: 'TYPO3 Profiler: Latest', description: 'Compact summary of the most recent request profile (timing, query count, N+1, cache, page.id) plus a resource_uri to read the full profile. Primary tool for a "slow page".')]
     public function latest(): string
     {
         $profile = $this->profiles->rawLatest();
@@ -38,21 +38,21 @@ final readonly class PerformanceTool
             : $this->profiles->summarize($profile));
     }
 
-    #[McpTool(name: 'typo3-profiler-list', description: 'List the most recent request profiles as compact summaries (token, url, status, timing, queries, cache), each with a resource_uri for the full profile.')]
+    #[McpTool(name: 'typo3-profiler-list', title: 'TYPO3 Profiler: List', description: 'List the most recent request profiles as compact summaries (token, url, status, timing, queries, cache), each with a resource_uri for the full profile.')]
     public function list(int $limit = 20): string
     {
         // Label the list so the AI gets a named field instead of a bare top-level array.
         return ResponseEncoder::encode(['profiles' => $this->profiles->summaries($limit)]);
     }
 
-    #[McpTool(name: 'typo3-profiler-search', description: 'Search request profiles by url substring and/or HTTP status; returns matching summaries (with resource_uri), newest first.')]
+    #[McpTool(name: 'typo3-profiler-search', title: 'TYPO3 Profiler: Search', description: 'Search request profiles by url substring and/or HTTP status; returns matching summaries (with resource_uri), newest first.')]
     public function search(?string $url = null, ?int $status = null, int $limit = 20): string
     {
         // Label the list so the AI gets a named field instead of a bare top-level array.
         return ResponseEncoder::encode(['profiles' => $this->profiles->search($url, $status, $limit)]);
     }
 
-    #[McpTool(name: 'typo3-profiler-get', description: 'Compact summary of a single request profile by its token (= request_id, correlates with logs), plus a resource_uri to read the full profile.')]
+    #[McpTool(name: 'typo3-profiler-get', title: 'TYPO3 Profiler: Get', description: 'Compact summary of a single request profile by its token (= request_id, correlates with logs), plus a resource_uri to read the full profile.')]
     public function get(string $token): string
     {
         $profile = $this->profiles->rawByToken($token);

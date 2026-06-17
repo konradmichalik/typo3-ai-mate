@@ -27,7 +27,7 @@ final readonly class EventsTool
 {
     public function __construct(private Typo3CliRunner $typo3) {}
 
-    #[McpTool(name: 'typo3-events', description: 'Resolved PSR-14 event listener registry (which listeners fire for which event), optionally filtered by event class substring.')]
+    #[McpTool(name: 'typo3-events', title: 'TYPO3 Event Listeners', description: 'Resolved PSR-14 event listener registry (which listeners fire for which event), optionally filtered by event class substring.')]
     public function list(?string $event = null): string
     {
         $options = null !== $event && '' !== $event ? ['event' => $event] : [];

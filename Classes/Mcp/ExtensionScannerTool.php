@@ -27,7 +27,7 @@ final readonly class ExtensionScannerTool
 {
     public function __construct(private Typo3CliRunner $typo3) {}
 
-    #[McpTool(name: 'typo3-extension-scanner', description: 'Static scan of PHP code against the core breaking/deprecation matchers — reports where code breaks in the installed target version (message, line, strong/weak indicator). Pass an extension key to scan one; omit it to scan all non-core extensions (own + third-party).')]
+    #[McpTool(name: 'typo3-extension-scanner', title: 'TYPO3 Extension Scanner', description: 'Static scan of PHP code against the core breaking/deprecation matchers — reports where code breaks in the installed target version (message, line, strong/weak indicator). Pass an extension key to scan one; omit it to scan all non-core extensions (own + third-party).')]
     public function scan(?string $extension = null): string
     {
         $arguments = null !== $extension && '' !== $extension ? [$extension] : [];
