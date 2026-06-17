@@ -16,7 +16,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 use KonradMichalik\Typo3AiMate\Command\UpgradeWizardsCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use TYPO3\CMS\Core\Core\BootService;
+use TYPO3\CMS\Install\Service\LateBootService;
 
 /**
  * UpgradeWizardsCommandTest.
@@ -30,7 +30,7 @@ final class UpgradeWizardsCommandTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->command = new UpgradeWizardsCommand(self::createStub(BootService::class));
+        $this->command = new UpgradeWizardsCommand(self::createStub(LateBootService::class));
     }
 
     #[Test]

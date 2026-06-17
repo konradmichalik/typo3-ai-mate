@@ -17,8 +17,10 @@ use KonradMichalik\Typo3AiMate\Support\Cast;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use TYPO3\CMS\Core\Core\{BootService, Bootstrap};
+use TYPO3\CMS\Core\Authentication\CommandLineUserAuthentication;
+use TYPO3\CMS\Core\Core\Bootstrap;
 use TYPO3\CMS\Core\Service\UpgradeWizardsService;
+use TYPO3\CMS\Install\Service\LateBootService;
 
 /**
  * UpgradeWizardsCommand.
@@ -32,7 +34,7 @@ use TYPO3\CMS\Core\Service\UpgradeWizardsService;
 )]
 final class UpgradeWizardsCommand extends AbstractJsonCommand
 {
-    public function __construct(private readonly BootService $bootService)
+    public function __construct(private readonly LateBootService $lateBootService)
     {
         parent::__construct();
     }
@@ -55,10 +57,20 @@ final class UpgradeWizardsCommand extends AbstractJsonCommand
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $service = $this->bootService
-            ->loadExtLocalconfDatabaseAndExtTables(false, false)
-            ->get(UpgradeWizardsService::class);
+        // UpgradeWizardsService is only registered in the install-tool container,
+        // so it must be resolved from the late-booted container (mirrors the core
+        // upgrade:list command). The class moved from EXT:install (v13) to
+        // EXT:core (v14), so resolve whichever namespace the core provides.
+        $container = $this->lateBootService->loadExtLocalconfDatabaseAndExtTables(false);
+        Bootstrap::initializeBackendUser(CommandLineUserAuthentication::class);
         Bootstrap::initializeBackendAuthentication();
+
+        $serviceClass = 'TYPO3\\CMS\\Core\\Service\\UpgradeWizardsService';
+        if (!class_exists($serviceClass)) {
+            $serviceClass = 'TYPO3\\CMS\\Install\\Service\\UpgradeWizardsService';
+        }
+        /** @var UpgradeWizardsService $service */
+        $service = $container->get($serviceClass);
 
         $wizards = [];
         foreach ($service->getUpgradeWizardIdentifiers() as $identifier) {
@@ -66,6 +78,8 @@ final class UpgradeWizardsCommand extends AbstractJsonCommand
             $info = Cast::array($service->getWizardInformationByIdentifier($identifier));
             $wizards[] = $this->formatWizard($identifier, $info, $service->isWizardDone($identifier));
         }
+
+        $this->lateBootService->resetGlobalContainer();
 
         return $this->emit($output, ['wizards' => $wizards]);
     }
