@@ -44,7 +44,7 @@ trait WithTemporaryVarPath
 
     protected function cleanupVarPath(): void
     {
-        array_map('unlink', glob($this->varPath.'/log/*') ?: []);
+        array_map(unlink(...), glob($this->varPath.'/log/*') ?: []);
         @rmdir($this->varPath.'/log');
         @rmdir($this->varPath);
     }
