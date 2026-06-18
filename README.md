@@ -98,9 +98,10 @@ The MCP tools run in the **Mate process** (its own Symfony DI container, `Config
 | `typo3-upgrade-wizards` | List pending and completed upgrade wizards — outstanding DB/config migrations. |
 | `typo3-extension-scanner` | Statically scan an extension — or all non-core extensions — against the core breaking/deprecation matchers. Returns a compact summary by default (matches grouped by message with strong/weak counts and the affected files, plus a per-origin rollup when scanning all); pass `mode=full` for individual matches with line content, and `ownCode=true` to skip third-party (vendor) packages. |
 | `typo3-deprecations` | Report runtime deprecation notices, deduplicated and counted. |
+| `typo3-render-page` | Render a frontend page via an internal HTTP request (no external curl/Playwright) so runtime notices fire, and report the HTTP status plus the log entries written during that request. Requires a running webserver (e.g. DDEV). |
 
 > [!NOTE]
-> The profiler tools (`typo3-profiler-*`) read profiles recorded by the bundled `typo3-ai-mate`. Trigger a frontend request in the Development context to produce `var/log/profiles/*.json`.
+> The profiler tools (`typo3-profiler-*`) read profiles recorded by the bundled `typo3-ai-mate`. Trigger a frontend request in the Development context to produce `var/log/profiles/*.json` — `typo3-render-page` does this from within the assistant.
 
 ## 💡 Development
 

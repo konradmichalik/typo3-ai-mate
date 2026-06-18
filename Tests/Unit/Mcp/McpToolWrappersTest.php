@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{DeprecationsTool, EventsTool, ExtensionScannerTool, LogsTool, MiddlewaresTool, PageTool, TcaTool, TypoScriptTool, UpgradeWizardsTool};
+use KonradMichalik\Typo3AiMate\Mcp\{DeprecationsTool, EventsTool, ExtensionScannerTool, LogsTool, MiddlewaresTool, PageTool, RenderPageTool, TcaTool, TypoScriptTool, UpgradeWizardsTool};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -149,6 +149,24 @@ final class McpToolWrappersTest extends TestCase
 
         self::assertSame('typo3-ai-mate:upgrade:wizards', $result['command']);
         self::assertSame([], $result['args']);
+    }
+
+    #[Test]
+    public function renderPageToolForwardsThePageIdAndLanguage(): void
+    {
+        $result = $this->decode((new RenderPageTool($this->runner))->render(5));
+
+        self::assertSame('typo3-ai-mate:fe:render', $result['command']);
+        self::assertSame(['5', '--language', '0'], $result['args']);
+    }
+
+    #[Test]
+    public function renderPageToolForwardsAnExplicitUrl(): void
+    {
+        $result = $this->decode((new RenderPageTool($this->runner))->render(null, 'https://example.com/page'));
+
+        self::assertSame('typo3-ai-mate:fe:render', $result['command']);
+        self::assertSame(['--url', 'https://example.com/page', '--language', '0'], $result['args']);
     }
 
     #[Test]
