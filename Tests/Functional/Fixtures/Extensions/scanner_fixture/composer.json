@@ -13,7 +13,11 @@
     },
     "extra": {
         "typo3/cms": {
-            "extension-key": "scanner_fixture"
+            "Package": {
+                "providesPackages": {}
+            },
+            "extension-key": "scanner_fixture",
+            "version": "1.0.0"
         }
     }
 }

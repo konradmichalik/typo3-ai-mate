@@ -16,6 +16,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 use KonradMichalik\Typo3AiMate\Command\TcaCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Console\Tester\CommandTester;
 
 /**
  * TcaCommandTest.
@@ -24,6 +25,22 @@ use PHPUnit\Framework\TestCase;
  */
 final class TcaCommandTest extends TestCase
 {
+    private mixed $originalTca = null;
+
+    protected function setUp(): void
+    {
+        $this->originalTca = $GLOBALS['TCA'] ?? null;
+    }
+
+    protected function tearDown(): void
+    {
+        if (null === $this->originalTca) {
+            unset($GLOBALS['TCA']);
+        } else {
+            $GLOBALS['TCA'] = $this->originalTca;
+        }
+    }
+
     #[Test]
     public function extractTableKeepsOnlyTheRelevantCtrlKeys(): void
     {
@@ -80,5 +97,45 @@ final class TcaCommandTest extends TestCase
         $result = (new TcaCommand())->extractTable([]);
 
         self::assertSame(['ctrl' => [], 'columns' => []], $result);
+    }
+
+    #[Test]
+    public function executeListsAllTableNamesSortedWhenNoTableGiven(): void
+    {
+        $GLOBALS['TCA'] = ['tt_content' => [], 'pages' => [], 'be_users' => []];
+
+        $tester = new CommandTester(new TcaCommand());
+        $exitCode = $tester->execute([]);
+
+        self::assertSame(0, $exitCode);
+        self::assertSame(['be_users', 'pages', 'tt_content'], json_decode($tester->getDisplay(), true));
+    }
+
+    #[Test]
+    public function executeDumpsTheTrimmedTableDefinition(): void
+    {
+        $GLOBALS['TCA'] = ['pages' => ['ctrl' => ['title' => 'Pages'], 'columns' => []]];
+
+        $tester = new CommandTester(new TcaCommand());
+        $exitCode = $tester->execute(['table' => 'pages']);
+
+        self::assertSame(0, $exitCode);
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        self::assertSame(['title' => 'Pages'], $result['ctrl']);
+    }
+
+    #[Test]
+    public function executeFailsForAnUnknownTable(): void
+    {
+        $GLOBALS['TCA'] = ['pages' => []];
+
+        $tester = new CommandTester(new TcaCommand());
+        $exitCode = $tester->execute(['table' => 'does_not_exist']);
+
+        self::assertSame(1, $exitCode);
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        self::assertArrayHasKey('error', $result);
     }
 }

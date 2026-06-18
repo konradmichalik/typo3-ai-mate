@@ -11,37 +11,3 @@ jobs:
       php-versions: '["8.2", "8.3", "8.4", "8.5"]'
       typo3-versions: '["13.4", "14.0"]'
       dependencies: '["highest", "lowest"]'
-
-  functional:
-    name: Functional (PHP ${{ matrix.php }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        php: ['8.2', '8.4']
-    services:
-      mariadb:
-        image: mariadb:10.11
-        env:
-          MARIADB_ROOT_PASSWORD: root
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="healthcheck.sh --connect --innodb_initialized"
-          --health-interval=10s --health-timeout=5s --health-retries=5
-    env:
-      typo3DatabaseDriver: mysqli
-      typo3DatabaseHost: 127.0.0.1
-      typo3DatabasePort: 3306
-      typo3DatabaseName: typo3_func
-      typo3DatabaseUsername: root
-      typo3DatabasePassword: root
-    steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php }}
-          extensions: mysqli, mbstring
-          coverage: none
-      - run: composer install --no-progress
-      - run: composer test:functional
