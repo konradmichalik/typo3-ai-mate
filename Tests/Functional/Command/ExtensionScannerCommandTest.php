@@ -27,6 +27,10 @@ use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
  */
 final class ExtensionScannerCommandTest extends FunctionalTestCase
 {
+    // The scanner is pure static analysis; skipping database setup avoids the
+    // per-test database creation that fails on the oldest testing-framework.
+    protected bool $initializeDatabase = false;
+
     protected array $coreExtensionsToLoad = [
         'install',
     ];
