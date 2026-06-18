@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Command;
 
 use KonradMichalik\Typo3AiMate\Command\Support\DeprecationOriginResolver;
-use KonradMichalik\Typo3AiMate\Support\Cast;
+use KonradMichalik\Typo3AiMate\Support\{Cast, OwnPackages};
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -182,10 +182,10 @@ final class DeprecationsCommand extends AbstractJsonCommand
             if ('typo3-cms-extension' !== $package->getValueFromComposerManifest('type')) {
                 continue;
             }
-            $basePath = GeneralUtility::fixWindowsFilePath($package->getPackagePath());
-            if (str_contains($basePath, '/vendor/')) {
+            if (!OwnPackages::isOwn($package->getPackagePath())) {
                 continue;
             }
+            $basePath = GeneralUtility::fixWindowsFilePath($package->getPackagePath());
             foreach ($this->readPackageFiles($basePath, $package->getPackageKey()) as $file) {
                 $files[] = $file;
             }
