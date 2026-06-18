@@ -52,29 +52,58 @@ final readonly class DeprecationOriginResolver
     }
 
     /**
-     * Extract the deprecated symbol candidates from a message. camelCase tokens
-     * (an internal uppercase, e.g. getRequest, useNonce) are reliable identifier
-     * signals — English prose words almost never contain them — plus any method
-     * named after a -> or :: operator.
+     * The deprecated method names mentioned in a message — a flat view of the
+     * structured candidates from {@see parseCalls()}, handy for callers/tests.
      *
      * @return list<string>
      */
     public function extractSymbols(string $message): array
     {
-        $symbols = [];
-        preg_match_all('/(?:->|::)\s*([A-Za-z_]\w{2,})/', $message, $methodMatches);
-        foreach ($methodMatches[1] as $symbol) {
-            $symbols[] = $symbol;
+        return array_values(array_unique(array_map(
+            static fn (array $call): string => $call['method'],
+            $this->parseCalls($message),
+        )));
+    }
+
+    /**
+     * Parse method-call candidates from a deprecation message. A qualified call
+     * (Class::method / Class->method) keeps its class so the search can demand
+     * that the class is referenced in a file too — without that context a bare
+     * method name like "add" matches every unrelated ->add() call (the reported
+     * false positive). Standalone camelCase identifiers (e.g. useNonce) are
+     * distinctive enough to search on their own.
+     *
+     * @return list<array{class: string|null, method: string}>
+     */
+    private function parseCalls(string $message): array
+    {
+        $calls = [];
+        $qualifiedMethods = [];
+        preg_match_all('/([A-Za-z_]\w*)\s*(?:::|->)\s*([A-Za-z_]\w+)/', $message, $qualified, \PREG_SET_ORDER);
+        foreach ($qualified as $match) {
+            $calls[] = ['class' => $match[1], 'method' => $match[2]];
+            $qualifiedMethods[$match[2]] = true;
         }
-        preg_match_all('/\b([a-z]+[A-Z][A-Za-z0-9]*)\b/', $message, $camelMatches);
-        foreach ($camelMatches[1] as $symbol) {
-            $symbols[] = $symbol;
+        preg_match_all('/\b([a-z]+[A-Z][A-Za-z0-9]*)\b/', $message, $camel);
+        foreach ($camel[1] as $method) {
+            // Skip methods already seen qualified — their class context is stronger.
+            if (!isset($qualifiedMethods[$method])) {
+                $calls[] = ['class' => null, 'method' => $method];
+            }
         }
 
-        return array_values(array_unique(array_filter(
-            $symbols,
-            static fn (string $symbol): bool => 3 <= strlen($symbol) && !in_array($symbol, self::STOP_WORDS, true),
-        )));
+        $result = [];
+        $seen = [];
+        foreach ($calls as $call) {
+            $key = ($call['class'] ?? '').'::'.$call['method'];
+            if (strlen($call['method']) < 3 || in_array($call['method'], self::STOP_WORDS, true) || isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $result[] = $call;
+        }
+
+        return $result;
     }
 
     /**
@@ -113,14 +142,14 @@ final readonly class DeprecationOriginResolver
      */
     private function fromStaticSearch(string $message): array
     {
-        $symbols = $this->extractSymbols($message);
-        if ([] === $symbols) {
+        $calls = $this->parseCalls($message);
+        if ([] === $calls) {
             return [];
         }
 
         $origins = [];
         foreach ($this->ownFiles as $ownFile) {
-            foreach ($this->matchSymbolsInFile($ownFile, $symbols) as $origin) {
+            foreach ($this->matchCallsInFile($ownFile, $calls) as $origin) {
                 $origins[] = $origin;
                 if (count($origins) >= self::MAX_ORIGINS) {
                     return $origins;
@@ -133,21 +162,30 @@ final readonly class DeprecationOriginResolver
 
     /**
      * @param array{path: string, label: string, content: string} $ownFile
-     * @param list<string>                                        $symbols
+     * @param list<array{class: string|null, method: string}>     $calls
      *
      * @return list<array{file: string, line: int, snippet: string, symbol: string, via: string, confidence: string}>
      */
-    private function matchSymbolsInFile(array $ownFile, array $symbols): array
+    private function matchCallsInFile(array $ownFile, array $calls): array
     {
-        $pattern = '/\b(?:'.implode('|', array_map(preg_quote(...), $symbols)).')\b/';
+        // A qualified call only counts when its class is referenced in the file.
+        $active = array_values(array_filter(
+            $calls,
+            fn (array $call): bool => null === $call['class'] || $this->mentions($ownFile['content'], $call['class']),
+        ));
+        if ([] === $active) {
+            return [];
+        }
+
         $origins = [];
         foreach (explode("\n", $ownFile['content']) as $index => $line) {
-            if (1 === preg_match($pattern, $line, $matches)) {
+            $call = $this->firstMatchingCall($line, $active);
+            if (null !== $call) {
                 $origins[] = [
                     'file' => $ownFile['label'],
                     'line' => $index + 1,
                     'snippet' => trim($line),
-                    'symbol' => $matches[0],
+                    'symbol' => (null !== $call['class'] ? $call['class'].'::' : '').$call['method'],
                     'via' => 'static',
                     'confidence' => 'low',
                 ];
@@ -155,6 +193,27 @@ final readonly class DeprecationOriginResolver
         }
 
         return array_slice($origins, 0, self::MAX_ORIGINS);
+    }
+
+    /**
+     * @param list<array{class: string|null, method: string}> $calls
+     *
+     * @return array{class: string|null, method: string}|null
+     */
+    private function firstMatchingCall(string $line, array $calls): ?array
+    {
+        foreach ($calls as $call) {
+            if (1 === preg_match('/\b'.preg_quote($call['method'], '/').'\b/', $line)) {
+                return $call;
+            }
+        }
+
+        return null;
+    }
+
+    private function mentions(string $content, string $class): bool
+    {
+        return 1 === preg_match('/\b'.preg_quote($class, '/').'\b/', $content);
     }
 
     /**
