@@ -116,12 +116,12 @@ final class McpToolWrappersTest extends TestCase
     }
 
     #[Test]
-    public function extensionScannerToolForwardsTheExtensionKey(): void
+    public function extensionScannerToolForwardsTheExtensionKeyAndDefaultsToSummary(): void
     {
         $result = $this->decode((new ExtensionScannerTool($this->runner))->scan('my_ext'));
 
         self::assertSame('typo3-ai-mate:upgrade:scan', $result['command']);
-        self::assertSame(['my_ext'], $result['args']);
+        self::assertSame(['my_ext', '--format', 'summary'], $result['args']);
     }
 
     #[Test]
@@ -130,7 +130,16 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new ExtensionScannerTool($this->runner))->scan());
 
         self::assertSame('typo3-ai-mate:upgrade:scan', $result['command']);
-        self::assertSame([], $result['args']);
+        self::assertSame(['--format', 'summary'], $result['args']);
+    }
+
+    #[Test]
+    public function extensionScannerToolForwardsFullModeAndOwnCodeFlag(): void
+    {
+        $result = $this->decode((new ExtensionScannerTool($this->runner))->scan(null, 'full', true));
+
+        self::assertSame('typo3-ai-mate:upgrade:scan', $result['command']);
+        self::assertSame(['--format', 'full', '--own-code'], $result['args']);
     }
 
     #[Test]

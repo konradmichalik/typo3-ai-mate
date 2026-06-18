@@ -13,12 +13,13 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Command;
 
+use KonradMichalik\Typo3AiMate\Command\Support\ScanResultFormatter;
 use KonradMichalik\Typo3AiMate\Support\Cast;
 use PhpParser\{NodeTraverser, NodeVisitor, ParserFactory, PhpVersion};
 use PhpParser\NodeVisitor\NameResolver;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\{InputArgument, InputInterface};
+use Symfony\Component\Console\Input\{InputArgument, InputInterface, InputOption};
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Finder\Finder;
 use Throwable;
@@ -27,7 +28,6 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Install\ExtensionScanner\CodeScannerInterface;
 use TYPO3\CMS\Install\ExtensionScanner\Php\{CodeStatistics, GeneratorClassesResolver, MatcherFactory};
 
-use function array_slice;
 use function count;
 use function is_array;
 use function sprintf;
@@ -46,11 +46,13 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
 {
     private const MATCHER_NAMESPACE = 'TYPO3\\CMS\\Install\\ExtensionScanner\\Php\\Matcher\\';
     private const CONFIG_DIR = 'EXT:install/Configuration/ExtensionScanner/Php';
-    private const MAX_MATCHES = 200;
+
+    private readonly ScanResultFormatter $formatter;
 
     public function __construct(private readonly PackageManager $packageManager)
     {
         parent::__construct();
+        $this->formatter = new ScanResultFormatter();
     }
 
     /**
@@ -86,27 +88,57 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
 
     protected function configure(): void
     {
-        $this->addArgument('extension', InputArgument::OPTIONAL, 'Extension key to scan, e.g. my_ext. Omit to scan all non-core extensions.');
+        $this
+            ->addArgument('extension', InputArgument::OPTIONAL, 'Extension key to scan, e.g. my_ext. Omit to scan all non-core extensions.')
+            ->addOption('format', null, InputOption::VALUE_REQUIRED, 'summary (matches grouped by message with strong/weak counts, default) or full (individual matches with line content)', 'summary')
+            ->addOption('own-code', null, InputOption::VALUE_NONE, 'When scanning all extensions, restrict to own extensions (outside vendor/) and skip third-party packages');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $matcherConfigurations = $this->buildMatcherConfigurations($this->configFileBasenames());
+        $format = $this->resolveFormat($input->getOption('format'));
         $extension = Cast::string($input->getArgument('extension'));
 
         if ('' !== $extension) {
             $result = $this->scanExtension($extension, $matcherConfigurations);
+            if (isset($result['error'])) {
+                return $this->emit($output, $result, Command::FAILURE);
+            }
 
-            return $this->emit($output, $result, isset($result['error']) ? Command::FAILURE : Command::SUCCESS);
+            return $this->emit($output, $this->formatter->format($result, $format));
         }
 
-        // No extension given: scan every active non-core extension.
-        $extensions = [];
-        foreach ($this->scannableExtensionKeys() as $key) {
-            $extensions[] = $this->scanExtension($key, $matcherConfigurations);
+        return $this->emit($output, $this->scanAll($matcherConfigurations, $format, (bool) $input->getOption('own-code')));
+    }
+
+    /**
+     * Scan every active non-core extension (optionally own code only) and shape
+     * the combined result for the requested format.
+     *
+     * @param list<array{class: class-string, configurationFile: string}> $matcherConfigurations
+     *
+     * @return array<string, mixed>
+     */
+    private function scanAll(array $matcherConfigurations, string $format, bool $ownOnly): array
+    {
+        $results = [];
+        foreach ($this->scannableExtensionKeys($ownOnly) as $key) {
+            $results[] = $this->scanExtension($key, $matcherConfigurations);
         }
 
-        return $this->emit($output, ['extensions' => $extensions]);
+        if ('full' === $format) {
+            return ['mode' => 'full', 'extensions' => array_map($this->formatter->full(...), $results)];
+        }
+
+        // Summary: drop clean extensions, keep only those with findings, and add a rollup.
+        $withMatches = array_values(array_filter($results, $this->formatter->hasMatches(...)));
+
+        return [
+            'mode' => 'summary',
+            'totals' => $this->formatter->rollup($results),
+            'extensions' => array_map($this->formatter->summary(...), $withMatches),
+        ];
     }
 
     /**
@@ -145,21 +177,37 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
             }
         }
 
-        $matchCount = count($matches);
-        $truncated = $matchCount > self::MAX_MATCHES;
+        $strong = count(array_filter($matches, static fn (array $m): bool => 'strong' === ($m['indicator'] ?? '')));
 
         return [
             'extension' => $extension,
+            'origin' => $this->originForPath($basePath),
             'statistics' => [
                 'effectiveCodeLines' => $effectiveCodeLines,
                 'ignoredLines' => $ignoredLines,
                 'filesScanned' => $filesScanned,
                 'filesSkipped' => $filesSkipped,
-                'matchCount' => $matchCount,
+                'matchCount' => count($matches),
+                'strong' => $strong,
+                'weak' => count($matches) - $strong,
             ],
-            'matches' => $truncated ? array_slice($matches, 0, self::MAX_MATCHES) : $matches,
-            '_truncated' => $truncated,
+            'matches' => $matches,
         ];
+    }
+
+    /**
+     * Whether the package lives in vendor/ (third-party) or outside it (own
+     * code, typically a path-repository package). The scanner's most useful
+     * filter for an upgrade is "show me only the code I have to fix myself".
+     */
+    private function originForPath(string $basePath): string
+    {
+        return str_contains(GeneralUtility::fixWindowsFilePath($basePath), '/vendor/') ? 'thirdParty' : 'own';
+    }
+
+    private function resolveFormat(mixed $format): string
+    {
+        return 'full' === strtolower(trim(Cast::string($format))) ? 'full' : 'summary';
     }
 
     /**
@@ -169,13 +217,17 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
      *
      * @return list<string>
      */
-    private function scannableExtensionKeys(): array
+    private function scannableExtensionKeys(bool $ownOnly): array
     {
         $keys = [];
         foreach ($this->packageManager->getActivePackages() as $package) {
-            if ('typo3-cms-extension' === $package->getValueFromComposerManifest('type')) {
-                $keys[] = $package->getPackageKey();
+            if ('typo3-cms-extension' !== $package->getValueFromComposerManifest('type')) {
+                continue;
             }
+            if ($ownOnly && 'own' !== $this->originForPath($package->getPackagePath())) {
+                continue;
+            }
+            $keys[] = $package->getPackageKey();
         }
 
         return $keys;
