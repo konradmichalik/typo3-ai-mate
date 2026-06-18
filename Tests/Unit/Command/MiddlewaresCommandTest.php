@@ -17,6 +17,8 @@ use ArrayObject;
 use KonradMichalik\Typo3AiMate\Command\MiddlewaresCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use ReflectionMethod;
+use ReflectionNamedType;
 use RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\Http\MiddlewareStackResolver;
@@ -79,7 +81,7 @@ final class MiddlewaresCommandTest extends TestCase
     public function executeEmitsTheResolvedFrontendStackAsJson(): void
     {
         $resolver = $this->createMock(MiddlewareStackResolver::class);
-        $resolver->method('resolve')->with('frontend')->willReturn(new ArrayObject([
+        $resolver->method('resolve')->with('frontend')->willReturn($this->resolvedStack([
             'typo3/cms-frontend/timetracker' => ['target' => 'Some\\Middleware'],
         ]));
 
@@ -101,7 +103,7 @@ final class MiddlewaresCommandTest extends TestCase
     public function executeSelectsTheBackendStackWhenRequested(): void
     {
         $resolver = $this->createMock(MiddlewareStackResolver::class);
-        $resolver->expects(self::once())->method('resolve')->with('backend')->willReturn(new ArrayObject());
+        $resolver->expects(self::once())->method('resolve')->with('backend')->willReturn($this->resolvedStack([]));
 
         $tester = new CommandTester(new MiddlewaresCommand($resolver));
         $tester->execute(['--stack' => 'backend']);
@@ -124,5 +126,23 @@ final class MiddlewaresCommandTest extends TestCase
         $result = json_decode($tester->getDisplay(), true);
         self::assertIsArray($result);
         self::assertSame('boom', $result['error']);
+    }
+
+    /**
+     * MiddlewareStackResolver::resolve() returns an array on TYPO3 v13 but an
+     * ArrayObject on newer cores. Return whatever the installed version declares
+     * so the mock's value satisfies the method's return type.
+     *
+     * @param array<string, mixed> $middlewares
+     *
+     * @return iterable<string, mixed>
+     */
+    private function resolvedStack(array $middlewares): iterable
+    {
+        $returnType = (new ReflectionMethod(MiddlewareStackResolver::class, 'resolve'))->getReturnType();
+
+        return $returnType instanceof ReflectionNamedType && 'ArrayObject' === $returnType->getName()
+            ? new ArrayObject($middlewares)
+            : $middlewares;
     }
 }
