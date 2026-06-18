@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Command;
 
-use KonradMichalik\Typo3AiMate\Command\Support\DeprecationOriginResolver;
+use KonradMichalik\Typo3AiMate\Command\Support\{DeprecationLogData, DeprecationOriginResolver};
 use KonradMichalik\Typo3AiMate\Support\{Cast, OwnPackages};
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
@@ -108,7 +108,10 @@ final class DeprecationsCommand extends AbstractJsonCommand
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $entries = array_values(array_filter($this->logSearch->allEntries(), $this->isDeprecationEntry(...)));
+        $entries = array_map(
+            $this->normalizeEntry(...),
+            array_values(array_filter($this->logSearch->allEntries(), $this->isDeprecationEntry(...))),
+        );
 
         $deprecations = $this->aggregate($entries);
         if ([] !== $deprecations) {
@@ -134,17 +137,71 @@ final class DeprecationsCommand extends AbstractJsonCommand
     {
         $resolver = new DeprecationOriginResolver($this->buildOwnFileIndex());
         $traces = $this->tracesByMessage($entries);
+        $logged = $this->loggedOriginsByMessage($entries);
 
         return array_map(
-            static fn (array $deprecation): array => [
-                ...$deprecation,
-                'origins' => $resolver->resolve(
-                    Cast::string($deprecation['message'] ?? ''),
-                    $traces[Cast::string($deprecation['message'] ?? '')] ?? null,
-                ),
-            ],
+            function (array $deprecation) use ($resolver, $traces, $logged): array {
+                $message = Cast::string($deprecation['message'] ?? '');
+
+                return [
+                    ...$deprecation,
+                    'origins' => isset($logged[$message])
+                        ? [$this->loggedOrigin($logged[$message])]
+                        : $resolver->resolve($message, $traces[$message] ?? null),
+                ];
+            },
             $deprecations,
         );
+    }
+
+    /**
+     * Extract the backtrace origin the log processor stored and strip the data
+     * tail so the displayed message stays clean.
+     *
+     * @param array<string, mixed> $entry
+     *
+     * @return array<string, mixed>
+     */
+    private function normalizeEntry(array $entry): array
+    {
+        $message = Cast::string($entry['message'] ?? '');
+        $origin = DeprecationLogData::origin($message);
+        $entry['message'] = DeprecationLogData::withoutData($message);
+        if (null !== $origin) {
+            $entry['loggedOrigin'] = $origin;
+        }
+
+        return $entry;
+    }
+
+    /**
+     * @param list<array<string, mixed>> $entries
+     *
+     * @return array<string, string> cleaned message => "file:line"
+     */
+    private function loggedOriginsByMessage(array $entries): array
+    {
+        $origins = [];
+        foreach ($entries as $entry) {
+            $message = Cast::string($entry['message'] ?? '');
+            if ('' !== $message && !isset($origins[$message]) && isset($entry['loggedOrigin'])) {
+                $origins[$message] = Cast::string($entry['loggedOrigin']);
+            }
+        }
+
+        return $origins;
+    }
+
+    /**
+     * @return array{file: string, line: int, snippet: string, symbol: string, via: string, confidence: string}
+     */
+    private function loggedOrigin(string $origin): array
+    {
+        $position = strrpos($origin, ':');
+        $file = false === $position ? $origin : substr($origin, 0, $position);
+        $line = false === $position ? 0 : (int) substr($origin, $position + 1);
+
+        return ['file' => $file, 'line' => $line, 'snippet' => '', 'symbol' => '', 'via' => 'logged', 'confidence' => 'high'];
     }
 
     /**
