@@ -19,8 +19,6 @@ A _dev-only_ TYPO3 introspection bridge for AI coding assistants. It exposes the
 > [!WARNING]
 > This package is in early development stage and may change significantly in the future. I am working steadily to release a stable version as soon as possible.
 
-It is both a **TYPO3 extension** (it ships console commands that boot _inside_ TYPO3) and a [**symfony/ai-mate**](https://symfony.com/doc/current/ai/components/mate.html) extension (it ships `#[McpTool]`s that run in the Mate server process and wrap those commands / read profile artifacts).
-
 > [!IMPORTANT]
 > This package is **active only in a Development context** (`Environment::getContext()->isDevelopment()`).
 
@@ -32,9 +30,9 @@ AI assistants normally read your raw source and config files and _guess_ at the 
 
 ### [Use cases](docs/USE-CASES.md)
 
-- **Slow page** — _"This page is slow — find the performance problem."_ The assistant reads the profile, spots N+1 queries / cache state / timing, and diagnoses instead of guessing.
-- **Error page** — locate an exception in the logs and tie it back to the page that produced it.
-- **Major upgrade** — surface breaking code, outstanding migrations and runtime deprecations before a major jump.
+- **[Slow page](docs/USE-CASES.md#slow-page)** — _"This page is slow — find the performance problem."_ The assistant reads the profile, spots N+1 queries / cache state / timing, and diagnoses instead of guessing.
+- **[Error page](docs/USE-CASES.md#error-page)** — locate an exception in the logs and tie it back to the page that produced it.
+- **[Major upgrade](docs/USE-CASES.md#major-upgrade-any-lts-jump-eg-v13--v14)** — surface breaking code, outstanding migrations and runtime deprecations before a major jump.
 
 ## 🔥 Installation
 
@@ -43,12 +41,6 @@ AI assistants normally read your raw source and config files and _guess_ at the 
 * TYPO3 13.4 LTS & 14.0+
 * PHP 8.2+
 * Composer mode
-
-### Supports
-
-| **Version** | **TYPO3** | **PHP** |
-|-------------|-----------|---------|
-| 0.x         | 13-14     | 8.2-8.5 |
 
 ### Composer
 
