@@ -134,27 +134,68 @@ final class LogsCommandTest extends TestCase
     }
 
     #[Test]
-    public function executeReadsParsesFiltersAndLimitsLogEntries(): void
+    public function resolveSinceParsesRelativeOffsetsAndDates(): void
+    {
+        $now = time();
+        $thirtyMinutes = $this->command->resolveSince('30m');
+        self::assertIsInt($thirtyMinutes);
+        self::assertEqualsWithDelta($now - 1800, $thirtyMinutes, 5);
+
+        $twoDays = $this->command->resolveSince('2d');
+        self::assertIsInt($twoDays);
+        self::assertEqualsWithDelta($now - 172800, $twoDays, 5);
+
+        self::assertSame(strtotime('Mon, 15 Jun 2026 16:16:25 +0200'), $this->command->resolveSince('Mon, 15 Jun 2026 16:16:25 +0200'));
+        self::assertNull($this->command->resolveSince(null));
+        self::assertNull($this->command->resolveSince(''));
+    }
+
+    #[Test]
+    public function aggregateDeduplicatesByMessageCountsAndDropsTrace(): void
+    {
+        $summaries = $this->command->aggregate([
+            ['message' => 'Boom', 'level' => 'ERROR', 'component' => 'TYPO3.CMS.Core', 'time' => 'T1', 'request_id' => 'r1', 'trace' => '#0 a'],
+            ['message' => 'Other', 'level' => 'WARNING', 'component' => 'TYPO3.CMS.Foo', 'time' => 'T2', 'request_id' => 'r2'],
+            ['message' => 'Boom', 'level' => 'ERROR', 'component' => 'TYPO3.CMS.Core', 'time' => 'T3', 'request_id' => 'r3'],
+        ]);
+
+        self::assertSame('Boom', $summaries[0]['message']);
+        self::assertSame(2, $summaries[0]['count']);
+        self::assertSame('T3', $summaries[0]['lastSeen']);
+        self::assertSame('r1', $summaries[0]['exampleRequestId']);
+        self::assertSame('ERROR', $summaries[0]['level']);
+        self::assertArrayNotHasKey('trace', $summaries[0]);
+    }
+
+    #[Test]
+    public function executeReturnsSummaryByDefault(): void
     {
         $this->writeLog('test', [
             'Mon, 15 Jun 2026 16:16:25 +0200 [ERROR] request="abc" component="TYPO3.CMS.Core": First failure',
-            'Mon, 15 Jun 2026 16:16:26 +0200 [INFO] request="def" component="TYPO3.CMS.Foo": Just info',
+            'Mon, 15 Jun 2026 16:16:26 +0200 [ERROR] request="def" component="TYPO3.CMS.Core": First failure',
+            'Mon, 15 Jun 2026 16:16:27 +0200 [INFO] request="ghi" component="TYPO3.CMS.Foo": Just info',
         ]);
 
         $tester = new CommandTester($this->command);
         $exitCode = $tester->execute(['--level' => 'error']);
 
         self::assertSame(0, $exitCode);
-        $entries = json_decode($tester->getDisplay(), true);
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        self::assertSame('summary', $result['mode']);
+        self::assertSame(2, $result['totalMatched']);
+        self::assertSame(1, $result['distinct']);
+        $entries = $result['entries'];
         self::assertIsArray($entries);
         self::assertCount(1, $entries);
         $first = $entries[0];
         self::assertIsArray($first);
-        self::assertSame('ERROR', $first['level']);
+        self::assertSame('First failure', $first['message']);
+        self::assertSame(2, $first['count']);
     }
 
     #[Test]
-    public function executeAppliesTheMostRecentLimit(): void
+    public function executeFullFormatAppliesTheMostRecentLimit(): void
     {
         $this->writeLog('test', [
             'Mon, 15 Jun 2026 16:16:25 +0200 [INFO] request="a" component="TYPO3.CMS.Core": One',
@@ -163,13 +204,41 @@ final class LogsCommandTest extends TestCase
         ]);
 
         $tester = new CommandTester($this->command);
-        $tester->execute(['--limit' => '1']);
+        $tester->execute(['--format' => 'full', '--limit' => '1']);
 
-        $entries = json_decode($tester->getDisplay(), true);
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        self::assertSame('full', $result['mode']);
+        self::assertSame(3, $result['totalMatched']);
+        $entries = $result['entries'];
         self::assertIsArray($entries);
         self::assertCount(1, $entries);
         $first = $entries[0];
         self::assertIsArray($first);
         self::assertSame('Three', $first['message']);
+    }
+
+    #[Test]
+    public function executeFullFormatTruncatesLongTraces(): void
+    {
+        $longTrace = str_repeat('#0 /very/long/stack/frame.php ', 200);
+        $this->writeLog('test', array_merge(
+            ['Mon, 15 Jun 2026 16:16:25 +0200 [ERROR] request="abc" component="TYPO3.CMS.Core": Boom'],
+            [$longTrace],
+        ));
+
+        $tester = new CommandTester($this->command);
+        $tester->execute(['--format' => 'full', '--trace-limit' => '50']);
+
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        $entries = $result['entries'];
+        self::assertIsArray($entries);
+        $first = $entries[0];
+        self::assertIsArray($first);
+        $trace = $first['trace'];
+        self::assertIsString($trace);
+        self::assertStringEndsWith('…[truncated]', $trace);
+        self::assertLessThan(mb_strlen($longTrace), mb_strlen($trace));
     }
 }
