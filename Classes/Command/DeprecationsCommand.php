@@ -13,11 +13,15 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Command;
 
+use KonradMichalik\Typo3AiMate\Command\Support\DeprecationOriginResolver;
 use KonradMichalik\Typo3AiMate\Support\Cast;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Finder\Finder;
 use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Package\PackageManager;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * DeprecationsCommand.
@@ -35,7 +39,7 @@ final class DeprecationsCommand extends AbstractJsonCommand
 
     private readonly LogsCommand $logSearch;
 
-    public function __construct()
+    public function __construct(private readonly PackageManager $packageManager)
     {
         parent::__construct();
         $this->logSearch = new LogsCommand();
@@ -114,10 +118,116 @@ final class DeprecationsCommand extends AbstractJsonCommand
             }
         }
 
+        $deprecations = $this->aggregate($entries);
+        if ([] !== $deprecations) {
+            $deprecations = $this->attachOrigins($deprecations, $entries);
+        }
+
         return $this->emit($output, [
             'loggingEnabled' => $this->isDeprecationLoggingEnabled($this->writerConfiguration()),
-            'deprecations' => $this->aggregate($entries),
+            'deprecations' => $deprecations,
         ]);
+    }
+
+    /**
+     * Point each deprecation back at the likely caller in own code (trace frame
+     * if present, otherwise a static reverse search for the deprecated symbol).
+     *
+     * @param list<array<string, mixed>> $deprecations
+     * @param list<array<string, mixed>> $entries
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function attachOrigins(array $deprecations, array $entries): array
+    {
+        $resolver = new DeprecationOriginResolver($this->buildOwnFileIndex());
+        $traces = $this->tracesByMessage($entries);
+
+        return array_map(
+            static fn (array $deprecation): array => [
+                ...$deprecation,
+                'origins' => $resolver->resolve(
+                    Cast::string($deprecation['message'] ?? ''),
+                    $traces[Cast::string($deprecation['message'] ?? '')] ?? null,
+                ),
+            ],
+            $deprecations,
+        );
+    }
+
+    /**
+     * First backtrace seen per message (most entries carry none, but a
+     * configured backtrace yields a high-confidence origin).
+     *
+     * @param list<array<string, mixed>> $entries
+     *
+     * @return array<string, string>
+     */
+    private function tracesByMessage(array $entries): array
+    {
+        $traces = [];
+        foreach ($entries as $entry) {
+            $message = Cast::string($entry['message'] ?? '');
+            if ('' !== $message && !isset($traces[$message]) && isset($entry['trace'])) {
+                $traces[$message] = Cast::string($entry['trace']);
+            }
+        }
+
+        return $traces;
+    }
+
+    /**
+     * Read own (non-vendor) extension PHP/Fluid files into a flat index the
+     * resolver searches. Third-party packages under vendor/ are skipped — the
+     * point is to find the caller in code the user actually maintains.
+     *
+     * @return list<array{path: string, label: string, content: string}>
+     */
+    private function buildOwnFileIndex(): array
+    {
+        $files = [];
+        foreach ($this->packageManager->getActivePackages() as $package) {
+            if ('typo3-cms-extension' !== $package->getValueFromComposerManifest('type')) {
+                continue;
+            }
+            $basePath = GeneralUtility::fixWindowsFilePath($package->getPackagePath());
+            if (str_contains($basePath, '/vendor/')) {
+                continue;
+            }
+            foreach ($this->readPackageFiles($basePath, $package->getPackageKey()) as $file) {
+                $files[] = $file;
+            }
+        }
+
+        return $files;
+    }
+
+    /**
+     * @return list<array{path: string, label: string, content: string}>
+     */
+    private function readPackageFiles(string $basePath, string $packageKey): array
+    {
+        $finder = new Finder();
+        $finder->files()->ignoreUnreadableDirs()->in($basePath)
+            ->exclude(['vendor', 'node_modules', '.git', '.Build'])
+            ->name(['*.php', '*.html'])
+            ->size('< 512K')
+            ->sortByName();
+
+        $files = [];
+        foreach ($finder as $file) {
+            $content = file_get_contents($file->getPathname());
+            if (false === $content) {
+                continue;
+            }
+            $files[] = [
+                'path' => GeneralUtility::fixWindowsFilePath($file->getPathname()),
+                'label' => $packageKey.'/'.GeneralUtility::fixWindowsFilePath($file->getRelativePathname()),
+                'content' => $content,
+            ];
+        }
+
+        return $files;
     }
 
     /**

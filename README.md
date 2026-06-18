@@ -97,7 +97,7 @@ The MCP tools run in the **Mate process** (its own Symfony DI container, `Config
 | `typo3-events` | List the resolved PSR-14 event listener registry. |
 | `typo3-upgrade-wizards` | List pending and completed upgrade wizards — outstanding DB/config migrations. |
 | `typo3-extension-scanner` | Statically scan an extension — or all non-core extensions — against the core breaking/deprecation matchers. Returns a compact summary by default (matches grouped by message with strong/weak counts and the affected files, plus a per-origin rollup when scanning all); pass `mode=full` for individual matches with line content, and `ownCode=true` to skip third-party (vendor) packages. |
-| `typo3-deprecations` | Report runtime deprecation notices, deduplicated and counted. |
+| `typo3-deprecations` | Report runtime deprecation notices, deduplicated and counted. Each one carries `origins` — the likely caller in own code (a backtrace frame when available, otherwise a static reverse search for the deprecated symbol across own PHP/Fluid files). |
 | `typo3-render-page` | Render a frontend page via an internal HTTP request (no external curl/Playwright) so runtime notices fire, and report the HTTP status plus the log entries written during that request. Requires a running webserver (e.g. DDEV). |
 
 > [!NOTE]
