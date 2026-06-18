@@ -214,6 +214,18 @@ final class LogsCommand extends AbstractJsonCommand
         return self::SEVERITY[strtoupper(trim($level))] ?? null;
     }
 
+    /**
+     * Parse every TYPO3 log file in var/log into a flat, chronological list.
+     * Shared by the deprecation and render-page commands, which reuse this
+     * command as the log parser rather than re-globbing var/log themselves.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function allEntries(): array
+    {
+        return $this->parseFiles($this->logFiles());
+    }
+
     protected function configure(): void
     {
         $this
@@ -229,7 +241,7 @@ final class LogsCommand extends AbstractJsonCommand
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $entries = $this->filter($this->parseFiles($this->logFiles()), $input);
+        $entries = $this->filter($this->allEntries(), $input);
         $limit = max(1, Cast::int($input->getOption('limit')));
 
         if ('full' === $this->resolveFormat($input->getOption('format'))) {

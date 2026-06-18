@@ -134,6 +134,22 @@ final class LogsCommandTest extends TestCase
     }
 
     #[Test]
+    public function allEntriesParsesEveryLogFileInVarLog(): void
+    {
+        $this->writeLog('test', [
+            'Mon, 15 Jun 2026 16:16:25 +0200 [ERROR] request="a" component="TYPO3.CMS.Core": One',
+        ]);
+        $this->writeLog('deprecations', [
+            'Mon, 15 Jun 2026 16:16:26 +0200 [NOTICE] request="b" component="TYPO3.CMS.deprecations": Two',
+        ]);
+
+        $messages = array_column($this->command->allEntries(), 'message');
+
+        self::assertContains('One', $messages);
+        self::assertContains('Two', $messages);
+    }
+
+    #[Test]
     public function resolveSinceParsesRelativeOffsetsAndDates(): void
     {
         $now = time();
