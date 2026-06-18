@@ -28,6 +28,7 @@
 		"typo3/cms-install": "^13.4 || ^14.0"
 	},
 	"require-dev": {
+		"phpunit/phpcov": "^9.0 || ^10.0 || ^11.0 || ^13.0",
 		"phpunit/phpunit": "^10.5 || ^11.0 || ^12.0",
 		"typo3/cms-base-distribution": "^13.4 || ^14.0",
 		"typo3/testing-framework": "^8.2 || ^9.0"
@@ -78,8 +79,17 @@
 			"@cgl install"
 		],
 		"cgl": "@composer -d Tests/CGL --",
-		"test": "@test:coverage --no-coverage",
-		"test:coverage": "@php -dpcov.enabled=1 vendor/bin/phpunit -c phpunit.xml",
-		"test:functional": "phpunit -c FunctionalTests.xml"
+		"test": [
+			"@test:unit",
+			"@test:functional"
+		],
+		"test:coverage": [
+			"@php -dpcov.enabled=1 vendor/bin/phpunit -c phpunit.xml --coverage-php=.Build/coverage/cov/unit.cov",
+			"@php -dpcov.enabled=1 vendor/bin/phpunit -c FunctionalTests.xml --coverage-php=.Build/coverage/cov/functional.cov",
+			"@php vendor/bin/phpcov merge --clover=.Build/coverage/clover.xml --html=.Build/coverage/html --text=php://stdout .Build/coverage/cov"
+		],
+		"test:coverage:unit": "@php -dpcov.enabled=1 vendor/bin/phpunit -c phpunit.xml",
+		"test:functional": "phpunit -c FunctionalTests.xml",
+		"test:unit": "phpunit -c phpunit.xml --no-coverage"
 	}
 }

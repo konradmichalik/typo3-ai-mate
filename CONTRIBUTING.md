@@ -95,10 +95,12 @@ has been recorded (see above).
 # Unit tests
 composer test
 
-# Functional tests (need a database; run inside DDEV)
-ddev exec env typo3DatabaseDriver=mysqli typo3DatabaseHost=db \
-  typo3DatabaseUsername=root typo3DatabasePassword=root typo3DatabaseName=db \
-  composer test:functional
+# Functional tests (need a database; run inside DDEV).
+# The typo3Database* defaults live in FunctionalTests.xml; CI overrides them.
+ddev composer test:functional
+
+# Unit + functional tests with merged coverage (clover + HTML in .Build/coverage)
+ddev composer test:coverage
 
 # Coding standards, static analysis, rector (CGL)
 composer cgl install
