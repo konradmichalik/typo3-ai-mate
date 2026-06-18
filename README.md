@@ -28,15 +28,13 @@ It is both a **TYPO3 extension** (it ships console commands that boot _inside_ T
 
 AI assistants normally read your raw source and config files and _guess_ at the result. But the state that actually matters — the merged TCA, the resolved TypoScript of a page, the real PSR-15 middleware order, whether a request was cached — is computed at runtime and can't be reliably inferred from files alone.
 
-`typo3-ai-mate` hands the assistant that already-resolved state instead — see [Tools](#tools) below for the full list of what it exposes.
+`typo3-ai-mate` hands the assistant that already-resolved state instead — see [Tools](#tools) below for the full list of what it exposes. This is often more token-efficient too: a compact resolved summary costs far fewer tokens than having the assistant read and reason over the raw source and config files.
 
-### Use cases
+### [Use cases](docs/USE-CASES.md)
 
 - **Slow page** — _"This page is slow — find the performance problem."_ The assistant reads the profile, spots N+1 queries / cache state / timing, and diagnoses instead of guessing.
 - **Error page** — locate an exception in the logs and tie it back to the page that produced it.
 - **Major upgrade** — surface breaking code, outstanding migrations and runtime deprecations before a major jump.
-
-See [`docs/USE-CASES.md`](docs/USE-CASES.md) for the full tool-by-tool flows and the `request_id` correlation anchor.
 
 ## 🔥 Installation
 
@@ -77,9 +75,6 @@ claude mcp add typo3-ai-mate --scope project -- ddev exec vendor/bin/mate serve 
 claude mcp add typo3-ai-mate --scope project -- ./vendor/bin/mate serve           # host PHP project
 ```
 
-> [!TIP]
-> Use `ddev exec` (not the `ddev <version>` wrapper — its header line would corrupt the stdio MCP stream). Verify with `claude mcp list` or `/mcp`. For Claude Desktop or other clients, add the same command to their `mcpServers` config.
-
 ## ⚙️ How it works
 
 The MCP tools run in the **Mate process** (its own Symfony DI container, `Configuration/Mate.php`). They boot no TYPO3; they reach it by shelling out to `vendor/bin/typo3 <command>` (`TYPO3_CONTEXT=Development`, stdout→JSON) via the `Typo3CliRunner` service, or by reading profile artifacts directly. The console commands run in the **TYPO3 process** (TYPO3 DI, `Configuration/Services.yaml`) and emit raw JSON.
@@ -97,11 +92,8 @@ The MCP tools run in the **Mate process** (its own Symfony DI container, `Config
 | `typo3-events` | List the resolved PSR-14 event listener registry. |
 | `typo3-upgrade-wizards` | List pending and completed upgrade wizards — outstanding DB/config migrations. |
 | `typo3-extension-scanner` | Statically scan an extension — or all non-core extensions — against the core breaking/deprecation matchers. Returns a compact summary by default (matches grouped by message with strong/weak counts and the affected files, plus a per-origin rollup when scanning all); pass `mode=full` for individual matches with line content, and `ownCode=true` to skip third-party (vendor) packages. |
-| `typo3-deprecations` | Report runtime deprecation notices, deduplicated and counted. Each one carries `origins` — the likely caller in own code (a backtrace frame when available, otherwise a static reverse search for the deprecated symbol across own PHP/Fluid files). |
+| `typo3-deprecations` | Report runtime deprecation notices, deduplicated and counted. Each one carries `origins` — the likely caller in own code. With deprecation logging enabled, a dev-only log processor records the caller's backtrace at log time for a high-confidence file:line; otherwise it falls back to a class-aware static reverse search across own PHP/Fluid files. |
 | `typo3-render-page` | Render a frontend page via an internal HTTP request (no external curl/Playwright) so runtime notices fire, and report the HTTP status plus the log entries written during that request. Requires a running webserver (e.g. DDEV). |
-
-> [!NOTE]
-> The profiler tools (`typo3-profiler-*`) read profiles recorded by the bundled `typo3-ai-mate`. Trigger a frontend request in the Development context to produce `var/log/profiles/*.json` — `typo3-render-page` does this from within the assistant.
 
 ## 💡 Development
 

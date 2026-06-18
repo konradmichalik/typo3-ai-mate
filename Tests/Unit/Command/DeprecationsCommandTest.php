@@ -177,6 +177,38 @@ final class DeprecationsCommandTest extends TestCase
         self::assertSame('static', $origin['via']);
     }
 
+    #[Test]
+    public function executePrefersTheLoggedBacktraceOriginAndCleansTheMessage(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS'] = ['LOG' => ['TYPO3' => ['CMS' => ['deprecations' => ['writerConfiguration' => [
+            'NOTICE' => ['TYPO3\\CMS\\Core\\Log\\Writer\\FileWriter' => ['logFileInfix' => 'deprecations']],
+        ]]]]]];
+        // FileWriter appends the processor's data as " - {json}" (slashes escaped).
+        $this->writeLog('deprecations', [
+            'Mon, 15 Jun 2026 16:16:25 +0200 [NOTICE] request="r1" component="TYPO3.CMS.deprecations": Foo is deprecated - {"typo3-ai-mate-origin":"packages\\/my_ext\\/Classes\\/Caller.php:42"}',
+        ]);
+
+        $tester = new CommandTester($this->command);
+        $tester->execute([]);
+
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        $deprecations = $result['deprecations'];
+        self::assertIsArray($deprecations);
+        $first = $deprecations[0];
+        self::assertIsArray($first);
+        // The data tail is stripped from the displayed message.
+        self::assertSame('Foo is deprecated', $first['message']);
+        $origins = $first['origins'];
+        self::assertIsArray($origins);
+        $origin = $origins[0];
+        self::assertIsArray($origin);
+        self::assertSame('packages/my_ext/Classes/Caller.php', $origin['file']);
+        self::assertSame(42, $origin['line']);
+        self::assertSame('logged', $origin['via']);
+        self::assertSame('high', $origin['confidence']);
+    }
+
     private function removeDir(string $dir): void
     {
         $files = glob($dir.'/*') ?: [];
