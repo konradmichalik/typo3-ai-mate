@@ -3,6 +3,9 @@ type: php
 docroot: .Build
 php_version: "8.2"
 webserver_type: apache-fpm
+# pcov is the coverage driver used by `composer test:coverage` (faster than Xdebug).
+webimage_extra_packages:
+  - php8.2-pcov
 database:
   type: mariadb
   version: "10.11"
