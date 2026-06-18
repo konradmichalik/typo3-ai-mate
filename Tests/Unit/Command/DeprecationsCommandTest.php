@@ -17,6 +17,7 @@ use KonradMichalik\Typo3AiMate\Command\DeprecationsCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
+use TYPO3\CMS\Core\Package\{PackageInterface, PackageManager};
 
 /**
  * DeprecationsCommandTest.
@@ -33,7 +34,9 @@ final class DeprecationsCommandTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->command = new DeprecationsCommand();
+        $packageManager = self::createStub(PackageManager::class);
+        $packageManager->method('getActivePackages')->willReturn([]);
+        $this->command = new DeprecationsCommand($packageManager);
         $this->originalConfVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
         $this->initVarPath();
     }
@@ -127,5 +130,59 @@ final class DeprecationsCommandTest extends TestCase
         self::assertIsArray($first);
         self::assertSame('Foo is deprecated', $first['message']);
         self::assertSame(2, $first['count']);
+        // Origins are attached; with no own packages registered the list is empty.
+        self::assertArrayHasKey('origins', $first);
+        self::assertSame([], $first['origins']);
+    }
+
+    #[Test]
+    public function executeResolvesTheCallerInOwnCodeStatically(): void
+    {
+        $packageDir = sys_get_temp_dir().'/typo3-ai-mate-own-'.bin2hex(random_bytes(8));
+        mkdir($packageDir.'/Classes', 0o777, true);
+        file_put_contents($packageDir.'/Classes/Caller.php', "<?php\n\$renderer->useNonce(true);\n");
+
+        $package = self::createStub(PackageInterface::class);
+        $package->method('getValueFromComposerManifest')->willReturn('typo3-cms-extension');
+        $package->method('getPackagePath')->willReturn($packageDir);
+        $package->method('getPackageKey')->willReturn('my_ext');
+        $packageManager = self::createStub(PackageManager::class);
+        $packageManager->method('getActivePackages')->willReturn([$package]);
+
+        $GLOBALS['TYPO3_CONF_VARS'] = ['LOG' => ['TYPO3' => ['CMS' => ['deprecations' => ['writerConfiguration' => [
+            'NOTICE' => ['TYPO3\\CMS\\Core\\Log\\Writer\\FileWriter' => ['logFileInfix' => 'deprecations']],
+        ]]]]]];
+        $this->writeLog('deprecations', [
+            'Mon, 15 Jun 2026 16:16:25 +0200 [NOTICE] request="r1" component="TYPO3.CMS.deprecations": Argument $useNonce is deprecated',
+        ]);
+
+        $tester = new CommandTester(new DeprecationsCommand($packageManager));
+        $tester->execute([]);
+
+        $this->removeDir($packageDir);
+
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        $deprecations = $result['deprecations'];
+        self::assertIsArray($deprecations);
+        $first = $deprecations[0];
+        self::assertIsArray($first);
+        $origins = $first['origins'];
+        self::assertIsArray($origins);
+        self::assertNotEmpty($origins);
+        $origin = $origins[0];
+        self::assertIsArray($origin);
+        self::assertSame('my_ext/Classes/Caller.php', $origin['file']);
+        self::assertSame('useNonce', $origin['symbol']);
+        self::assertSame('static', $origin['via']);
+    }
+
+    private function removeDir(string $dir): void
+    {
+        $files = glob($dir.'/*') ?: [];
+        foreach ($files as $file) {
+            is_dir($file) ? $this->removeDir($file) : unlink($file);
+        }
+        @rmdir($dir);
     }
 }
