@@ -92,6 +92,33 @@ final class DeprecationOriginResolverTest extends TestCase
     }
 
     #[Test]
+    public function staticSearchRequiresClassContextForQualifiedCallsToAvoidFalsePositives(): void
+    {
+        $resolver = new DeprecationOriginResolver([
+            [
+                // Unrelated ->add() call, no reference to the deprecated class.
+                'path' => '/app/packages/my_ext/Classes/Repository.php',
+                'label' => 'my_ext/Classes/Repository.php',
+                'content' => "<?php\n\$queryBuilder->add(new DeletedRestriction());\n",
+            ],
+            [
+                // The real caller: references the Application class and calls add().
+                'path' => '/app/packages/my_ext/Classes/Commands.php',
+                'label' => 'my_ext/Classes/Commands.php',
+                'content' => "<?php\nuse Symfony\\Component\\Console\\Application;\n\$app = new Application();\n\$app->add(\$command);\n",
+            ],
+        ]);
+
+        $origins = $resolver->resolve('Symfony\\Component\\Console\\Application::add() is deprecated.');
+
+        $files = array_column($origins, 'file');
+        // The QueryBuilder->add() call must NOT be reported (no Application context).
+        self::assertNotContains('my_ext/Classes/Repository.php', $files);
+        // The genuine Application caller is found.
+        self::assertContains('my_ext/Classes/Commands.php', $files);
+    }
+
+    #[Test]
     public function resolveReturnsEmptyWhenTheSymbolIsNowhereInOwnCode(): void
     {
         $resolver = new DeprecationOriginResolver([
