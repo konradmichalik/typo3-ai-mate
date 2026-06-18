@@ -8,6 +8,7 @@
 [![Packagist Downloads](https://img.shields.io/packagist/dt/konradmichalik/typo3-ai-mate?color=brightgreen)](https://packagist.org/packages/konradmichalik/typo3-ai-mate)
 [![Supported PHP Versions](https://img.shields.io/packagist/dependency-v/konradmichalik/typo3-ai-mate/php?logo=php)](https://packagist.org/packages/konradmichalik/typo3-ai-mate)
 [![CGL](https://img.shields.io/github/actions/workflow/status/konradmichalik/typo3-ai-mate/cgl.yml?label=cgl&logo=github)](https://github.com/konradmichalik/typo3-ai-mate/actions/workflows/cgl.yml)
+[![Coverage](https://img.shields.io/coverallsCoverage/github/konradmichalik/typo3-ai-mate?logo=coveralls)](https://coveralls.io/github/konradmichalik/typo3-ai-mate)
 [![Tests](https://img.shields.io/github/actions/workflow/status/konradmichalik/typo3-ai-mate/tests.yml?label=tests&logo=github)](https://github.com/konradmichalik/typo3-ai-mate/actions/workflows/tests.yml)
 [![License](https://img.shields.io/badge/license-GPL--2.0--or--later-blue.svg)](LICENSE.md)
 
@@ -58,7 +59,7 @@ composer require --dev konradmichalik/typo3-ai-mate
 ```
 
 > [!NOTE]
-> Requiring `typo3-ai-mate` automatically pulls in `symfony/ai-mate` (the MCP server and `mate` binary) and [`konradmichalik/typo3-request-profiler`](https://packagist.org/packages/konradmichalik/typo3-request-profiler) (the profile source for the `typo3-profiler-*` tools) — no separate installs needed.
+> Requiring `typo3-ai-mate` automatically pulls in `symfony/ai-mate` (the MCP server and `mate` binary) and [`konradmichalik/typo3-ai-mate`](https://packagist.org/packages/konradmichalik/typo3-ai-mate) (the profile source for the `typo3-profiler-*` tools) — no separate installs needed.
 
 ## 🔌 Connect your assistant
 
@@ -99,7 +100,7 @@ The MCP tools run in the **Mate process** (its own Symfony DI container, `Config
 | `typo3-deprecations` | Report runtime deprecation notices, deduplicated and counted. |
 
 > [!NOTE]
-> The profiler tools (`typo3-profiler-*`) read profiles recorded by the bundled `typo3-request-profiler`. Trigger a frontend request in the Development context to produce `var/log/profiles/*.json`.
+> The profiler tools (`typo3-profiler-*`) read profiles recorded by the bundled `typo3-ai-mate`. Trigger a frontend request in the Development context to produce `var/log/profiles/*.json`.
 
 ## 💡 Development
 
