@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Command;
 
 use KonradMichalik\Typo3AiMate\Command\Support\ScanResultFormatter;
-use KonradMichalik\Typo3AiMate\Support\Cast;
+use KonradMichalik\Typo3AiMate\Support\{Cast, OwnPackages};
 use PhpParser\{NodeTraverser, NodeVisitor, ParserFactory, PhpVersion};
 use PhpParser\NodeVisitor\NameResolver;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -181,7 +181,7 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
 
         return [
             'extension' => $extension,
-            'origin' => $this->originForPath($basePath),
+            'origin' => OwnPackages::origin($basePath),
             'statistics' => [
                 'effectiveCodeLines' => $effectiveCodeLines,
                 'ignoredLines' => $ignoredLines,
@@ -193,16 +193,6 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
             ],
             'matches' => $matches,
         ];
-    }
-
-    /**
-     * Whether the package lives in vendor/ (third-party) or outside it (own
-     * code, typically a path-repository package). The scanner's most useful
-     * filter for an upgrade is "show me only the code I have to fix myself".
-     */
-    private function originForPath(string $basePath): string
-    {
-        return str_contains(GeneralUtility::fixWindowsFilePath($basePath), '/vendor/') ? 'thirdParty' : 'own';
     }
 
     private function resolveFormat(mixed $format): string
@@ -224,7 +214,7 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
             if ('typo3-cms-extension' !== $package->getValueFromComposerManifest('type')) {
                 continue;
             }
-            if ($ownOnly && 'own' !== $this->originForPath($package->getPackagePath())) {
+            if ($ownOnly && !OwnPackages::isOwn($package->getPackagePath())) {
                 continue;
             }
             $keys[] = $package->getPackageKey();
