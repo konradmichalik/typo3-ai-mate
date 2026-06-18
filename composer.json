@@ -69,8 +69,12 @@
 			"copyright": 2026
 		},
 		"typo3/cms": {
+			"Package": {
+				"providesPackages": {}
+			},
 			"cms-package-dir": "{$vendor-dir}/typo3/cms",
 			"extension-key": "typo3_ai_mate",
+			"version": "0.1.0",
 			"web-dir": "public"
 		}
 	},
