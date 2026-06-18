@@ -184,6 +184,22 @@ final class LogsCommandTest extends TestCase
     }
 
     #[Test]
+    public function aggregateCapsLongMessageBodiesAndMergesNearIdenticalOnes(): void
+    {
+        $long = 'Exception: '.str_repeat('x', 5000);
+        $summaries = $this->command->aggregate([
+            ['message' => $long.' AAA', 'level' => 'ERROR', 'component' => 'TYPO3.CMS.Core', 'time' => 'T1', 'request_id' => 'r1'],
+            ['message' => $long.' BBB', 'level' => 'ERROR', 'component' => 'TYPO3.CMS.Core', 'time' => 'T2', 'request_id' => 'r2'],
+        ]);
+
+        // Both share the same 2000-char prefix once capped → one merged entry.
+        self::assertCount(1, $summaries);
+        self::assertSame(2, $summaries[0]['count']);
+        self::assertLessThan(mb_strlen($long), mb_strlen($summaries[0]['message']));
+        self::assertStringEndsWith('…[truncated]', $summaries[0]['message']);
+    }
+
+    #[Test]
     public function executeReturnsSummaryByDefault(): void
     {
         $this->writeLog('test', [

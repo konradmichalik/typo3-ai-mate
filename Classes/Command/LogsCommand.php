@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Command;
 
+use KonradMichalik\Typo3AiMate\Command\Support\LogTrimmer;
 use KonradMichalik\Typo3AiMate\Support\Cast;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\{InputInterface, InputOption};
@@ -49,6 +50,13 @@ final class LogsCommand extends AbstractJsonCommand
         'INFO' => 6,
         'DEBUG' => 7,
     ];
+
+    /**
+     * TYPO3's exception handler writes the full stack trace and JSON context
+     * into the log *message* itself (tens of kB per entry), which deduplication
+     * alone does not bound. Cap the message body so summaries stay token-cheap.
+     */
+    private const MESSAGE_LIMIT = 2000;
 
     /**
      * @return list<array<string, mixed>>
@@ -181,7 +189,9 @@ final class LogsCommand extends AbstractJsonCommand
     {
         $grouped = [];
         foreach ($entries as $entry) {
-            $message = Cast::string($entry['message'] ?? '');
+            // Group by the capped message: near-identical entries whose only
+            // difference is deep in an inlined trace collapse into one.
+            $message = LogTrimmer::message(Cast::string($entry['message'] ?? ''), self::MESSAGE_LIMIT);
             if ('' === $message) {
                 continue;
             }
@@ -270,26 +280,8 @@ final class LogsCommand extends AbstractJsonCommand
         return [
             'mode' => 'full',
             'totalMatched' => count($entries),
-            'entries' => array_map(fn (array $entry): array => $this->truncateTrace($entry, $traceLimit), $recent),
+            'entries' => array_map(static fn (array $entry): array => LogTrimmer::entry($entry, self::MESSAGE_LIMIT, $traceLimit), $recent),
         ];
-    }
-
-    /**
-     * @param array<string, mixed> $entry
-     *
-     * @return array<string, mixed>
-     */
-    private function truncateTrace(array $entry, int $traceLimit): array
-    {
-        if (0 === $traceLimit || !isset($entry['trace'])) {
-            return $entry;
-        }
-        $trace = Cast::string($entry['trace']);
-        if (mb_strlen($trace) <= $traceLimit) {
-            return $entry;
-        }
-
-        return array_merge($entry, ['trace' => mb_substr($trace, 0, $traceLimit).'…[truncated]']);
     }
 
     private function resolveFormat(mixed $format): string
