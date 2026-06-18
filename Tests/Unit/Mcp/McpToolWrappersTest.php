@@ -152,40 +152,29 @@ final class McpToolWrappersTest extends TestCase
     }
 
     #[Test]
-    public function logsSearchForwardsNonEmptyFiltersOnly(): void
+    public function logsSearchForwardsNonEmptyFiltersOnlyAndDefaultsToSummary(): void
     {
-        $entries = $this->entries((new LogsTool($this->runner))->search('boom', 'error'));
+        $result = $this->decode((new LogsTool($this->runner))->search('boom', 'error'));
 
-        self::assertSame('typo3-ai-mate:logs:search', $entries['command']);
-        self::assertSame(['--query', 'boom', '--level', 'error', '--limit', '50'], $entries['args']);
+        self::assertSame('typo3-ai-mate:logs:search', $result['command']);
+        self::assertSame(['--query', 'boom', '--level', 'error', '--limit', '50', '--format', 'summary'], $result['args']);
     }
 
     #[Test]
-    public function logsByLevelForwardsLevelAndRequestId(): void
+    public function logsByLevelForwardsLevelRequestIdAndMode(): void
     {
-        $entries = $this->entries((new LogsTool($this->runner))->byLevel('error', 'abc123'));
+        $result = $this->decode((new LogsTool($this->runner))->byLevel('error', 'abc123', 50, 'full', '2h'));
 
-        self::assertSame('typo3-ai-mate:logs:search', $entries['command']);
-        self::assertSame(['--level', 'error', '--request-id', 'abc123', '--limit', '50'], $entries['args']);
+        self::assertSame('typo3-ai-mate:logs:search', $result['command']);
+        self::assertSame(['--level', 'error', '--request-id', 'abc123', '--limit', '50', '--format', 'full', '--since', '2h'], $result['args']);
     }
 
     #[Test]
-    public function logsTailForwardsTheLimit(): void
+    public function logsTailForwardsTheLimitAndDefaultsToSummary(): void
     {
-        $entries = $this->entries((new LogsTool($this->runner))->tail(10));
+        $result = $this->decode((new LogsTool($this->runner))->tail(10));
 
-        self::assertSame('typo3-ai-mate:logs:search', $entries['command']);
-        self::assertSame(['--limit', '10'], $entries['args']);
-    }
-
-    /**
-     * @return array<mixed>
-     */
-    private function entries(string $response): array
-    {
-        $entries = $this->decode($response)['entries'];
-        self::assertIsArray($entries);
-
-        return $entries;
+        self::assertSame('typo3-ai-mate:logs:search', $result['command']);
+        self::assertSame(['--limit', '10', '--format', 'summary'], $result['args']);
     }
 }

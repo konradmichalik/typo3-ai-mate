@@ -90,7 +90,7 @@ The MCP tools run in the **Mate process** (its own Symfony DI container, `Config
 |---|---|
 | `typo3-profiler-latest` / `-list` / `-search` / `-get` | Inspect recorded per-request profiles as compact summaries (timing, N+1, cache, `page.id`), each linking a `typo3-profiler://profile/{token}` resource for the full SQL/section detail. |
 | `typo3-page` | Show a page's composition: content elements, cache signals and `USER_INT` plugins. |
-| `typo3-logs-search` / `-tail` / `-by-level` | Search, tail or filter the TYPO3 logs, with exceptions extracted. |
+| `typo3-logs-search` / `-tail` / `-by-level` | Search, tail or filter the TYPO3 logs. Returns a compact summary (distinct messages with occurrence counts and `lastSeen`, no stack traces) by default; pass `mode=full` for individual entries with truncated traces, and `since` (e.g. `1h`, `2d`) to scope to recent entries. |
 | `typo3-tca` | Dump the resolved (merged, trimmed) TCA of a table. |
 | `typo3-typoscript` | Dump the resolved frontend TypoScript of a page. |
 | `typo3-middlewares` | List the resolved PSR-15 middleware order. |

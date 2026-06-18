@@ -19,7 +19,9 @@ use Symfony\Component\Console\Input\{InputInterface, InputOption};
 use Symfony\Component\Console\Output\OutputInterface;
 use TYPO3\CMS\Core\Core\Environment;
 
+use function array_map;
 use function array_slice;
+use function count;
 use function is_string;
 
 /**
@@ -127,6 +129,82 @@ final class LogsCommand extends AbstractJsonCommand
         return true;
     }
 
+    /**
+     * Whether the entry's timestamp is at or after the given lower bound. A null
+     * bound (no --since) always matches.
+     *
+     * @param array<string, mixed> $entry
+     */
+    public function entryReachesSince(array $entry, ?int $sinceTimestamp): bool
+    {
+        if (null === $sinceTimestamp) {
+            return true;
+        }
+        $time = strtotime(Cast::string($entry['time'] ?? ''));
+
+        return false !== $time && $time >= $sinceTimestamp;
+    }
+
+    /**
+     * Resolve a --since value to a minimum unix timestamp. Accepts a relative
+     * offset (e.g. 30m, 2h, 7d) or any date string parseable by strtotime.
+     * Returns null when empty or unparseable (i.e. no lower time bound).
+     */
+    public function resolveSince(mixed $since): ?int
+    {
+        if (!is_string($since) || '' === trim($since)) {
+            return null;
+        }
+        $since = trim($since);
+
+        if (1 === preg_match('/^(\d+)\s*([smhd])$/i', $since, $matches)) {
+            $unit = ['s' => 1, 'm' => 60, 'h' => 3600, 'd' => 86400][strtolower($matches[2])] ?? 1;
+
+            return time() - ((int) $matches[1] * $unit);
+        }
+
+        $timestamp = strtotime($since);
+
+        return false === $timestamp ? null : $timestamp;
+    }
+
+    /**
+     * Deduplicate entries by message, count occurrences and keep the most recent
+     * timestamp. Entries are expected in chronological (file) order. The full
+     * stack trace is intentionally dropped — this is the compact summary view.
+     *
+     * @param list<array<string, mixed>> $entries
+     *
+     * @return list<array{message: string, level: string, component: string, count: int, lastSeen: string, exampleRequestId: string}>
+     */
+    public function aggregate(array $entries): array
+    {
+        $grouped = [];
+        foreach ($entries as $entry) {
+            $message = Cast::string($entry['message'] ?? '');
+            if ('' === $message) {
+                continue;
+            }
+            if (!isset($grouped[$message])) {
+                $grouped[$message] = [
+                    'message' => $message,
+                    'level' => Cast::string($entry['level'] ?? ''),
+                    'component' => Cast::string($entry['component'] ?? ''),
+                    'count' => 0,
+                    'lastSeen' => '',
+                    'exampleRequestId' => Cast::string($entry['request_id'] ?? ''),
+                ];
+            }
+            ++$grouped[$message]['count'];
+            $grouped[$message]['lastSeen'] = Cast::string($entry['time'] ?? '');
+        }
+
+        $summaries = array_values($grouped);
+        usort($summaries, static fn (array $a, array $b): int => $b['count'] <=> $a['count']);
+
+        return $summaries;
+    }
+
     public function resolveMinSeverity(mixed $level): ?int
     {
         if (!is_string($level) || '' === $level) {
@@ -143,18 +221,68 @@ final class LogsCommand extends AbstractJsonCommand
             ->addOption('component', null, InputOption::VALUE_REQUIRED, 'Filter by component/channel substring')
             ->addOption('query', null, InputOption::VALUE_REQUIRED, 'Full-text substring to match in the message')
             ->addOption('request-id', null, InputOption::VALUE_REQUIRED, 'Filter by request id (correlates with profile token)')
-            ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Maximum number of (most recent) entries', '50');
+            ->addOption('since', null, InputOption::VALUE_REQUIRED, 'Only entries at or after this time: relative (e.g. 30m, 2h, 7d) or any parseable date')
+            ->addOption('format', null, InputOption::VALUE_REQUIRED, 'summary (distinct messages with counts, default) or full (individual entries with truncated traces)', 'summary')
+            ->addOption('trace-limit', null, InputOption::VALUE_REQUIRED, 'In full format, truncate each stack trace to this many characters (0 = unlimited)', '2000')
+            ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Maximum number of distinct messages (summary) or most recent entries (full)', '50');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $entries = $this->parseFiles($this->logFiles());
-        $entries = $this->filter($entries, $input);
-
+        $entries = $this->filter($this->parseFiles($this->logFiles()), $input);
         $limit = max(1, Cast::int($input->getOption('limit')));
-        $entries = array_slice($entries, -$limit);
 
-        return $this->emit($output, $entries);
+        if ('full' === $this->resolveFormat($input->getOption('format'))) {
+            return $this->emit($output, $this->fullPayload($entries, $limit, max(0, Cast::int($input->getOption('trace-limit')))));
+        }
+
+        $summaries = $this->aggregate($entries);
+
+        return $this->emit($output, [
+            'mode' => 'summary',
+            'totalMatched' => count($entries),
+            'distinct' => count($summaries),
+            'entries' => array_slice($summaries, 0, $limit),
+        ]);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $entries
+     *
+     * @return array{mode: string, totalMatched: int, entries: list<array<string, mixed>>}
+     */
+    private function fullPayload(array $entries, int $limit, int $traceLimit): array
+    {
+        $recent = array_slice($entries, -$limit);
+
+        return [
+            'mode' => 'full',
+            'totalMatched' => count($entries),
+            'entries' => array_map(fn (array $entry): array => $this->truncateTrace($entry, $traceLimit), $recent),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $entry
+     *
+     * @return array<string, mixed>
+     */
+    private function truncateTrace(array $entry, int $traceLimit): array
+    {
+        if (0 === $traceLimit || !isset($entry['trace'])) {
+            return $entry;
+        }
+        $trace = Cast::string($entry['trace']);
+        if (mb_strlen($trace) <= $traceLimit) {
+            return $entry;
+        }
+
+        return array_merge($entry, ['trace' => mb_substr($trace, 0, $traceLimit).'…[truncated]']);
+    }
+
+    private function resolveFormat(mixed $format): string
+    {
+        return 'full' === strtolower(trim(Cast::string($format))) ? 'full' : 'summary';
     }
 
     /**
@@ -196,10 +324,12 @@ final class LogsCommand extends AbstractJsonCommand
         $component = $this->stringOption($input->getOption('component'));
         $query = $this->stringOption($input->getOption('query'));
         $requestId = $this->stringOption($input->getOption('request-id'));
+        $since = $this->resolveSince($input->getOption('since'));
 
         return array_values(array_filter(
             $entries,
-            fn (array $entry): bool => $this->entryMatches($entry, $minSeverity, $component, $query, $requestId),
+            fn (array $entry): bool => $this->entryMatches($entry, $minSeverity, $component, $query, $requestId)
+                && $this->entryReachesSince($entry, $since),
         ));
     }
 
