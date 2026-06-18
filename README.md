@@ -75,6 +75,9 @@ claude mcp add typo3-ai-mate --scope project -- ddev exec vendor/bin/mate serve 
 claude mcp add typo3-ai-mate --scope project -- ./vendor/bin/mate serve           # host PHP project
 ```
 
+> [!NOTE]
+> After updating the package (`composer update`), **reconnect the MCP server** so the assistant picks up new or changed tool schemas — in Claude Code run `/mcp` and reconnect `typo3-ai-mate`. Freshly installed vendor code alone is not enough; without a reconnect the assistant keeps using the previously registered tool definitions.
+
 ## ⚙️ How it works
 
 The MCP tools run in the **Mate process** (its own Symfony DI container, `Configuration/Mate.php`). They boot no TYPO3; they reach it by shelling out to `vendor/bin/typo3 <command>` (`TYPO3_CONTEXT=Development`, stdout→JSON) via the `Typo3CliRunner` service, or by reading profile artifacts directly. The console commands run in the **TYPO3 process** (TYPO3 DI, `Configuration/Services.yaml`) and emit raw JSON.
