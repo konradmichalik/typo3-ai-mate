@@ -53,26 +53,10 @@ final class RenderPageCommandTest extends TestCase
         $entries = $command->newEntriesSince([
             ['time' => 'Mon, 15 Jun 2026 15:59:59 +0200', 'message' => 'before'],
             ['time' => 'Mon, 15 Jun 2026 16:00:01 +0200', 'message' => 'after'],
-        ], $boundary, 50, 2000);
+        ], $boundary);
 
         self::assertCount(1, $entries);
         self::assertSame('after', $entries[0]['message']);
-    }
-
-    #[Test]
-    public function newEntriesSinceCapsAndTruncatesTraces(): void
-    {
-        $command = new RenderPageCommand(self::createStub(SiteFinder::class), self::createStub(RequestFactory::class));
-        $longTrace = str_repeat('x', 5000);
-
-        $entries = $command->newEntriesSince([
-            ['time' => 'Mon, 15 Jun 2026 16:00:01 +0200', 'message' => 'a', 'trace' => $longTrace],
-            ['time' => 'Mon, 15 Jun 2026 16:00:02 +0200', 'message' => 'b'],
-        ], 0, 1, 100);
-
-        // Cap keeps the most recent entry only.
-        self::assertCount(1, $entries);
-        self::assertSame('b', $entries[0]['message']);
     }
 
     #[Test]
@@ -99,13 +83,30 @@ final class RenderPageCommandTest extends TestCase
 
         $logs = $result['logs'];
         self::assertIsArray($logs);
-        // The far-future entry is captured; the 2020 entry is excluded by the boundary.
-        self::assertSame(1, $logs['count']);
+        // The far-future entry is captured (and deduplicated); the 2020 entry is excluded by the boundary.
+        self::assertSame(1, $logs['totalMatched']);
+        self::assertSame(1, $logs['distinct']);
         $entries = $logs['entries'];
         self::assertIsArray($entries);
         $first = $entries[0];
         self::assertIsArray($first);
         self::assertSame('Something is deprecated', $first['message']);
+        self::assertSame(1, $first['count']);
+    }
+
+    #[Test]
+    public function executeResolvesARelativeUrlAgainstTheSiteBase(): void
+    {
+        $tester = new CommandTester(new RenderPageCommand(
+            $this->siteFinderWithBase('https://example.test/'),
+            $this->requestFactoryReturning(200, 10),
+        ));
+        $tester->execute(['--url' => '/some/path']);
+
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        self::assertSame('https://example.test/some/path', $result['url']);
+        self::assertSame(200, $result['status']);
     }
 
     #[Test]
@@ -149,6 +150,18 @@ final class RenderPageCommandTest extends TestCase
         $site->method('getRouter')->willReturn($router);
         $siteFinder = self::createStub(SiteFinder::class);
         $siteFinder->method('getSiteByPageId')->willReturn($site);
+
+        return $siteFinder;
+    }
+
+    private function siteFinderWithBase(string $base): SiteFinder
+    {
+        $uri = self::createStub(UriInterface::class);
+        $uri->method('__toString')->willReturn($base);
+        $site = self::createStub(Site::class);
+        $site->method('getBase')->willReturn($uri);
+        $siteFinder = self::createStub(SiteFinder::class);
+        $siteFinder->method('getAllSites')->willReturn(['example' => $site]);
 
         return $siteFinder;
     }

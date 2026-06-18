@@ -22,8 +22,6 @@ use Throwable;
 use TYPO3\CMS\Core\Http\RequestFactory;
 use TYPO3\CMS\Core\Site\SiteFinder;
 
-use function array_map;
-use function array_slice;
 use function count;
 use function is_numeric;
 use function is_string;
@@ -42,9 +40,6 @@ use function strlen;
 )]
 final class RenderPageCommand extends AbstractJsonCommand
 {
-    private const MAX_ENTRIES = 50;
-    private const TRACE_LIMIT = 2000;
-
     private readonly LogsCommand $logSearch;
 
     public function __construct(
@@ -56,25 +51,20 @@ final class RenderPageCommand extends AbstractJsonCommand
     }
 
     /**
-     * Keep entries logged at or after the boundary, most recent last, capped and
-     * with truncated traces (a single render must not flood the output).
+     * Keep only entries logged at or after the boundary (i.e. during the render).
+     * Deduplication and message/trace capping are left to LogsCommand::aggregate.
      *
      * @param list<array<string, mixed>> $entries
      *
      * @return list<array<string, mixed>>
      */
-    public function newEntriesSince(array $entries, int $boundary, int $cap, int $traceLimit): array
+    public function newEntriesSince(array $entries, int $boundary): array
     {
-        $matched = array_values(array_filter($entries, static function (array $entry) use ($boundary): bool {
+        return array_values(array_filter($entries, static function (array $entry) use ($boundary): bool {
             $time = strtotime(Cast::string($entry['time'] ?? ''));
 
             return false !== $time && $time >= $boundary;
         }));
-
-        return array_map(
-            fn (array $entry): array => $this->truncateTrace($entry, $traceLimit),
-            array_slice($matched, -$cap),
-        );
     }
 
     protected function configure(): void
@@ -88,16 +78,20 @@ final class RenderPageCommand extends AbstractJsonCommand
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $pageId = is_numeric($input->getArgument('pageId')) ? (int) $input->getArgument('pageId') : null;
-        $url = $this->stringOption($input->getOption('url'));
+        $urlOption = $this->stringOption($input->getOption('url'));
 
-        if (null === $url) {
-            if (null === $pageId) {
-                return $this->emit($output, ['error' => 'Pass a pageId argument or a --url to render.'], Command::FAILURE);
+        if (null !== $urlOption) {
+            $url = $this->absoluteUrl($urlOption);
+            if (null === $url) {
+                return $this->emit($output, ['error' => sprintf('Relative URL "%s" needs a site base — pass an absolute URL or a pageId.', $urlOption)], Command::FAILURE);
             }
+        } elseif (null !== $pageId) {
             $url = $this->urlForPage($pageId, Cast::int($input->getOption('language')));
             if (null === $url) {
                 return $this->emit($output, ['error' => sprintf('Could not resolve a URL for page %d (no site configuration?).', $pageId)], Command::FAILURE);
             }
+        } else {
+            return $this->emit($output, ['error' => 'Pass a pageId argument or a --url to render.'], Command::FAILURE);
         }
 
         $boundary = time();
@@ -105,7 +99,8 @@ final class RenderPageCommand extends AbstractJsonCommand
         $request = $this->performRequest($url);
         $durationMs = (int) round((microtime(true) - $started) * 1000);
 
-        $entries = $this->newEntriesSince($this->logSearch->allEntries(), $boundary, self::MAX_ENTRIES, self::TRACE_LIMIT);
+        $matched = $this->newEntriesSince($this->logSearch->allEntries(), $boundary);
+        $summary = $this->logSearch->aggregate($matched);
 
         $payload = [
             'url' => $url,
@@ -114,8 +109,9 @@ final class RenderPageCommand extends AbstractJsonCommand
             'durationMs' => $durationMs,
             'bytes' => $request['bytes'],
             'logs' => [
-                'count' => count($entries),
-                'entries' => $entries,
+                'totalMatched' => count($matched),
+                'distinct' => count($summary),
+                'entries' => $summary,
             ],
         ];
         if (null !== $request['error']) {
@@ -137,6 +133,36 @@ final class RenderPageCommand extends AbstractJsonCommand
     }
 
     /**
+     * Pass absolute URLs through; resolve a relative one against the first site
+     * that has an absolute base (Guzzle rejects a scheme-less URL like "/").
+     */
+    private function absoluteUrl(string $url): ?string
+    {
+        if (str_contains($url, '://')) {
+            return $url;
+        }
+        $base = $this->firstSiteBase();
+
+        return null === $base ? null : rtrim($base, '/').'/'.ltrim($url, '/');
+    }
+
+    private function firstSiteBase(): ?string
+    {
+        try {
+            foreach ($this->siteFinder->getAllSites() as $site) {
+                $base = (string) $site->getBase();
+                if (str_contains($base, '://')) {
+                    return $base;
+                }
+            }
+        } catch (Throwable) {
+            return null;
+        }
+
+        return null;
+    }
+
+    /**
      * @return array{status: int, bytes: int, error: string|null}
      */
     private function performRequest(string $url): array
@@ -151,24 +177,6 @@ final class RenderPageCommand extends AbstractJsonCommand
         } catch (Throwable $exception) {
             return ['status' => 0, 'bytes' => 0, 'error' => $exception->getMessage()];
         }
-    }
-
-    /**
-     * @param array<string, mixed> $entry
-     *
-     * @return array<string, mixed>
-     */
-    private function truncateTrace(array $entry, int $traceLimit): array
-    {
-        if (0 === $traceLimit || !isset($entry['trace'])) {
-            return $entry;
-        }
-        $trace = Cast::string($entry['trace']);
-        if (mb_strlen($trace) <= $traceLimit) {
-            return $entry;
-        }
-
-        return array_merge($entry, ['trace' => mb_substr($trace, 0, $traceLimit).'…[truncated]']);
     }
 
     private function stringOption(mixed $value): ?string
