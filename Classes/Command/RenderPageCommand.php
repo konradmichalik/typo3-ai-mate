@@ -19,7 +19,6 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\{InputArgument, InputInterface, InputOption};
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
-use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Http\RequestFactory;
 use TYPO3\CMS\Core\Site\SiteFinder;
 
@@ -106,7 +105,7 @@ final class RenderPageCommand extends AbstractJsonCommand
         $request = $this->performRequest($url);
         $durationMs = (int) round((microtime(true) - $started) * 1000);
 
-        $entries = $this->newEntriesSince($this->logEntries(), $boundary, self::MAX_ENTRIES, self::TRACE_LIMIT);
+        $entries = $this->newEntriesSince($this->logSearch->allEntries(), $boundary, self::MAX_ENTRIES, self::TRACE_LIMIT);
 
         $payload = [
             'url' => $url,
@@ -152,32 +151,6 @@ final class RenderPageCommand extends AbstractJsonCommand
         } catch (Throwable $exception) {
             return ['status' => 0, 'bytes' => 0, 'error' => $exception->getMessage()];
         }
-    }
-
-    /**
-     * @return list<array<string, mixed>>
-     */
-    private function logEntries(): array
-    {
-        $entries = [];
-        foreach ($this->logFiles() as $file) {
-            foreach ($this->logSearch->parseFile($file) as $entry) {
-                $entries[] = $entry;
-            }
-        }
-
-        return $entries;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function logFiles(): array
-    {
-        $files = glob(Environment::getVarPath().'/log/typo3_*.log') ?: [];
-        sort($files);
-
-        return $files;
     }
 
     /**

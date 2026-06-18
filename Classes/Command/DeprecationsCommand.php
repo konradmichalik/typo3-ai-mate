@@ -19,7 +19,6 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Finder\Finder;
-use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Package\PackageManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -109,14 +108,7 @@ final class DeprecationsCommand extends AbstractJsonCommand
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $entries = [];
-        foreach ($this->logFiles() as $file) {
-            foreach ($this->logSearch->parseFile($file) as $entry) {
-                if ($this->isDeprecationEntry($entry)) {
-                    $entries[] = $entry;
-                }
-            }
-        }
+        $entries = array_values(array_filter($this->logSearch->allEntries(), $this->isDeprecationEntry(...)));
 
         $deprecations = $this->aggregate($entries);
         if ([] !== $deprecations) {
@@ -226,17 +218,6 @@ final class DeprecationsCommand extends AbstractJsonCommand
                 'content' => $content,
             ];
         }
-
-        return $files;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function logFiles(): array
-    {
-        $files = glob(Environment::getVarPath().'/log/typo3_*.log') ?: [];
-        sort($files);
 
         return $files;
     }
