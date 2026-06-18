@@ -28,18 +28,29 @@ use function count;
 final class DeprecationOriginResolverTest extends TestCase
 {
     #[Test]
-    public function extractSymbolsPicksCamelCaseAndMethodTokensButDropsProse(): void
+    public function staticSearchMatchesIdentifiersButIgnoresProseWords(): void
     {
-        $resolver = new DeprecationOriginResolver([]);
+        $resolver = new DeprecationOriginResolver([
+            [
+                'path' => '/app/packages/my_ext/Classes/Caller.php',
+                'label' => 'my_ext/Classes/Caller.php',
+                'content' => "<?php\nuse TYPO3\\CMS\\Core\\Utility\\GeneralUtility;\n\$r = GeneralUtility::getRequest();\n",
+            ],
+            [
+                // Contains the prose words from the message ("will", "removed") only.
+                'path' => '/app/packages/my_ext/Classes/Prose.php',
+                'label' => 'my_ext/Classes/Prose.php',
+                'content' => "<?php\n// this will be removed soon\n",
+            ],
+        ]);
 
-        $symbols = $resolver->extractSymbols('GeneralUtility::getRequest() will be removed in TYPO3 v14; use the PSR-7 request instead.');
-        self::assertContains('getRequest', $symbols);
+        $origins = $resolver->resolve('GeneralUtility::getRequest() will be removed in TYPO3 v14.');
 
-        // Plain prose words must not be treated as identifiers.
-        self::assertNotContains('removed', $symbols);
-        self::assertNotContains('will', $symbols);
-        // "typo3" is a stop word even though it survives the patterns.
-        self::assertNotContains('typo3', $symbols);
+        $files = array_column($origins, 'file');
+        // The getRequest() call is matched (with its GeneralUtility class context)…
+        self::assertContains('my_ext/Classes/Caller.php', $files);
+        // …while prose words like "will"/"removed" are not treated as symbols.
+        self::assertNotContains('my_ext/Classes/Prose.php', $files);
     }
 
     #[Test]

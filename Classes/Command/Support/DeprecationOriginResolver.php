@@ -52,20 +52,6 @@ final readonly class DeprecationOriginResolver
     }
 
     /**
-     * The deprecated method names mentioned in a message — a flat view of the
-     * structured candidates from {@see parseCalls()}, handy for callers/tests.
-     *
-     * @return list<string>
-     */
-    public function extractSymbols(string $message): array
-    {
-        return array_values(array_unique(array_map(
-            static fn (array $call): string => $call['method'],
-            $this->parseCalls($message),
-        )));
-    }
-
-    /**
      * Parse method-call candidates from a deprecation message. A qualified call
      * (Class::method / Class->method) keeps its class so the search can demand
      * that the class is referenced in a file too — without that context a bare
