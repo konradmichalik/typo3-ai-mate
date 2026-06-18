@@ -28,6 +28,7 @@
 		"typo3/cms-install": "^13.4 || ^14.0"
 	},
 	"require-dev": {
+		"composer/class-map-generator": "^1.0",
 		"phpunit/phpcov": "^9.0 || ^10.0 || ^11.0 || ^13.0",
 		"phpunit/phpunit": "^10.5 || ^11.0 || ^12.0",
 		"typo3/cms-base-distribution": "^13.4 || ^14.0",
