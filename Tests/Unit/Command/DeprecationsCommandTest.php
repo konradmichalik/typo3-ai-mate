@@ -16,6 +16,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 use KonradMichalik\Typo3AiMate\Command\DeprecationsCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Console\Tester\CommandTester;
 
 /**
  * DeprecationsCommandTest.
@@ -24,11 +25,27 @@ use PHPUnit\Framework\TestCase;
  */
 final class DeprecationsCommandTest extends TestCase
 {
+    use WithTemporaryVarPath;
+
     private DeprecationsCommand $command;
+
+    private mixed $originalConfVars = null;
 
     protected function setUp(): void
     {
         $this->command = new DeprecationsCommand();
+        $this->originalConfVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
+        $this->initVarPath();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->cleanupVarPath();
+        if (null === $this->originalConfVars) {
+            unset($GLOBALS['TYPO3_CONF_VARS']);
+        } else {
+            $GLOBALS['TYPO3_CONF_VARS'] = $this->originalConfVars;
+        }
     }
 
     #[Test]
@@ -81,5 +98,34 @@ final class DeprecationsCommandTest extends TestCase
         self::assertTrue($this->command->isDeprecationLoggingEnabled($enabled));
 
         self::assertFalse($this->command->isDeprecationLoggingEnabled([]));
+    }
+
+    #[Test]
+    public function executeAggregatesOnlyDeprecationChannelEntriesAndReportsLoggingState(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS'] = ['LOG' => ['TYPO3' => ['CMS' => ['deprecations' => ['writerConfiguration' => [
+            'NOTICE' => ['TYPO3\\CMS\\Core\\Log\\Writer\\FileWriter' => ['logFileInfix' => 'deprecations']],
+        ]]]]]];
+
+        $this->writeLog('deprecations', [
+            'Mon, 15 Jun 2026 16:16:25 +0200 [NOTICE] request="r1" component="TYPO3.CMS.deprecations": Foo is deprecated',
+            'Mon, 15 Jun 2026 16:16:26 +0200 [NOTICE] request="r2" component="TYPO3.CMS.deprecations": Foo is deprecated',
+            'Mon, 15 Jun 2026 16:16:27 +0200 [INFO] request="r3" component="TYPO3.CMS.Core": Not a deprecation',
+        ]);
+
+        $tester = new CommandTester($this->command);
+        $exitCode = $tester->execute([]);
+
+        self::assertSame(0, $exitCode);
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        self::assertTrue($result['loggingEnabled']);
+        $deprecations = $result['deprecations'];
+        self::assertIsArray($deprecations);
+        self::assertCount(1, $deprecations);
+        $first = $deprecations[0];
+        self::assertIsArray($first);
+        self::assertSame('Foo is deprecated', $first['message']);
+        self::assertSame(2, $first['count']);
     }
 }

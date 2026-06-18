@@ -16,6 +16,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 use KonradMichalik\Typo3AiMate\Command\LogsCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Console\Tester\CommandTester;
 
 /**
  * LogsCommandTest.
@@ -24,11 +25,19 @@ use PHPUnit\Framework\TestCase;
  */
 final class LogsCommandTest extends TestCase
 {
+    use WithTemporaryVarPath;
+
     private LogsCommand $command;
 
     protected function setUp(): void
     {
         $this->command = new LogsCommand();
+        $this->initVarPath();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->cleanupVarPath();
     }
 
     #[Test]
@@ -122,5 +131,45 @@ final class LogsCommandTest extends TestCase
         // Query is a message substring.
         self::assertTrue($this->command->entryMatches($entry, null, null, 'failed', null));
         self::assertFalse($this->command->entryMatches($entry, null, null, 'success', null));
+    }
+
+    #[Test]
+    public function executeReadsParsesFiltersAndLimitsLogEntries(): void
+    {
+        $this->writeLog('test', [
+            'Mon, 15 Jun 2026 16:16:25 +0200 [ERROR] request="abc" component="TYPO3.CMS.Core": First failure',
+            'Mon, 15 Jun 2026 16:16:26 +0200 [INFO] request="def" component="TYPO3.CMS.Foo": Just info',
+        ]);
+
+        $tester = new CommandTester($this->command);
+        $exitCode = $tester->execute(['--level' => 'error']);
+
+        self::assertSame(0, $exitCode);
+        $entries = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($entries);
+        self::assertCount(1, $entries);
+        $first = $entries[0];
+        self::assertIsArray($first);
+        self::assertSame('ERROR', $first['level']);
+    }
+
+    #[Test]
+    public function executeAppliesTheMostRecentLimit(): void
+    {
+        $this->writeLog('test', [
+            'Mon, 15 Jun 2026 16:16:25 +0200 [INFO] request="a" component="TYPO3.CMS.Core": One',
+            'Mon, 15 Jun 2026 16:16:26 +0200 [INFO] request="b" component="TYPO3.CMS.Core": Two',
+            'Mon, 15 Jun 2026 16:16:27 +0200 [INFO] request="c" component="TYPO3.CMS.Core": Three',
+        ]);
+
+        $tester = new CommandTester($this->command);
+        $tester->execute(['--limit' => '1']);
+
+        $entries = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($entries);
+        self::assertCount(1, $entries);
+        $first = $entries[0];
+        self::assertIsArray($first);
+        self::assertSame('Three', $first['message']);
     }
 }

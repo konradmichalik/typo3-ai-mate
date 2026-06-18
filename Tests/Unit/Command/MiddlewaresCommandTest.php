@@ -13,9 +13,13 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 
+use ArrayObject;
 use KonradMichalik\Typo3AiMate\Command\MiddlewaresCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
+use Symfony\Component\Console\Tester\CommandTester;
+use TYPO3\CMS\Core\Http\MiddlewareStackResolver;
 
 /**
  * MiddlewaresCommandTest.
@@ -69,5 +73,56 @@ final class MiddlewaresCommandTest extends TestCase
         ]);
 
         self::assertNull($mapped[0]['identifier']);
+    }
+
+    #[Test]
+    public function executeEmitsTheResolvedFrontendStackAsJson(): void
+    {
+        $resolver = $this->createMock(MiddlewareStackResolver::class);
+        $resolver->method('resolve')->with('frontend')->willReturn(new ArrayObject([
+            'typo3/cms-frontend/timetracker' => ['target' => 'Some\\Middleware'],
+        ]));
+
+        $tester = new CommandTester(new MiddlewaresCommand($resolver));
+        $exitCode = $tester->execute([]);
+
+        self::assertSame(0, $exitCode);
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        self::assertSame('frontend', $result['stack']);
+        $middlewares = $result['middlewares'];
+        self::assertIsArray($middlewares);
+        $first = $middlewares[0];
+        self::assertIsArray($first);
+        self::assertSame('typo3/cms-frontend/timetracker', $first['identifier']);
+    }
+
+    #[Test]
+    public function executeSelectsTheBackendStackWhenRequested(): void
+    {
+        $resolver = $this->createMock(MiddlewareStackResolver::class);
+        $resolver->expects(self::once())->method('resolve')->with('backend')->willReturn(new ArrayObject());
+
+        $tester = new CommandTester(new MiddlewaresCommand($resolver));
+        $tester->execute(['--stack' => 'backend']);
+
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        self::assertSame('backend', $result['stack']);
+    }
+
+    #[Test]
+    public function executeReportsResolverFailuresAsAnError(): void
+    {
+        $resolver = $this->createMock(MiddlewareStackResolver::class);
+        $resolver->method('resolve')->willThrowException(new RuntimeException('boom'));
+
+        $tester = new CommandTester(new MiddlewaresCommand($resolver));
+        $exitCode = $tester->execute([]);
+
+        self::assertSame(1, $exitCode);
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        self::assertSame('boom', $result['error']);
     }
 }
