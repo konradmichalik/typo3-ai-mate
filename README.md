@@ -44,12 +44,22 @@ AI assistants normally read your raw source and config files and _guess_ at the 
 
 ### Composer
 
+[![Packagist](https://img.shields.io/packagist/v/konradmichalik/typo3-ai-mate?label=version&logo=packagist)](https://packagist.org/packages/konradmichalik/typo3-ai-mate)
+[![Packagist Downloads](https://img.shields.io/packagist/dt/konradmichalik/typo3-ai-mate?color=brightgreen)](https://packagist.org/packages/konradmichalik/typo3-ai-mate)
+
 ```bash
 composer require --dev konradmichalik/typo3-ai-mate
 ```
 
 > [!NOTE]
-> Requiring `typo3-ai-mate` automatically pulls in `symfony/ai-mate` (the MCP server and `mate` binary) and [`konradmichalik/typo3-request-profiler`](https://packagist.org/packages/konradmichalik/typo3-request-profiler) (the profile source for the `typo3-profiler-*` tools) — no separate installs needed.
+> Requiring `typo3-ai-mate` automatically pulls in `symfony/ai-mate` (the MCP server and `mate` binary) and [`konradmichalik/typo3-ai-mate`](https://packagist.org/packages/konradmichalik/typo3-ai-mate) (the profile source for the `typo3-profiler-*` tools) — no separate installs needed.
+
+### TER
+
+[![TER version](https://typo3-badges.dev/badge/typo3_ai_mate/version/shields.svg)](https://extensions.typo3.org/extension/typo3_ai_mate)
+[![TER downloads](https://typo3-badges.dev/badge/typo3_ai_mate/downloads/shields.svg)](https://extensions.typo3.org/extension/typo3_ai_mate)
+
+Download the zip file from [TYPO3 extension repository (TER)](https://extensions.typo3.org/extension/typo3_ai_mate).
 
 ## 🔌 Connect your assistant
 
