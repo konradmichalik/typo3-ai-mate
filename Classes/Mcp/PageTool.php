@@ -26,7 +26,11 @@ final readonly class PageTool
 {
     public function __construct(private Typo3CliRunner $typo3) {}
 
-    #[McpTool(name: 'typo3-page', title: 'TYPO3 Page Composition', description: 'Page composition (content elements incl. CType/plugin, backend layout) plus cache signals and USER_INT plugins. Expand a profile page.id.')]
+    /**
+     * @param int|null    $pageId Page UID to inspect — typically the page.id reported by a profiler summary. Provide exactly one of pageId or url.
+     * @param string|null $url    Speaking URL to resolve to a page instead of a UID. Provide exactly one of pageId or url.
+     */
+    #[McpTool(name: 'typo3-page', title: 'TYPO3 Page Composition', description: 'Page composition (content elements incl. CType/plugin, backend layout) plus cache signals and USER_INT plugins. Expand the page.id reported by the profiler tools to see what rendered on a slow page.')]
     public function info(?int $pageId = null, ?string $url = null): string
     {
         $arguments = null !== $pageId ? [$pageId] : [];

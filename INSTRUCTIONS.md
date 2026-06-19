@@ -4,6 +4,16 @@ These tools expose the **resolved runtime state** of a TYPO3 installation (dev
 context only). Prefer them over reading source files: they report what TYPO3
 actually computed, not what the code might do.
 
+## Use a tool instead of reading files
+
+| Instead of reading…                  | …use                  |
+| ------------------------------------ | --------------------- |
+| `Configuration/TCA/*.php`            | `typo3-tca`           |
+| `*.typoscript` / guessing the setup  | `typo3-typoscript`    |
+| `RequestMiddlewares.php`             | `typo3-middlewares`   |
+| event listeners in `Services.yaml`   | `typo3-events`        |
+| `tail -f var/log/*.log`              | `typo3-logs-tail`     |
+
 ## Diagnose instead of guessing
 
 **"This page is slow":**

@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
+use KonradMichalik\Typo3AiMate\Mcp\Enum\MiddlewareStack;
 use Mcp\Capability\Attribute\McpTool;
 use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
@@ -26,9 +27,12 @@ final readonly class MiddlewaresTool
 {
     public function __construct(private Typo3CliRunner $typo3) {}
 
+    /**
+     * @param MiddlewareStack $stack frontend (default) | backend — which request stack's middleware order to resolve
+     */
     #[McpTool(name: 'typo3-middlewares', title: 'TYPO3 Middlewares', description: 'Resolved PSR-15 middleware order of a stack (frontend|backend).')]
-    public function list(string $stack = 'frontend'): string
+    public function list(MiddlewareStack $stack = MiddlewareStack::Frontend): string
     {
-        return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:middlewares:list', [], ['stack' => $stack]));
+        return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:middlewares:list', [], ['stack' => $stack->value]));
     }
 }

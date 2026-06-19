@@ -38,6 +38,9 @@ final readonly class PerformanceTool
             : $this->profiles->summarize($profile));
     }
 
+    /**
+     * @param int $limit maximum number of recent profiles to list
+     */
     #[McpTool(name: 'typo3-profiler-list', title: 'TYPO3 Profiler: List', description: 'List the most recent request profiles as compact summaries (token, url, status, timing, queries, cache), each with a resource_uri for the full profile.')]
     public function list(int $limit = 20): string
     {
@@ -45,6 +48,11 @@ final readonly class PerformanceTool
         return ResponseEncoder::encode(['profiles' => $this->profiles->summaries($limit)]);
     }
 
+    /**
+     * @param string|null $url    substring matched against the request URL; omit to match any URL
+     * @param int|null    $status HTTP status code to match (e.g. 500); omit to match any status.
+     * @param int         $limit  maximum number of matching profiles to return
+     */
     #[McpTool(name: 'typo3-profiler-search', title: 'TYPO3 Profiler: Search', description: 'Search request profiles by url substring and/or HTTP status; returns matching summaries (with resource_uri), newest first.')]
     public function search(?string $url = null, ?int $status = null, int $limit = 20): string
     {
@@ -52,6 +60,9 @@ final readonly class PerformanceTool
         return ResponseEncoder::encode(['profiles' => $this->profiles->search($url, $status, $limit)]);
     }
 
+    /**
+     * @param string $token profiler token (= request_id, correlates with logs) identifying the profile
+     */
     #[McpTool(name: 'typo3-profiler-get', title: 'TYPO3 Profiler: Get', description: 'Compact summary of a single request profile by its token (= request_id, correlates with logs), plus a resource_uri to read the full profile.')]
     public function get(string $token): string
     {
