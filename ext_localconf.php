@@ -11,17 +11,12 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
+use KonradMichalik\Typo3AiMate\Configuration;
+
 defined('TYPO3') || exit;
 
-(static function (): void {
-    // Dev-only: capture the caller's backtrace when a deprecation is logged so
-    // the typo3-deprecations tool can report a high-confidence origin. Only adds
-    // a processor to the (default-disabled) deprecations channel; no effect until
-    // deprecation logging is enabled.
-    if (!TYPO3\CMS\Core\Core\Environment::getContext()->isDevelopment()) {
-        return;
-    }
-
-    $config = &$GLOBALS['TYPO3_CONF_VARS']['LOG']['TYPO3']['CMS']['deprecations']['processorConfiguration'];
-    $config[Psr\Log\LogLevel::NOTICE][KonradMichalik\Typo3AiMate\Log\DeprecationBacktraceProcessor::class] ??= [];
-})();
+// Dev-only: capture the caller's backtrace when a deprecation is logged so the
+// typo3-deprecations tool can report a high-confidence origin.
+if (Configuration::isDeprecationTrackingActive()) {
+    Configuration::registerDeprecationBacktraceProcessor();
+}

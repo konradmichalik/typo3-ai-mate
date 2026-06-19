@@ -26,6 +26,10 @@ final readonly class TcaTool
 {
     public function __construct(private Typo3CliRunner $typo3) {}
 
+    /**
+     * @param string|null $table table name whose resolved (trimmed) TCA to return; omit (or set list=true) to get only the table names
+     * @param bool        $list  true returns just the list of all TCA table names instead of a table's TCA
+     */
     #[McpTool(name: 'typo3-tca', title: 'TYPO3 TCA', description: 'Resolved (trimmed) TCA of a table, or the list of all TCA table names when no table is given.')]
     public function dump(?string $table = null, bool $list = false): string
     {

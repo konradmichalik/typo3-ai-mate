@@ -15,6 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
 use KonradMichalik\Typo3AiMate\Mcp\{DeprecationsTool, EventsTool, ExtensionScannerTool, LogsTool, MiddlewaresTool, PageTool, RenderPageTool, TcaTool, TypoScriptTool, UpgradeWizardsTool};
+use KonradMichalik\Typo3AiMate\Mcp\Enum\{LogLevel, MiddlewareStack, OutputMode, TypoScriptType};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -91,7 +92,7 @@ final class McpToolWrappersTest extends TestCase
     #[Test]
     public function typoScriptToolForwardsPageIdTypeAndPath(): void
     {
-        $result = $this->decode((new TypoScriptTool($this->runner))->dump(7, 'constants', 'lib.foo'));
+        $result = $this->decode((new TypoScriptTool($this->runner))->dump(7, TypoScriptType::Constants, 'lib.foo'));
 
         self::assertSame('typo3-ai-mate:typoscript:dump', $result['command']);
         self::assertSame(['7', '--type', 'constants', '--path', 'lib.foo'], $result['args']);
@@ -100,7 +101,7 @@ final class McpToolWrappersTest extends TestCase
     #[Test]
     public function middlewaresToolForwardsTheStackOption(): void
     {
-        $result = $this->decode((new MiddlewaresTool($this->runner))->list('backend'));
+        $result = $this->decode((new MiddlewaresTool($this->runner))->list(MiddlewareStack::Backend));
 
         self::assertSame('typo3-ai-mate:middlewares:list', $result['command']);
         self::assertSame(['--stack', 'backend'], $result['args']);
@@ -136,7 +137,7 @@ final class McpToolWrappersTest extends TestCase
     #[Test]
     public function extensionScannerToolForwardsFullModeAndOwnCodeFlag(): void
     {
-        $result = $this->decode((new ExtensionScannerTool($this->runner))->scan(null, 'full', true));
+        $result = $this->decode((new ExtensionScannerTool($this->runner))->scan(null, OutputMode::Full, true));
 
         self::assertSame('typo3-ai-mate:upgrade:scan', $result['command']);
         self::assertSame(['--format', 'full', '--own-code'], $result['args']);
@@ -181,7 +182,7 @@ final class McpToolWrappersTest extends TestCase
     #[Test]
     public function logsSearchForwardsNonEmptyFiltersOnlyAndDefaultsToSummary(): void
     {
-        $result = $this->decode((new LogsTool($this->runner))->search('boom', 'error'));
+        $result = $this->decode((new LogsTool($this->runner))->search('boom', LogLevel::Error));
 
         self::assertSame('typo3-ai-mate:logs:search', $result['command']);
         self::assertSame(['--query', 'boom', '--level', 'error', '--limit', '50', '--format', 'summary'], $result['args']);
@@ -190,7 +191,7 @@ final class McpToolWrappersTest extends TestCase
     #[Test]
     public function logsByLevelForwardsLevelRequestIdAndMode(): void
     {
-        $result = $this->decode((new LogsTool($this->runner))->byLevel('error', 'abc123', 50, 'full', '2h'));
+        $result = $this->decode((new LogsTool($this->runner))->byLevel(LogLevel::Error, 'abc123', 50, OutputMode::Full, '2h'));
 
         self::assertSame('typo3-ai-mate:logs:search', $result['command']);
         self::assertSame(['--level', 'error', '--request-id', 'abc123', '--limit', '50', '--format', 'full', '--since', '2h'], $result['args']);

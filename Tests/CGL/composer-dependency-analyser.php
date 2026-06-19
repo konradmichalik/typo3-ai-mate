@@ -25,7 +25,14 @@ $configuration
     ->addPathToScan($rootPath.'/Configuration', false)
     ->addPathsToExclude([
         $rootPath.'/Tests/CGL',
+        // Test fixtures deliberately reference core classes removed in old TYPO3
+        // versions so the extension scanner has something to flag — not real code.
+        $rootPath.'/Tests/Functional/Fixtures',
     ])
+    // helgesverre/toon is used at runtime by ai-mate's ResponseEncoder to encode tool
+    // responses as TOON, but this package never references its symbols directly — so the
+    // analyser cannot detect the link. It is required on purpose (see composer-unused.php).
+    ->ignoreErrorsOnPackage('helgesverre/toon', [ComposerDependencyAnalyser\Config\ErrorType::UNUSED_DEPENDENCY])
 ;
 
 return $configuration;

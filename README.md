@@ -74,6 +74,13 @@ claude mcp add typo3-ai-mate --scope project -- ./vendor/bin/mate serve         
 
 The MCP tools run in the **Mate process** (its own Symfony DI container, `Configuration/Mate.php`). They boot no TYPO3; they reach it by shelling out to `vendor/bin/typo3 <command>` (`TYPO3_CONTEXT=Development`, stdout→JSON) via the `Typo3CliRunner` service, or by reading profile artifacts directly. The console commands run in the **TYPO3 process** (TYPO3 DI, `Configuration/Services.yaml`) and emit raw JSON.
 
+```mermaid
+flowchart LR
+    A["AI agent (e.g. Claude)"] -->|MCP| B["Mate process (typo3-* tools)"]
+    B -->|shell out| C["TYPO3 process (vendor/bin/typo3)"]
+    C -->|JSON| B
+```
+
 ### Tools
 
 | Area | MCP tool | Purpose |
