@@ -28,7 +28,7 @@ AI assistants normally read your raw source and config files and _guess_ at the 
 
 `typo3-ai-mate` hands the assistant that already-resolved state instead — see [Tools](#tools) below for the full list of what it exposes. This is often more token-efficient too: a compact resolved summary costs far fewer tokens than having the assistant read and reason over the raw source and config files.
 
-### [Use cases](docs/USE-CASES.md)
+### Use cases
 
 - **[Slow page](docs/USE-CASES.md#slow-page)** — _"This page is slow — find the performance problem."_ The assistant reads the profile, spots N+1 queries / cache state / timing, and diagnoses instead of guessing.
 - **[Error page](docs/USE-CASES.md#error-page)** — locate an exception in the logs and tie it back to the page that produced it.
@@ -38,7 +38,7 @@ AI assistants normally read your raw source and config files and _guess_ at the 
 
 ### Requirements
 
-* TYPO3 13.4 LTS & 14.0+
+* TYPO3 13.4 LTS & 14.3 LTS
 * PHP 8.2+
 * Composer mode
 
@@ -49,7 +49,7 @@ composer require --dev konradmichalik/typo3-ai-mate
 ```
 
 > [!NOTE]
-> Requiring `typo3-ai-mate` automatically pulls in `symfony/ai-mate` (the MCP server and `mate` binary) and [`konradmichalik/typo3-ai-mate`](https://packagist.org/packages/konradmichalik/typo3-ai-mate) (the profile source for the `typo3-profiler-*` tools) — no separate installs needed.
+> Requiring `typo3-ai-mate` automatically pulls in `symfony/ai-mate` (the MCP server and `mate` binary) and [`konradmichalik/typo3-request-profiler`](https://packagist.org/packages/konradmichalik/typo3-request-profiler) (the profile source for the `typo3-profiler-*` tools) — no separate installs needed.
 
 ## 🔌 Connect your assistant
 
@@ -76,19 +76,19 @@ The MCP tools run in the **Mate process** (its own Symfony DI container, `Config
 
 ### Tools
 
-| MCP tool | Purpose |
-|---|---|
-| `typo3-profiler-latest` / `-list` / `-search` / `-get` | Inspect recorded per-request profiles as compact summaries (timing, N+1, cache, `page.id`), each linking a `typo3-profiler://profile/{token}` resource for the full SQL/section detail. |
-| `typo3-page` | Show a page's composition: content elements, cache signals and `USER_INT` plugins. |
-| `typo3-logs-search` / `-tail` / `-by-level` | Search, tail or filter the TYPO3 logs. Returns a compact summary (distinct messages with occurrence counts and `lastSeen`, no stack traces) by default; pass `mode=full` for individual entries with truncated traces, and `since` (e.g. `1h`, `2d`) to scope to recent entries. |
-| `typo3-tca` | Dump the resolved (merged, trimmed) TCA of a table. |
-| `typo3-typoscript` | Dump the resolved frontend TypoScript of a page. |
-| `typo3-middlewares` | List the resolved PSR-15 middleware order. |
-| `typo3-events` | List the resolved PSR-14 event listener registry. |
-| `typo3-upgrade-wizards` | List pending and completed upgrade wizards — outstanding DB/config migrations. |
-| `typo3-extension-scanner` | Statically scan an extension — or all non-core extensions — against the core breaking/deprecation matchers. Returns a compact summary by default (matches grouped by message with strong/weak counts and the affected files, plus a per-origin rollup when scanning all); pass `mode=full` for individual matches with line content, and `ownCode=true` to skip third-party (vendor) packages. |
-| `typo3-deprecations` | Report runtime deprecation notices, deduplicated and counted. Each one carries `origins` — the likely caller in own code. With deprecation logging enabled, a dev-only log processor records the caller's backtrace at log time for a high-confidence file:line; otherwise it falls back to a class-aware static reverse search across own PHP/Fluid files. |
-| `typo3-render-page` | Render a frontend page via an internal HTTP request (no external curl/Playwright) so runtime notices fire, and report the HTTP status plus the log entries written during that request. Requires a running webserver (e.g. DDEV). |
+| Area | MCP tool | Purpose |
+|---|---|---|
+| Profiling | `typo3-profiler-latest` / `-list` / `-search` / `-get` | Inspect recorded per-request profiles as compact summaries (timing, N+1, cache, `page.id`), each linking a `typo3-profiler://profile/{token}` resource for the full SQL/section detail. |
+| Page | `typo3-page` | Show a page's composition: content elements, cache signals and `USER_INT` plugins. |
+| Logs | `typo3-logs-search` / `-tail` / `-by-level` | Search, tail or filter the TYPO3 logs. Returns a compact summary (distinct messages with occurrence counts and `lastSeen`, no stack traces) by default; pass `mode=full` for individual entries with truncated traces, and `since` (e.g. `1h`, `2d`) to scope to recent entries. |
+| TCA | `typo3-tca` | Dump the resolved (merged, trimmed) TCA of a table. |
+| TypoScript | `typo3-typoscript` | Dump the resolved frontend TypoScript of a page. |
+| Middlewares | `typo3-middlewares` | List the resolved PSR-15 middleware order. |
+| Events | `typo3-events` | List the resolved PSR-14 event listener registry. |
+| Upgrade | `typo3-upgrade-wizards` | List pending and completed upgrade wizards — outstanding DB/config migrations. |
+| Extension scanner | `typo3-extension-scanner` | Statically scan an extension — or all non-core extensions — against the core breaking/deprecation matchers. Returns a compact summary by default (matches grouped by message with strong/weak counts and the affected files, plus a per-origin rollup when scanning all); pass `mode=full` for individual matches with line content, and `ownCode=true` to skip third-party (vendor) packages. |
+| Deprecations | `typo3-deprecations` | Report runtime deprecation notices, deduplicated and counted. Each one carries `origins` — the likely caller in own code. With deprecation logging enabled, a dev-only log processor records the caller's backtrace at log time for a high-confidence file:line; otherwise it falls back to a class-aware static reverse search across own PHP/Fluid files. |
+| Rendering | `typo3-render-page` | Render a frontend page via an internal HTTP request (no external curl/Playwright) so runtime notices fire, and report the HTTP status plus the log entries written during that request. Requires a running webserver (e.g. DDEV). |
 
 ## 💡 Development
 
