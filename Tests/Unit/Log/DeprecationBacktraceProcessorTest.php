@@ -43,6 +43,7 @@ final class DeprecationBacktraceProcessorTest extends TestCase
         touch($this->base.'/packages/my_ext/Classes/NewsMiddleware.php');
         touch($this->base.'/var/cache/code/Template.php');
         touch($this->base.'/vendor/typo3/cms-core/Logger.php');
+        touch($this->base.'/index.php'); // front controller (public path entry)
 
         Environment::initialize(
             new ApplicationContext('Testing'),
@@ -124,6 +125,18 @@ final class DeprecationBacktraceProcessorTest extends TestCase
     {
         $origin = $this->processor->firstOwnFrame([
             ['file' => $this->base.'/packages/my_ext/Classes/NewsMiddleware.php', 'line' => 5, 'class' => self::createStub(RequestHandlerInterface::class)::class, 'function' => 'handle'],
+        ]);
+
+        self::assertNull($origin);
+    }
+
+    #[Test]
+    public function firstOwnFrameSkipsTheFrontControllerEntryScript(): void
+    {
+        // A vendor-only deprecation leaves only the public/index.php Application->run()
+        // frame as "own" — it bootstraps the request and must not be reported.
+        $origin = $this->processor->firstOwnFrame([
+            ['file' => $this->base.'/index.php', 'line' => 28, 'class' => 'TYPO3\\CMS\\Frontend\\Http\\Application', 'function' => 'run'],
         ]);
 
         self::assertNull($origin);

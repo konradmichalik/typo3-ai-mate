@@ -76,15 +76,25 @@ final class DeprecationBacktraceProcessor extends AbstractProcessor
 
     /**
      * Whether a frame is request-dispatch infrastructure rather than the code
-     * that triggered the deprecation: generated code under the var/ path
-     * (compiled Fluid templates, caches) or a PSR-15 middleware/request-handler
-     * whose process()/handle() just routes the request.
+     * that triggered the deprecation: the front-controller entry script,
+     * generated code under the var/ path (compiled Fluid templates, caches), or
+     * a PSR-15 middleware/request-handler whose process()/handle() just routes
+     * the request.
      *
      * @param array<string, mixed> $frame
      */
     private function isPlumbing(string $file, array $frame): bool
     {
-        if (str_starts_with($this->canonical($file).'/', $this->canonical(Environment::getVarPath()).'/')) {
+        $canonical = $this->canonical($file);
+
+        // The front controller (public/index.php → Application->run()) only
+        // bootstraps the request; it is never the deprecation trigger.
+        if ($canonical === $this->canonical(Environment::getPublicPath().'/index.php')) {
+            return true;
+        }
+
+        // Generated code under var/ (compiled Fluid templates, caches) is not source.
+        if (str_starts_with($canonical.'/', $this->canonical(Environment::getVarPath()).'/')) {
             return true;
         }
 
