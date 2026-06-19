@@ -19,6 +19,8 @@
 		"konradmichalik/typo3-request-profiler": "^0.2",
 		"mcp/sdk": "^0.5",
 		"nikic/php-parser": "^5.0",
+		"psr/http-server-handler": "^1.0",
+		"psr/http-server-middleware": "^1.0",
 		"symfony/ai-mate": "^0.9",
 		"symfony/console": "^6.4 || ^7.0",
 		"symfony/dependency-injection": "^6.4 || ^7.0",

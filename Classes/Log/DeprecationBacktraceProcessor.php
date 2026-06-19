@@ -14,11 +14,13 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Log;
 
 use KonradMichalik\Typo3AiMate\Support\OwnPackages;
+use Psr\Http\Server\{MiddlewareInterface, RequestHandlerInterface};
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Log\LogRecord;
 use TYPO3\CMS\Core\Log\Processor\AbstractProcessor;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
+use function is_a;
 use function is_int;
 use function is_string;
 use function strlen;
@@ -49,8 +51,11 @@ final class DeprecationBacktraceProcessor extends AbstractProcessor
     }
 
     /**
-     * First backtrace frame located in own (non-vendor) code, as
-     * "project-relative/path.php:line", or null if none.
+     * First backtrace frame located in own (non-vendor) source code, as
+     * "project-relative/path.php:line", or null if none. The backtrace is
+     * ordered trigger-nearest first, so the first surviving frame is the closest
+     * real caller; framework plumbing (PSR-15 dispatch, generated code) is
+     * skipped so a routing pass-through is never mistaken for the caller.
      *
      * @param list<array<string, mixed>> $backtrace
      */
@@ -59,7 +64,7 @@ final class DeprecationBacktraceProcessor extends AbstractProcessor
         foreach ($backtrace as $frame) {
             $file = isset($frame['file']) && is_string($frame['file']) ? $frame['file'] : '';
             $line = isset($frame['line']) && is_int($frame['line']) ? $frame['line'] : 0;
-            if ('' === $file || 0 === $line || !OwnPackages::isOwn($file)) {
+            if ('' === $file || 0 === $line || !OwnPackages::isOwn($file) || $this->isPlumbing($file, $frame)) {
                 continue;
             }
 
@@ -69,11 +74,41 @@ final class DeprecationBacktraceProcessor extends AbstractProcessor
         return null;
     }
 
+    /**
+     * Whether a frame is request-dispatch infrastructure rather than the code
+     * that triggered the deprecation: generated code under the var/ path
+     * (compiled Fluid templates, caches) or a PSR-15 middleware/request-handler
+     * whose process()/handle() just routes the request.
+     *
+     * @param array<string, mixed> $frame
+     */
+    private function isPlumbing(string $file, array $frame): bool
+    {
+        if (str_starts_with($this->canonical($file).'/', $this->canonical(Environment::getVarPath()).'/')) {
+            return true;
+        }
+
+        $class = is_string($frame['class'] ?? null) ? $frame['class'] : '';
+        $function = is_string($frame['function'] ?? null) ? $frame['function'] : '';
+
+        // Only the dispatch methods route the request; other methods on a PSR-15
+        // class can be a genuine caller, so they must not be hidden.
+        return ('process' === $function && is_a($class, MiddlewareInterface::class, true))
+            || ('handle' === $function && is_a($class, RequestHandlerInterface::class, true));
+    }
+
     private function relative(string $file): string
     {
-        $file = GeneralUtility::fixWindowsFilePath($file);
-        $projectPath = GeneralUtility::fixWindowsFilePath(Environment::getProjectPath()).'/';
+        $projectPath = $this->canonical(Environment::getProjectPath()).'/';
+        $file = $this->canonical($file);
 
         return str_starts_with($file, $projectPath) ? substr($file, strlen($projectPath)) : $file;
+    }
+
+    private function canonical(string $path): string
+    {
+        $real = realpath($path);
+
+        return GeneralUtility::fixWindowsFilePath(false !== $real ? $real : $path);
     }
 }
