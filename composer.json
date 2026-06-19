@@ -1,6 +1,6 @@
 {
 	"name": "konradmichalik/typo3-ai-mate",
-	"description": "Dev-only TYPO3 extension and symfony/ai-mate bridge that exposes the resolved runtime state of a TYPO3 installation (TCA, pages, TypoScript, middlewares, logs, request profiles) to AI coding assistants via MCP tools.",
+	"description": "AI Mate - Dev-only TYPO3 extension and symfony/ai-mate bridge that exposes the resolved runtime state of a TYPO3 installation (TCA, pages, TypoScript, middlewares, logs, request profiles) to AI coding assistants via MCP tools.",
 	"license": [
 		"GPL-2.0-or-later"
 	],
@@ -8,7 +8,7 @@
 	"authors": [
 		{
 			"name": "Konrad Michalik",
-			"email": "km@move-elevator.de",
+			"email": "hej@konradmichalik.dev",
 			"role": "Maintainer"
 		}
 	],
