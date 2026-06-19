@@ -26,14 +26,14 @@
 		"symfony/dependency-injection": "^6.4 || ^7.0",
 		"symfony/finder": "^6.4 || ^7.0",
 		"symfony/process": "^6.4 || ^7.0",
-		"typo3/cms-core": "^13.4 || ^14.0",
-		"typo3/cms-install": "^13.4 || ^14.0"
+		"typo3/cms-core": "^13.4 || ^14.3",
+		"typo3/cms-install": "^13.4 || ^14.3"
 	},
 	"require-dev": {
 		"composer/class-map-generator": "^1.0",
 		"phpunit/phpcov": "^9.0 || ^10.0 || ^11.0 || ^13.0",
 		"phpunit/phpunit": "^10.5 || ^11.0 || ^12.0",
-		"typo3/cms-base-distribution": "^13.4 || ^14.0",
+		"typo3/cms-base-distribution": "^13.4 || ^14.3",
 		"typo3/testing-framework": "^9.5"
 	},
 	"autoload": {
