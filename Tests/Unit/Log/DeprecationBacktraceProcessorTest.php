@@ -130,6 +130,18 @@ final class DeprecationBacktraceProcessorTest extends TestCase
     }
 
     #[Test]
+    public function firstOwnFrameKeepsNonDispatchMethodsOnPsr15Classes(): void
+    {
+        // A deprecation triggered in a middleware's own helper (not process()) is
+        // a genuine caller and must not be hidden as plumbing.
+        $origin = $this->processor->firstOwnFrame([
+            ['file' => $this->base.'/packages/my_ext/Classes/NewsMiddleware.php', 'line' => 51, 'class' => self::createStub(MiddlewareInterface::class)::class, 'function' => 'enrichRequest'],
+        ]);
+
+        self::assertSame('packages/my_ext/Classes/NewsMiddleware.php:51', $origin);
+    }
+
+    #[Test]
     public function firstOwnFrameSkipsGeneratedCodeUnderTheVarPath(): void
     {
         // A compiled Fluid template under var/ is not source — skip it, keep the real caller.

@@ -89,9 +89,12 @@ final class DeprecationBacktraceProcessor extends AbstractProcessor
         }
 
         $class = is_string($frame['class'] ?? null) ? $frame['class'] : '';
+        $function = is_string($frame['function'] ?? null) ? $frame['function'] : '';
 
-        return '' !== $class
-            && (is_a($class, MiddlewareInterface::class, true) || is_a($class, RequestHandlerInterface::class, true));
+        // Only the dispatch methods route the request; other methods on a PSR-15
+        // class can be a genuine caller, so they must not be hidden.
+        return ('process' === $function && is_a($class, MiddlewareInterface::class, true))
+            || ('handle' === $function && is_a($class, RequestHandlerInterface::class, true));
     }
 
     private function relative(string $file): string
