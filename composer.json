@@ -19,9 +19,18 @@
 		"konradmichalik/typo3-request-profiler": "^0.2",
 		"mcp/sdk": "^0.6",
 		"nikic/php-parser": "^5.7.0",
+<<<<<<< HEAD
 		"psr/http-server-handler": "^1.0",
+		"psr/http-server-middleware": "^1.0.2",
+=======
+		"psr/http-server-handler": "^1.0.2",
 		"psr/http-server-middleware": "^1.0",
+<<<<<<< HEAD
 		"psr/log": "^3.0.2",
+=======
+>>>>>>> origin/main
+		"psr/log": "^3.0",
+>>>>>>> origin/main
 		"symfony/ai-mate": "^0.10",
 		"symfony/console": "^6.4 || ^7.0",
 		"symfony/dependency-injection": "^6.4 || ^7.0",
@@ -31,7 +40,7 @@
 		"typo3/cms-install": "^13.4 || ^14.3"
 	},
 	"require-dev": {
-		"composer/class-map-generator": "^1.0",
+		"composer/class-map-generator": "^1.7.3",
 		"phpunit/phpcov": "^9.0 || ^10.0 || ^11.0 || ^13.0",
 		"phpunit/phpunit": "^10.5 || ^11.0 || ^12.0",
 		"psr/http-message": "^1.0 || ^2.0",
