@@ -19,18 +19,9 @@
 		"konradmichalik/typo3-request-profiler": "^0.2",
 		"mcp/sdk": "^0.6",
 		"nikic/php-parser": "^5.7.0",
-<<<<<<< HEAD
-		"psr/http-server-handler": "^1.0",
-		"psr/http-server-middleware": "^1.0.2",
-=======
 		"psr/http-server-handler": "^1.0.2",
-		"psr/http-server-middleware": "^1.0",
-<<<<<<< HEAD
+		"psr/http-server-middleware": "^1.0.2",
 		"psr/log": "^3.0.2",
-=======
->>>>>>> origin/main
-		"psr/log": "^3.0",
->>>>>>> origin/main
 		"symfony/ai-mate": "^0.10",
 		"symfony/console": "^6.4 || ^7.0",
 		"symfony/dependency-injection": "^6.4 || ^7.0",
