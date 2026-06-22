@@ -25,8 +25,12 @@
 =======
 		"psr/http-server-handler": "^1.0.2",
 		"psr/http-server-middleware": "^1.0",
+<<<<<<< HEAD
+		"psr/log": "^3.0.2",
+=======
 >>>>>>> origin/main
 		"psr/log": "^3.0",
+>>>>>>> origin/main
 		"symfony/ai-mate": "^0.10",
 		"symfony/console": "^6.4 || ^7.0",
 		"symfony/dependency-injection": "^6.4 || ^7.0",
