@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "18cdd1cc8202f0c5d0af7bfe658436be",
+    "content-hash": "96dfabecea62ecd04c00312c89452e66",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -1469,16 +1469,16 @@
         },
         {
             "name": "mcp/sdk",
-            "version": "v0.5.0",
+            "version": "v0.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/modelcontextprotocol/php-sdk.git",
-                "reference": "fb2c8c2ee4ab2791239c5f534bb07bfb7589d4e8"
+                "reference": "433c84b58af346dd32f15f9909679e96a46ebe23"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/modelcontextprotocol/php-sdk/zipball/fb2c8c2ee4ab2791239c5f534bb07bfb7589d4e8",
-                "reference": "fb2c8c2ee4ab2791239c5f534bb07bfb7589d4e8",
+                "url": "https://api.github.com/repos/modelcontextprotocol/php-sdk/zipball/433c84b58af346dd32f15f9909679e96a46ebe23",
+                "reference": "433c84b58af346dd32f15f9909679e96a46ebe23",
                 "shasum": ""
             },
             "require": {
@@ -1547,9 +1547,9 @@
             "description": "Model Context Protocol SDK for Client and Server applications in PHP",
             "support": {
                 "issues": "https://github.com/modelcontextprotocol/php-sdk/issues",
-                "source": "https://github.com/modelcontextprotocol/php-sdk/tree/v0.5.0"
+                "source": "https://github.com/modelcontextprotocol/php-sdk/tree/v0.6.0"
             },
-            "time": "2026-04-26T13:37:40+00:00"
+            "time": "2026-06-02T15:47:04+00:00"
         },
         {
             "name": "nikic/php-parser",
@@ -2670,23 +2670,23 @@
         },
         {
             "name": "symfony/ai-mate",
-            "version": "v0.9.0",
+            "version": "v0.10.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/ai-mate.git",
-                "reference": "e38aefde76cc60e226fa7abca1771733cc1a4557"
+                "reference": "920d27317b229fd058843d25770ade3317c2cf00"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/ai-mate/zipball/e38aefde76cc60e226fa7abca1771733cc1a4557",
-                "reference": "e38aefde76cc60e226fa7abca1771733cc1a4557",
+                "url": "https://api.github.com/repos/symfony/ai-mate/zipball/920d27317b229fd058843d25770ade3317c2cf00",
+                "reference": "920d27317b229fd058843d25770ade3317c2cf00",
                 "shasum": ""
             },
             "require": {
-                "mcp/sdk": "^0.5",
+                "mcp/sdk": "^0.6",
                 "php": ">=8.2",
                 "psr/log": "^2.0|^3.0",
-                "symfony/ai-mate-composer-plugin": "^0.9",
+                "symfony/ai-mate-composer-plugin": "^0.10",
                 "symfony/config": "^5.4|^6.4|^7.3|^8.0",
                 "symfony/console": "^5.4|^6.4|^7.3|^8.0",
                 "symfony/dependency-injection": "^5.4|^6.4|^7.3|^8.0",
@@ -2751,7 +2751,7 @@
                 "symfony"
             ],
             "support": {
-                "source": "https://github.com/symfony/ai-mate/tree/v0.9.0"
+                "source": "https://github.com/symfony/ai-mate/tree/v0.10.0"
             },
             "funding": [
                 {
@@ -2771,20 +2771,20 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-05-16T01:01:33+00:00"
+            "time": "2026-06-15T22:48:31+00:00"
         },
         {
             "name": "symfony/ai-mate-composer-plugin",
-            "version": "v0.9.0",
+            "version": "v0.10.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/ai-mate-composer-plugin.git",
-                "reference": "0e449d57b71b0f6fd56fd2b9353d4bccb628c476"
+                "reference": "61c793b096c77d5e50d0784a82e9a87a7a9a1dc0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/ai-mate-composer-plugin/zipball/0e449d57b71b0f6fd56fd2b9353d4bccb628c476",
-                "reference": "0e449d57b71b0f6fd56fd2b9353d4bccb628c476",
+                "url": "https://api.github.com/repos/symfony/ai-mate-composer-plugin/zipball/61c793b096c77d5e50d0784a82e9a87a7a9a1dc0",
+                "reference": "61c793b096c77d5e50d0784a82e9a87a7a9a1dc0",
                 "shasum": ""
             },
             "require": {
@@ -2797,7 +2797,7 @@
                 "phpstan/phpstan-phpunit": "^2.0",
                 "phpstan/phpstan-strict-rules": "^2.0",
                 "phpunit/phpunit": "^11.5.53",
-                "symfony/ai-mate": "^0.9"
+                "symfony/ai-mate": "^0.10"
             },
             "type": "composer-plugin",
             "extra": {
@@ -2840,7 +2840,7 @@
                 "mcp"
             ],
             "support": {
-                "source": "https://github.com/symfony/ai-mate-composer-plugin/tree/v0.9.0"
+                "source": "https://github.com/symfony/ai-mate-composer-plugin/tree/v0.10.0"
             },
             "funding": [
                 {
@@ -2860,7 +2860,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-05-16T01:01:33+00:00"
+            "time": "2026-06-15T22:48:31+00:00"
         },
         {
             "name": "symfony/cache",
@@ -6924,16 +6924,16 @@
         },
         {
             "name": "webmozart/assert",
-            "version": "2.4.0",
+            "version": "2.4.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/webmozarts/assert.git",
-                "reference": "9007ea6f45ecf352a9422b36644e4bfc039b9155"
+                "reference": "2ccb7c2e821038c03a3e6e1700c570c158c55f70"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/webmozarts/assert/zipball/9007ea6f45ecf352a9422b36644e4bfc039b9155",
-                "reference": "9007ea6f45ecf352a9422b36644e4bfc039b9155",
+                "url": "https://api.github.com/repos/webmozarts/assert/zipball/2ccb7c2e821038c03a3e6e1700c570c158c55f70",
+                "reference": "2ccb7c2e821038c03a3e6e1700c570c158c55f70",
                 "shasum": ""
             },
             "require": {
@@ -6984,9 +6984,9 @@
             ],
             "support": {
                 "issues": "https://github.com/webmozarts/assert/issues",
-                "source": "https://github.com/webmozarts/assert/tree/2.4.0"
+                "source": "https://github.com/webmozarts/assert/tree/2.4.1"
             },
-            "time": "2026-05-20T13:07:01+00:00"
+            "time": "2026-06-15T15:31:57+00:00"
         }
     ],
     "packages-dev": [
