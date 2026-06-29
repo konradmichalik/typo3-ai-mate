@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "9f802d7bfea39cf39357941049595b2e",
+    "content-hash": "c698c15a72590778a3cfe84e6b98bdb3",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -1269,16 +1269,16 @@
         },
         {
             "name": "konradmichalik/typo3-request-profiler",
-            "version": "0.2.0",
+            "version": "0.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/konradmichalik/typo3-request-profiler.git",
-                "reference": "700589d01c9f7644adfe74e8e989c96d35576f2d"
+                "reference": "66733767614a7793bbd3431d0d183ecc143cdf4e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/konradmichalik/typo3-request-profiler/zipball/700589d01c9f7644adfe74e8e989c96d35576f2d",
-                "reference": "700589d01c9f7644adfe74e8e989c96d35576f2d",
+                "url": "https://api.github.com/repos/konradmichalik/typo3-request-profiler/zipball/66733767614a7793bbd3431d0d183ecc143cdf4e",
+                "reference": "66733767614a7793bbd3431d0d183ecc143cdf4e",
                 "shasum": ""
             },
             "require": {
@@ -1288,15 +1288,15 @@
                 "psr/http-message": "^1.0 || ^2.0",
                 "psr/http-server-handler": "^1.0.2",
                 "psr/http-server-middleware": "^1.0.2",
-                "psr/log": "^3.0",
+                "psr/log": "^3.0.2",
                 "typo3/cms-core": "^13.4 || ^14.0",
                 "typo3/cms-frontend": "^13.4 || ^14.0"
             },
             "require-dev": {
-                "composer/class-map-generator": "^1.0",
-                "eliashaeussler/version-bumper": "^4.0",
+                "composer/class-map-generator": "^1.7.3",
+                "eliashaeussler/version-bumper": "^4.0.3",
                 "phpunit/phpcov": "^9.0 || ^10.0 || ^11.0 || ^13.0",
-                "phpunit/phpunit": "^10.5 || ^11.0 || ^12.0",
+                "phpunit/phpunit": "^10.5 || ^11.0 || ^12.0 || ^13.0",
                 "typo3/cms-base-distribution": "^13.4 || ^14.0",
                 "typo3/cms-lowlevel": "^13.4 || ^14.0",
                 "typo3/testing-framework": "^8.2 || ^9.5"
@@ -1331,9 +1331,9 @@
             "description": "Dev-only TYPO3 frontend request profiler that records SQL queries, N+1 patterns, cache state and timing as compact JSON profiles for AI coding assistants.",
             "support": {
                 "issues": "https://github.com/konradmichalik/typo3-request-profiler/issues",
-                "source": "https://github.com/konradmichalik/typo3-request-profiler/tree/0.2.0"
+                "source": "https://github.com/konradmichalik/typo3-request-profiler/tree/0.3.0"
             },
-            "time": "2026-06-17T14:53:39+00:00"
+            "time": "2026-06-29T08:57:15+00:00"
         },
         {
             "name": "lolli42/finediff",

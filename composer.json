@@ -16,7 +16,7 @@
 		"php": "~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0",
 		"ext-mbstring": "*",
 		"helgesverre/toon": "^3.1",
-		"konradmichalik/typo3-request-profiler": "^0.2",
+		"konradmichalik/typo3-request-profiler": "^0.3",
 		"mcp/sdk": "^0.6",
 		"nikic/php-parser": "^5.7.0",
 		"psr/http-server-handler": "^1.0.2",
