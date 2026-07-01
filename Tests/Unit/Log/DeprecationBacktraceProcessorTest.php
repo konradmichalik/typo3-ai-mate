@@ -17,7 +17,9 @@ use KonradMichalik\Typo3AiMate\Log\DeprecationBacktraceProcessor;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Server\{MiddlewareInterface, RequestHandlerInterface};
+use Psr\Log\LogLevel;
 use TYPO3\CMS\Core\Core\{ApplicationContext, Environment};
+use TYPO3\CMS\Core\Log\LogRecord;
 
 /**
  * DeprecationBacktraceProcessorTest.
@@ -164,6 +166,28 @@ final class DeprecationBacktraceProcessorTest extends TestCase
         ]);
 
         self::assertSame('packages/my_ext/Classes/Caller.php:8', $origin);
+    }
+
+    #[Test]
+    public function processLogRecordTagsAnUntaggedRecordWithAnOrigin(): void
+    {
+        $record = new LogRecord('TYPO3.CMS.deprecations', LogLevel::NOTICE, 'is deprecated');
+
+        $result = $this->processor->processLogRecord($record);
+
+        self::assertArrayHasKey(DeprecationBacktraceProcessor::DATA_KEY, $result->getData());
+    }
+
+    #[Test]
+    public function processLogRecordLeavesAnAlreadyTaggedRecordUntouched(): void
+    {
+        $record = new LogRecord('TYPO3.CMS.deprecations', LogLevel::NOTICE, 'is deprecated', [
+            DeprecationBacktraceProcessor::DATA_KEY => 'packages/my_ext/Classes/Caller.php:1',
+        ]);
+
+        $result = $this->processor->processLogRecord($record);
+
+        self::assertSame('packages/my_ext/Classes/Caller.php:1', $result->getData()[DeprecationBacktraceProcessor::DATA_KEY]);
     }
 
     private function removeDir(string $dir): void
