@@ -73,6 +73,23 @@ final class FluidResolverTest extends TestCase
     }
 
     #[Test]
+    public function pickExistingRejectsPathTraversalOutsideTheCandidateRoot(): void
+    {
+        $root = sys_get_temp_dir().'/typo3-ai-mate-fluid-'.bin2hex(random_bytes(8));
+        $base = $root.'/Templates';
+        mkdir($base, 0777, true);
+        file_put_contents($root.'/secret.html', 'x'); // sibling of the root path, outside it
+
+        $result = FluidResolver::pickExisting([['absolute' => $base]], '../secret', 'html');
+
+        self::assertNull($result['file']);
+
+        unlink($root.'/secret.html');
+        rmdir($base);
+        rmdir($root);
+    }
+
+    #[Test]
     public function pickExistingReturnsNullFileWhenNoCandidateMatches(): void
     {
         $result = FluidResolver::pickExisting([

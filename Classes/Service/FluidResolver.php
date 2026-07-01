@@ -94,7 +94,16 @@ final readonly class FluidResolver
             }
             $file = $base.'/'.$relative.'.'.$format;
             $checked[] = $file;
-            if (is_file($file)) {
+
+            // Guard against path traversal via the (user-supplied) name/format:
+            // the resolved file must stay inside the candidate root directory.
+            $real = realpath($file);
+            $realBase = realpath($base);
+            if (false === $real || false === $realBase || !str_starts_with($real, $realBase.\DIRECTORY_SEPARATOR)) {
+                continue;
+            }
+
+            if (is_file($real)) {
                 return ['file' => $file, 'checked' => $checked];
             }
         }
