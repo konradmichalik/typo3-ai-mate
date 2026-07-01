@@ -14,8 +14,8 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{DeprecationsTool, EventsTool, ExtensionScannerTool, LogsTool, MiddlewaresTool, PageTool, RenderPageTool, TcaTool, TypoScriptTool, UpgradeWizardsTool};
-use KonradMichalik\Typo3AiMate\Mcp\Enum\{LogLevel, MiddlewareStack, OutputMode, TypoScriptType};
+use KonradMichalik\Typo3AiMate\Mcp\{DeprecationsTool, EventsTool, ExtensionScannerTool, LogsTool, MiddlewaresTool, PageTool, RenderPageTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
+use KonradMichalik\Typo3AiMate\Mcp\Enum\{LogLevel, MiddlewareStack, OutputMode, TsConfigType, TypoScriptType};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -96,6 +96,24 @@ final class McpToolWrappersTest extends TestCase
 
         self::assertSame('typo3-ai-mate:typoscript:dump', $result['command']);
         self::assertSame(['7', '--type', 'constants', '--path', 'lib.foo'], $result['args']);
+    }
+
+    #[Test]
+    public function tsConfigToolDefaultsToPageTypeAndForwardsPageId(): void
+    {
+        $result = $this->decode((new TsConfigTool($this->runner))->dump(3));
+
+        self::assertSame('typo3-ai-mate:tsconfig:dump', $result['command']);
+        self::assertSame(['3', '--type', 'page'], $result['args']);
+    }
+
+    #[Test]
+    public function tsConfigToolForwardsUserTypeUserUidAndPath(): void
+    {
+        $result = $this->decode((new TsConfigTool($this->runner))->dump(3, TsConfigType::User, 5, 'mod.web_layout'));
+
+        self::assertSame('typo3-ai-mate:tsconfig:dump', $result['command']);
+        self::assertSame(['3', '--type', 'user', '--user', '5', '--path', 'mod.web_layout'], $result['args']);
     }
 
     #[Test]
