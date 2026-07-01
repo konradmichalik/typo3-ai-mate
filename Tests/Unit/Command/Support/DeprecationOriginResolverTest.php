@@ -144,6 +144,25 @@ final class DeprecationOriginResolverTest extends TestCase
     }
 
     #[Test]
+    public function resolveSkipsTooShortMethodTokens(): void
+    {
+        $resolver = new DeprecationOriginResolver([]);
+
+        // "ab" is shorter than the 3-char threshold and is dropped while parsing;
+        // with no own files indexed nothing can be resolved.
+        self::assertSame([], $resolver->resolve('Foo::ab is deprecated.'));
+    }
+
+    #[Test]
+    public function resolveReturnsEmptyWhenTheTraceHasNoOwnFrames(): void
+    {
+        $resolver = new DeprecationOriginResolver([]);
+        $trace = "#0 /app/vendor/typo3/cms-core/Foo.php(10): TYPO3\\CMS\\Core\\Foo->bar()";
+
+        self::assertSame([], $resolver->resolve('bar() is deprecated.', $trace));
+    }
+
+    #[Test]
     public function resolveCapsTheNumberOfStaticOrigins(): void
     {
         $lines = ['<?php'];
