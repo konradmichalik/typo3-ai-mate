@@ -36,4 +36,16 @@ final class TsConfigCommandTest extends TestCase
         self::assertIsArray($result);
         self::assertSame('--type=user requires a --user <uid>.', $result['error']);
     }
+
+    #[Test]
+    public function unknownTypeFailsWithAReadableError(): void
+    {
+        $tester = new CommandTester(new TsConfigCommand());
+        $exitCode = $tester->execute(['pageId' => '1', '--type' => 'bogus']);
+
+        self::assertSame(1, $exitCode);
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        self::assertSame('Invalid --type "bogus"; expected "page" or "user".', $result['error']);
+    }
 }

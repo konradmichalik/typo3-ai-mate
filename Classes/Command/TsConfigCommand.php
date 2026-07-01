@@ -24,7 +24,10 @@ use TYPO3\CMS\Backend\Utility\BackendUtility;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
+use function in_array;
+use function is_array;
 use function is_string;
+use function sprintf;
 
 /**
  * TsConfigCommand.
@@ -48,8 +51,13 @@ final class TsConfigCommand extends AbstractJsonCommand
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $type = $input->getOption('type');
+        if (!in_array($type, ['page', 'user'], true)) {
+            return $this->emit($output, ['error' => sprintf('Invalid --type "%s"; expected "page" or "user".', Cast::string($type))], Command::FAILURE);
+        }
+
         try {
-            $tree = 'user' === $input->getOption('type')
+            $tree = 'user' === $type
                 ? $this->resolveUserTsConfig(Cast::int($input->getOption('user')))
                 : BackendUtility::getPagesTSconfig(Cast::int($input->getArgument('pageId')));
         } catch (Throwable $exception) {
@@ -75,6 +83,9 @@ final class TsConfigCommand extends AbstractJsonCommand
 
         $backendUser = GeneralUtility::makeInstance(BackendUserAuthentication::class);
         $backendUser->setBeUserByUid($userUid);
+        if (!is_array($backendUser->user)) {
+            throw new RuntimeException(sprintf('Backend user with UID %d not found.', $userUid), 1730000002);
+        }
         $backendUser->fetchGroupData();
 
         return $backendUser->getTSConfig();
