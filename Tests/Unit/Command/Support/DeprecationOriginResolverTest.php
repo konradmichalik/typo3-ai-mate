@@ -157,7 +157,7 @@ final class DeprecationOriginResolverTest extends TestCase
     public function resolveReturnsEmptyWhenTheTraceHasNoOwnFrames(): void
     {
         $resolver = new DeprecationOriginResolver([]);
-        $trace = "#0 /app/vendor/typo3/cms-core/Foo.php(10): TYPO3\\CMS\\Core\\Foo->bar()";
+        $trace = '#0 /app/vendor/typo3/cms-core/Foo.php(10): TYPO3\\CMS\\Core\\Foo->bar()';
 
         self::assertSame([], $resolver->resolve('bar() is deprecated.', $trace));
     }

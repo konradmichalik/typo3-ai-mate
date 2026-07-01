@@ -64,7 +64,7 @@ final class LogsCommandTest extends TestCase
     #[Test]
     public function entryReachesSinceComparesTheTimestampAgainstTheBound(): void
     {
-        $bound = (int) strtotime('2024-01-01 00:00:00');
+        $bound = strtotime('2024-01-01 00:00:00');
 
         self::assertTrue($this->command->entryReachesSince(['time' => '2024-06-01 12:00:00'], $bound));
         self::assertFalse($this->command->entryReachesSince(['time' => '2023-01-01 00:00:00'], $bound));
