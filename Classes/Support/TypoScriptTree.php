@@ -56,8 +56,6 @@ final class TypoScriptTree
     {
         $node = self::get($tree, $path);
 
-        return null === $node
-            ? ['error' => sprintf('Path "%s" not found in resolved TypoScript.', $path)]
-            : $node;
+        return $node ?? ['error' => sprintf('Path "%s" not found in resolved TypoScript.', $path)];
     }
 }
