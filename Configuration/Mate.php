@@ -12,7 +12,7 @@ declare(strict_types=1);
  */
 
 use KonradMichalik\Typo3AiMate\Mate\{ProfileProvider, Typo3CliRunner};
-use KonradMichalik\Typo3AiMate\Mcp\{DeprecationsTool, EventsTool, ExtensionScannerTool, LogsTool, MiddlewaresTool, PageTool, PerformanceTool, ProfileResource, RenderPageTool, TcaTool, TypoScriptTool, UpgradeWizardsTool};
+use KonradMichalik\Typo3AiMate\Mcp\{DeprecationsTool, EventsTool, ExtensionScannerTool, FluidResolveTool, LogsTool, MiddlewaresTool, PageTool, PerformanceTool, ProfileResource, RenderPageTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 /*
@@ -38,6 +38,8 @@ return static function (ContainerConfigurator $container): void {
     $services->set(TcaTool::class);
     $services->set(PageTool::class);
     $services->set(TypoScriptTool::class);
+    $services->set(TsConfigTool::class);
+    $services->set(FluidResolveTool::class);
     $services->set(MiddlewaresTool::class);
     $services->set(EventsTool::class);
     $services->set(LogsTool::class);
