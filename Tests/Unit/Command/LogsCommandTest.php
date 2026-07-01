@@ -56,6 +56,22 @@ final class LogsCommandTest extends TestCase
     }
 
     #[Test]
+    public function entryReachesSinceAlwaysMatchesWithoutALowerBound(): void
+    {
+        self::assertTrue($this->command->entryReachesSince(['time' => '2020-01-01 00:00:00'], null));
+    }
+
+    #[Test]
+    public function entryReachesSinceComparesTheTimestampAgainstTheBound(): void
+    {
+        $bound = strtotime('2024-01-01 00:00:00');
+
+        self::assertTrue($this->command->entryReachesSince(['time' => '2024-06-01 12:00:00'], $bound));
+        self::assertFalse($this->command->entryReachesSince(['time' => '2023-01-01 00:00:00'], $bound));
+        self::assertFalse($this->command->entryReachesSince(['time' => 'not-a-date'], $bound));
+    }
+
+    #[Test]
     public function parseHeaderLineReturnsNullForNonHeaderLines(): void
     {
         self::assertNull($this->command->parseHeaderLine('#0 /some/stack/trace/line.php(42): Foo->bar()'));

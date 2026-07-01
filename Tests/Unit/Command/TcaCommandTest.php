@@ -100,6 +100,20 @@ final class TcaCommandTest extends TestCase
     }
 
     #[Test]
+    public function extractTableSkipsColumnsThatAreNotArrays(): void
+    {
+        $result = (new TcaCommand())->extractTable([
+            'columns' => [
+                'broken' => 'not-an-array',
+                'header' => ['config' => ['type' => 'input']],
+            ],
+        ]);
+
+        self::assertArrayNotHasKey('broken', $result['columns']);
+        self::assertArrayHasKey('header', $result['columns']);
+    }
+
+    #[Test]
     public function executeListsAllTableNamesSortedWhenNoTableGiven(): void
     {
         $GLOBALS['TCA'] = ['tt_content' => [], 'pages' => [], 'be_users' => []];
