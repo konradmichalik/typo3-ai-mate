@@ -14,17 +14,14 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Command;
 
 use KonradMichalik\Typo3AiMate\Service\TypoScriptResolver;
-use KonradMichalik\Typo3AiMate\Support\Cast;
+use KonradMichalik\Typo3AiMate\Support\{Cast, TypoScriptTree};
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\{InputArgument, InputInterface, InputOption};
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
 
-use function array_key_exists;
-use function is_array;
 use function is_string;
-use function sprintf;
 
 /**
  * TypoScriptCommand.
@@ -40,29 +37,6 @@ final class TypoScriptCommand extends AbstractJsonCommand
     public function __construct(private readonly TypoScriptResolver $resolver)
     {
         parent::__construct();
-    }
-
-    /**
-     * Scope a resolved TypoScript array to a dotted path. The resolved tree uses
-     * trailing-dot keys for nested objects (e.g. lib. => [foo. => [...]]).
-     *
-     * @param array<mixed> $tree
-     */
-    public static function scope(array $tree, string $path): mixed
-    {
-        $segments = explode('.', trim($path, '.'));
-        $node = $tree;
-        foreach ($segments as $segment) {
-            if (is_array($node) && array_key_exists($segment.'.', $node)) {
-                $node = $node[$segment.'.'];
-            } elseif (is_array($node) && array_key_exists($segment, $node)) {
-                $node = $node[$segment];
-            } else {
-                return ['error' => sprintf('Path "%s" not found in resolved TypoScript.', $path)];
-            }
-        }
-
-        return $node;
     }
 
     protected function configure(): void
@@ -88,7 +62,7 @@ final class TypoScriptCommand extends AbstractJsonCommand
 
         $path = $input->getOption('path');
         if (is_string($path) && '' !== $path) {
-            $tree = self::scope($tree, $path);
+            $tree = TypoScriptTree::scope($tree, $path);
         }
 
         return $this->emit($output, $tree);
