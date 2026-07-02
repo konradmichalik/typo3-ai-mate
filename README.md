@@ -6,8 +6,7 @@
 
 [![Packagist](https://img.shields.io/packagist/v/konradmichalik/typo3-ai-mate?label=version&logo=packagist)](https://packagist.org/packages/konradmichalik/typo3-ai-mate)
 [![Packagist Downloads](https://img.shields.io/packagist/dt/konradmichalik/typo3-ai-mate?color=brightgreen)](https://packagist.org/packages/konradmichalik/typo3-ai-mate)
-![TYPO3 v13](https://badgen.net/badge/TYPO3/v13/FF8700?icon=typo3)
-![TYPO3 v14](https://badgen.net/badge/TYPO3/v14/FF8700?icon=typo3)
+![TYPO3](https://img.shields.io/badge/TYPO3-13.4%20%7C%2014.3-orange.svg)
 [![Supported PHP Versions](https://img.shields.io/packagist/dependency-v/konradmichalik/typo3-ai-mate/php?logo=php)](https://packagist.org/packages/konradmichalik/typo3-ai-mate)
 [![CGL](https://img.shields.io/github/actions/workflow/status/konradmichalik/typo3-ai-mate/cgl.yml?label=cgl&logo=github)](https://github.com/konradmichalik/typo3-ai-mate/actions/workflows/cgl.yml)
 [![Coverage](https://img.shields.io/coverallsCoverage/github/konradmichalik/typo3-ai-mate?logo=coveralls)](https://coveralls.io/github/konradmichalik/typo3-ai-mate)
