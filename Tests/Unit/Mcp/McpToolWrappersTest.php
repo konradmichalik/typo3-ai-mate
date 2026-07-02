@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{DeprecationsTool, EventsTool, ExtensionScannerTool, FluidResolveTool, LogsTool, MiddlewaresTool, PageTool, RenderPageTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
+use KonradMichalik\Typo3AiMate\Mcp\{DeprecationsTool, EventsTool, ExtensionScannerTool, FluidResolveTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\{LogLevel, MiddlewareStack, OutputMode, TsConfigType, TypoScriptType};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -213,6 +213,33 @@ final class McpToolWrappersTest extends TestCase
 
         self::assertSame('typo3-ai-mate:upgrade:deprecations', $result['command']);
         self::assertSame([], $result['args']);
+    }
+
+    #[Test]
+    public function recordsToolForwardsTheTableAndDefaultsToSummary(): void
+    {
+        $result = $this->decode((new RecordsTool($this->runner))->query('tt_content'));
+
+        self::assertSame('typo3-ai-mate:records:query', $result['command']);
+        self::assertSame(['tt_content', '--limit', '25', '--format', 'summary'], $result['args']);
+    }
+
+    #[Test]
+    public function recordsToolForwardsNonEmptyFiltersOnlyAndOmitsTheDefaultFlag(): void
+    {
+        $result = $this->decode((new RecordsTool($this->runner))->query('tt_content', null, 42, 'CType=text'));
+
+        self::assertSame('typo3-ai-mate:records:query', $result['command']);
+        self::assertSame(['tt_content', '--pid', '42', '--where', 'CType=text', '--limit', '25', '--format', 'summary'], $result['args']);
+    }
+
+    #[Test]
+    public function recordsToolForwardsFullModeFieldsOrderAndEnableFieldsFlag(): void
+    {
+        $result = $this->decode((new RecordsTool($this->runner))->query('pages', 5, null, null, 'uid,title', 10, 'title:desc', OutputMode::Full, true));
+
+        self::assertSame('typo3-ai-mate:records:query', $result['command']);
+        self::assertSame(['pages', '--uid', '5', '--fields', 'uid,title', '--limit', '10', '--order-by', 'title:desc', '--format', 'full', '--respect-enable-fields'], $result['args']);
     }
 
     #[Test]
