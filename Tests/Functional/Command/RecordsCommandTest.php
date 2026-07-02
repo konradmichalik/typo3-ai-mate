@@ -115,6 +115,36 @@ final class RecordsCommandTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function redactsSensitiveColumns(): void
+    {
+        $this->importCSVDataSet(__DIR__.'/../Fixtures/be_users_records.csv');
+
+        [$exitCode, $result] = $this->runCommand(['table' => 'be_users', '--uid' => '1', '--fields' => 'uid,username,password']);
+
+        self::assertSame(0, $exitCode);
+        self::assertSame('admin', $result['rows'][0]['username']);
+        self::assertSame('***', $result['rows'][0]['password']);
+    }
+
+    #[Test]
+    public function failsForNonNumericUid(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['table' => 'tt_content', '--uid' => 'abc']);
+
+        self::assertSame(1, $exitCode);
+        self::assertArrayHasKey('error', $result);
+    }
+
+    #[Test]
+    public function failsForUnknownOrderByField(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['table' => 'tt_content', '--order-by' => 'ghost']);
+
+        self::assertSame(1, $exitCode);
+        self::assertArrayHasKey('error', $result);
+    }
+
+    #[Test]
     public function failsForAnUnknownTable(): void
     {
         [$exitCode, $result] = $this->runCommand(['table' => 'tx_does_not_exist']);

@@ -14,20 +14,19 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Command;
 
 use Doctrine\DBAL\Schema\Column;
+use Doctrine\DBAL\Schema\Exception\TableDoesNotExist;
 use InvalidArgumentException;
-use KonradMichalik\Typo3AiMate\Command\Support\{RecordSchema, RecordTrimmer};
+use KonradMichalik\Typo3AiMate\Command\Support\{RecordQueryInput, RecordSchema, RecordTrimmer};
 use KonradMichalik\Typo3AiMate\Support\Cast;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\{InputArgument, InputInterface, InputOption};
 use Symfony\Component\Console\Output\OutputInterface;
-use Throwable;
 use TYPO3\CMS\Core\Database\{Connection, ConnectionPool};
 
 use function array_map;
 use function array_slice;
 use function count;
-use function is_numeric;
 use function sprintf;
 
 /**
@@ -72,16 +71,22 @@ final class RecordsCommand extends AbstractJsonCommand
             return $this->emit($output, ['error' => sprintf('Unknown table "%s".', $table)], Command::FAILURE);
         }
 
+        $tcaTable = Cast::array(Cast::array($GLOBALS['TCA'] ?? null)[$table] ?? null);
+        $ctrl = Cast::array($tcaTable['ctrl'] ?? null);
+
         try {
-            $constraints = RecordSchema::parseWhere($input->getOption('where'), $columns);
-            $requestedFields = RecordSchema::parseFields($input->getOption('fields'), $columns);
+            $uid = RecordQueryInput::intOption($input->getOption('uid'), 'uid');
+            $pid = RecordQueryInput::intOption($input->getOption('pid'), 'pid');
+            $constraints = RecordQueryInput::parseWhere($input->getOption('where'), $columns);
+            $requestedFields = RecordQueryInput::parseFields($input->getOption('fields'), $columns);
+            $orderBy = RecordSchema::orderBy($input->getOption('order-by'), $columns, $ctrl);
         } catch (InvalidArgumentException $exception) {
             return $this->emit($output, ['error' => $exception->getMessage(), 'validColumns' => $columns], Command::FAILURE);
         }
 
-        $ctrl = Cast::array(Cast::array(Cast::array($GLOBALS['TCA'] ?? null)[$table] ?? null)['ctrl'] ?? null);
         $enableColumns = RecordSchema::enableColumns($ctrl, $columns);
         $deleteField = RecordSchema::deleteField($ctrl, $columns);
+        $sensitiveColumns = RecordSchema::sensitiveColumns(Cast::array($tcaTable['columns'] ?? null), $columns);
 
         $isFull = 'full' === strtolower(trim(Cast::string($input->getOption('format'))));
         $selectFields = $requestedFields
@@ -89,7 +94,7 @@ final class RecordsCommand extends AbstractJsonCommand
         $limit = min(self::MAX_LIMIT, max(1, Cast::int($input->getOption('limit'))));
         $respectEnableFields = true === $input->getOption('respect-enable-fields');
 
-        $rows = $this->fetch($table, $selectFields, $input, $constraints, $limit, $respectEnableFields, RecordSchema::orderBy($input->getOption('order-by'), $columns, $ctrl));
+        $rows = $this->fetch($table, $selectFields, $uid, $pid, $constraints, $limit, $respectEnableFields, $orderBy);
         $limited = count($rows) > $limit;
         if ($limited) {
             $rows = array_slice($rows, 0, $limit);
@@ -101,7 +106,7 @@ final class RecordsCommand extends AbstractJsonCommand
             'limited' => $limited,
             'restrictionsApplied' => $respectEnableFields,
             'fields' => $selectFields,
-            'rows' => $this->shape($rows, $enableColumns, $deleteField, $isFull),
+            'rows' => $this->shape($rows, $enableColumns, $deleteField, $sensitiveColumns, $isFull),
         ]);
     }
 
@@ -119,9 +124,11 @@ final class RecordsCommand extends AbstractJsonCommand
             return null;
         }
 
+        // Only a genuinely missing table maps to "unknown table"; connection,
+        // permission or driver failures must surface with their real cause.
         try {
             $introspected = $this->connectionPool->getConnectionForTable($table)->createSchemaManager()->introspectTableByUnquotedName($table);
-        } catch (Throwable) {
+        } catch (TableDoesNotExist) {
             return null;
         }
 
@@ -140,7 +147,7 @@ final class RecordsCommand extends AbstractJsonCommand
      *
      * @return list<array<string, mixed>>
      */
-    private function fetch(string $table, array $selectFields, InputInterface $input, array $constraints, int $limit, bool $respectEnableFields, array $orderBy): array
+    private function fetch(string $table, array $selectFields, ?int $uid, ?int $pid, array $constraints, int $limit, bool $respectEnableFields, array $orderBy): array
     {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable($table);
         if (!$respectEnableFields) {
@@ -150,13 +157,11 @@ final class RecordsCommand extends AbstractJsonCommand
         // Fetch one extra row to detect (and report) that the limit truncated the result.
         $queryBuilder->select(...$selectFields)->from($table)->setMaxResults($limit + 1);
 
-        $uid = $input->getOption('uid');
-        if (is_numeric($uid)) {
-            $queryBuilder->andWhere($queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter((int) $uid, Connection::PARAM_INT)));
+        if (null !== $uid) {
+            $queryBuilder->andWhere($queryBuilder->expr()->eq('uid', $queryBuilder->createNamedParameter($uid, Connection::PARAM_INT)));
         }
-        $pid = $input->getOption('pid');
-        if (is_numeric($pid)) {
-            $queryBuilder->andWhere($queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter((int) $pid, Connection::PARAM_INT)));
+        if (null !== $pid) {
+            $queryBuilder->andWhere($queryBuilder->expr()->eq('pid', $queryBuilder->createNamedParameter($pid, Connection::PARAM_INT)));
         }
         foreach ($constraints as [$field, $value]) {
             $queryBuilder->andWhere($queryBuilder->expr()->eq($field, $queryBuilder->createNamedParameter($value)));
@@ -176,16 +181,18 @@ final class RecordsCommand extends AbstractJsonCommand
     /**
      * @param list<array<string, mixed>> $rows
      * @param array<string, string>      $enableColumns
+     * @param list<string>               $sensitiveColumns
      *
      * @return list<array<string, mixed>>
      */
-    private function shape(array $rows, array $enableColumns, ?string $deleteField, bool $isFull): array
+    private function shape(array $rows, array $enableColumns, ?string $deleteField, array $sensitiveColumns, bool $isFull): array
     {
-        $now = Cast::int($GLOBALS['EXEC_TIME'] ?? time());
+        $now = Cast::int(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Context\Context::class)->getPropertyFromAspect('date', 'timestamp') ?? time());
         $valueLimit = $isFull ? 0 : self::VALUE_LIMIT;
 
-        return array_map(static function (array $row) use ($enableColumns, $deleteField, $now, $valueLimit): array {
+        return array_map(static function (array $row) use ($enableColumns, $deleteField, $sensitiveColumns, $now, $valueLimit): array {
             $flags = RecordTrimmer::flags($row, $enableColumns, $deleteField, $now);
+            $row = RecordTrimmer::redact($row, $sensitiveColumns);
 
             return RecordTrimmer::truncateRow($row, $valueLimit) + ['_flags' => $flags];
         }, $rows);

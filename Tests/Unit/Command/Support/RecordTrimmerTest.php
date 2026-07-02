@@ -68,6 +68,17 @@ final class RecordTrimmerTest extends TestCase
     }
 
     #[Test]
+    public function redactReplacesSensitiveColumnsThatArePresent(): void
+    {
+        $row = ['uid' => 1, 'username' => 'admin', 'password' => 'hash'];
+
+        $redacted = RecordTrimmer::redact($row, ['password', 'absent']);
+        self::assertSame('***', $redacted['password']);
+        self::assertSame('admin', $redacted['username']);
+        self::assertArrayNotHasKey('absent', $redacted);
+    }
+
+    #[Test]
     public function flagsFeGroupRestriction(): void
     {
         $enable = ['fe_group' => 'fe_group'];

@@ -43,30 +43,6 @@ final class RecordSchemaTest extends TestCase
     ];
 
     #[Test]
-    public function parseWhereReturnsFieldValuePairs(): void
-    {
-        self::assertSame([['CType', 'text'], ['hidden', '0']], RecordSchema::parseWhere('CType=text, hidden=0', self::COLUMNS));
-        self::assertSame([], RecordSchema::parseWhere(null, self::COLUMNS));
-    }
-
-    #[Test]
-    public function parseWhereRejectsUnknownFieldsAndMalformedPairs(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        RecordSchema::parseWhere('nope=1', self::COLUMNS);
-    }
-
-    #[Test]
-    public function parseFieldsKeepsOnlyExistingColumnsOrThrowsWhenNoneMatch(): void
-    {
-        self::assertNull(RecordSchema::parseFields(null, self::COLUMNS));
-        self::assertSame(['uid', 'header'], RecordSchema::parseFields('uid, header, ghost', self::COLUMNS));
-
-        $this->expectException(InvalidArgumentException::class);
-        RecordSchema::parseFields('ghost', self::COLUMNS);
-    }
-
-    #[Test]
     public function compactFieldsCollectsLabelTypeEnableAndTimestampColumns(): void
     {
         $enable = RecordSchema::enableColumns(self::CTRL, self::COLUMNS);
@@ -91,7 +67,27 @@ final class RecordSchemaTest extends TestCase
     {
         self::assertSame(['header', 'DESC'], RecordSchema::orderBy('header:desc', self::COLUMNS, self::CTRL));
         self::assertSame(['sorting', 'ASC'], RecordSchema::orderBy(null, self::COLUMNS, self::CTRL));
-        self::assertSame(['uid', 'ASC'], RecordSchema::orderBy('ghost', ['uid', 'value'], []));
+        self::assertSame(['uid', 'ASC'], RecordSchema::orderBy(null, ['uid', 'value'], []));
         self::assertSame([null, 'ASC'], RecordSchema::orderBy(null, ['value'], []));
+    }
+
+    #[Test]
+    public function orderByRejectsAnUnknownExplicitField(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        RecordSchema::orderBy('ghost', self::COLUMNS, self::CTRL);
+    }
+
+    #[Test]
+    public function sensitiveColumnsMatchesSecretNamesAndPasswordTcaType(): void
+    {
+        $tcaColumns = [
+            'secret_token' => ['config' => ['type' => 'password']],
+            'username' => ['config' => ['type' => 'input']],
+        ];
+        $columns = ['uid', 'username', 'password', 'secret_token'];
+
+        self::assertSame(['password', 'secret_token'], RecordSchema::sensitiveColumns($tcaColumns, $columns));
+        self::assertSame([], RecordSchema::sensitiveColumns([], ['uid', 'username']));
     }
 }

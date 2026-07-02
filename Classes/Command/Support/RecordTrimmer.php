@@ -15,6 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Command\Support;
 
 use KonradMichalik\Typo3AiMate\Support\Cast;
 
+use function array_key_exists;
 use function is_string;
 
 /**
@@ -55,6 +56,26 @@ final class RecordTrimmer
         }
 
         return $out;
+    }
+
+    /**
+     * Replace the value of every sensitive column with a redaction marker so
+     * credentials and PII never reach the AI response or logs.
+     *
+     * @param array<string, mixed> $row
+     * @param list<string>         $sensitiveColumns
+     *
+     * @return array<string, mixed>
+     */
+    public static function redact(array $row, array $sensitiveColumns): array
+    {
+        foreach ($sensitiveColumns as $column) {
+            if (array_key_exists($column, $row)) {
+                $row[$column] = '***';
+            }
+        }
+
+        return $row;
     }
 
     /**

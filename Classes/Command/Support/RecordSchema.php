@@ -30,60 +30,31 @@ use function sprintf;
 final class RecordSchema
 {
     /**
-     * @param list<string> $columns
-     *
-     * @return list<array{0: string, 1: string}>
+     * Column names whose value is always redacted, independent of TCA — a
+     * safety net for secret columns that may not carry a `password` TCA type.
      */
-    public static function parseWhere(mixed $where, array $columns): array
-    {
-        if (!is_string($where) || '' === trim($where)) {
-            return [];
-        }
-
-        $constraints = [];
-        foreach (explode(',', $where) as $pair) {
-            $pair = trim($pair);
-            if ('' === $pair) {
-                continue;
-            }
-            if (!str_contains($pair, '=')) {
-                throw new InvalidArgumentException(sprintf('Invalid where constraint "%s" (expected field=value).', $pair));
-            }
-            [$field, $value] = explode('=', $pair, 2);
-            $field = trim($field);
-            if (!in_array($field, $columns, true)) {
-                throw new InvalidArgumentException(sprintf('Unknown field "%s" in where.', $field));
-            }
-            $constraints[] = [$field, trim($value)];
-        }
-
-        return $constraints;
-    }
+    private const SECRET_COLUMN_NAMES = ['password'];
 
     /**
+     * Columns whose value must be redacted: known secret column names plus any
+     * column declared as a `password` TCA type.
+     *
+     * @param array<mixed> $tcaColumns the TCA `columns` section of the table
      * @param list<string> $columns
      *
-     * @return list<string>|null null when no explicit selection was given
+     * @return list<string>
      */
-    public static function parseFields(mixed $fields, array $columns): ?array
+    public static function sensitiveColumns(array $tcaColumns, array $columns): array
     {
-        if (!is_string($fields) || '' === trim($fields)) {
-            return null;
-        }
-
-        $selected = [];
-        foreach (explode(',', $fields) as $field) {
-            $field = trim($field);
-            if ('' !== $field && in_array($field, $columns, true) && !in_array($field, $selected, true)) {
-                $selected[] = $field;
+        $sensitive = [];
+        foreach ($columns as $column) {
+            $config = Cast::array(Cast::array($tcaColumns[$column] ?? null)['config'] ?? null);
+            if (in_array($column, self::SECRET_COLUMN_NAMES, true) || 'password' === Cast::string($config['type'] ?? '')) {
+                $sensitive[] = $column;
             }
         }
 
-        if ([] === $selected) {
-            throw new InvalidArgumentException('None of the requested fields exist on this table.');
-        }
-
-        return $selected;
+        return $sensitive;
     }
 
     /**
@@ -127,9 +98,11 @@ final class RecordSchema
             $parts = explode(':', trim($orderBy), 2);
             $field = trim($parts[0]);
             $direction = isset($parts[1]) && 'desc' === strtolower(trim($parts[1])) ? 'DESC' : 'ASC';
-            if (in_array($field, $columns, true)) {
-                return [$field, $direction];
+            if (!in_array($field, $columns, true)) {
+                throw new InvalidArgumentException(sprintf('Unknown field "%s" in order-by.', $field), 5379417855);
             }
+
+            return [$field, $direction];
         }
 
         $sortby = self::firstPlainColumn(Cast::string($ctrl['sortby'] ?? ''));
