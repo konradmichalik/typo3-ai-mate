@@ -12,6 +12,7 @@
 [![Coverage](https://img.shields.io/coverallsCoverage/github/konradmichalik/typo3-ai-mate?logo=coveralls)](https://coveralls.io/github/konradmichalik/typo3-ai-mate)
 [![Tests](https://img.shields.io/github/actions/workflow/status/konradmichalik/typo3-ai-mate/tests.yml?label=tests&logo=github)](https://github.com/konradmichalik/typo3-ai-mate/actions/workflows/tests.yml)
 [![License](https://img.shields.io/badge/license-GPL--2.0--or--later-blue.svg)](LICENSE.md)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/konradmichalik/typo3-ai-mate/badge)](https://securityscorecards.dev/viewer/?uri=github.com/konradmichalik/typo3-ai-mate)
 
 </div>
 
