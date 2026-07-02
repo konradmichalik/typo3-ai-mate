@@ -13,6 +13,7 @@ actually computed, not what the code might do.
 | `RequestMiddlewares.php`             | `typo3-middlewares`   |
 | event listeners in `Services.yaml`   | `typo3-events`        |
 | `tail -f var/log/*.log`              | `typo3-logs-tail`     |
+| raw `SELECT` / `ddev mysql`          | `typo3-records`       |
 
 ## Diagnose instead of guessing
 
@@ -51,6 +52,11 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
   `typo3-profiler://profile/{token}[/{section}]` resources. (Requires the
   `typo3-request-profiler` extension and a triggered FE request in the Development context.)
 - `typo3-page` — page composition + cache signals (expand a profile `page.id`).
+- `typo3-records` — read-only record query for any table (`table=<name>`, equality
+  filters via `uid`/`pid`/`where=field=value,…`). Compact rows with a `_flags` list
+  (hidden/deleted/timed/fe_group); no restrictions by default. Use instead of raw
+  SQL to answer "why is this record not showing?". `mode=full` for all columns,
+  `respectEnableFields=true` for the frontend view.
 - `typo3-logs-search` / `-tail` / `-by-level` — TYPO3 logs.
 - `typo3-tca` — resolved (trimmed) TCA of a table, or all table names.
 - `typo3-typoscript` — resolved frontend TypoScript of a page (scope with `path`).

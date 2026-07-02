@@ -97,6 +97,7 @@ flowchart LR
 |---|---|---|
 | Profiling | `typo3-profiler-latest` / `-list` / `-search` / `-get` | Inspect recorded per-request profiles as compact summaries (timing, N+1, cache, `page.id`), each linking a `typo3-profiler://profile/{token}` resource for the full SQL/section detail. |
 | Page | `typo3-page` | Show a page's composition: content elements, cache signals and `USER_INT` plugins. |
+| Records | `typo3-records` | Read-only record query for any table (structured, parameterised — equality filters via `uid`/`pid`/`where`, never raw SQL). Returns compact rows (uid, pid, label/type, enable columns, timestamps; long text truncated) each with a `_flags` list (hidden/deleted/timed/fe_group). No restrictions by default so hidden/deleted rows are visible — the answer to "why is this record not showing?". Pass `fields` for specific columns, `mode=full` for all columns, `respectEnableFields=true` for the frontend view. |
 | Logs | `typo3-logs-search` / `-tail` / `-by-level` | Search, tail or filter the TYPO3 logs. Returns a compact summary (distinct messages with occurrence counts and `lastSeen`, no stack traces) by default; pass `mode=full` for individual entries with truncated traces, and `since` (e.g. `1h`, `2d`) to scope to recent entries. |
 | TCA | `typo3-tca` | Dump the resolved (merged, trimmed) TCA of a table. |
 | TypoScript | `typo3-typoscript` | Dump the resolved frontend TypoScript of a page. |
