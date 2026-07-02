@@ -15,6 +15,7 @@
 	"require": {
 		"php": "~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0",
 		"ext-mbstring": "*",
+		"doctrine/dbal": "^4",
 		"helgesverre/toon": "^3.1",
 		"konradmichalik/typo3-request-profiler": "^0.3",
 		"mcp/sdk": "^0.6",
