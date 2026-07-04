@@ -60,8 +60,18 @@ final class ProfileProviderTest extends TestCase
         self::assertSame('/slow', $profile['url']);
 
         self::assertNull($provider->rawByToken('unknown'));
-        // Traversal-unsafe tokens are rejected by the profiler's reader.
+    }
+
+    #[Test]
+    public function rawByTokenRejectsNonAlphanumericTokens(): void
+    {
+        $provider = new ProfileProvider($this->rootDir);
+
+        // Validated at the trust boundary before reaching the file-based reader.
         self::assertNull($provider->rawByToken('../../etc/passwd'));
+        self::assertNull($provider->rawByToken('aaa/../bbb'));
+        self::assertNull($provider->rawByToken('aaa.json'));
+        self::assertNull($provider->rawByToken(''));
     }
 
     #[Test]
