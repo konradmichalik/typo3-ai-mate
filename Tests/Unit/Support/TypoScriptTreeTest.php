@@ -93,4 +93,30 @@ final class TypoScriptTreeTest extends TestCase
             TypoScriptTree::scope($tree, 'lib.foo.deeper'),
         );
     }
+
+    #[Test]
+    public function summarizeDescribesTopLevelKeysAndAddsAHint(): void
+    {
+        $tree = [
+            'lib.' => ['foo.' => [], 'bar.' => []],
+            'config.' => ['no_cache' => '0'],
+            'page' => 'PAGE',
+        ];
+
+        $summary = TypoScriptTree::summarize($tree);
+
+        self::assertSame('{2 keys}', $summary['lib.']);
+        self::assertSame('{1 keys}', $summary['config.']);
+        self::assertSame('PAGE', $summary['page']);
+        self::assertArrayHasKey('_hint', $summary);
+    }
+
+    #[Test]
+    public function summarizeCapsLongScalarPreviews(): void
+    {
+        $summary = TypoScriptTree::summarize(['long' => str_repeat('x', 200)]);
+
+        self::assertStringEndsWith('…', $summary['long']);
+        self::assertLessThan(200, mb_strlen($summary['long']));
+    }
 }
