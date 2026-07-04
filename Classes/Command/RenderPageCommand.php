@@ -23,8 +23,10 @@ use TYPO3\CMS\Core\Http\RequestFactory;
 use TYPO3\CMS\Core\Site\SiteFinder;
 
 use function count;
+use function in_array;
 use function is_numeric;
 use function is_string;
+use function parse_url;
 use function sprintf;
 use function strlen;
 
@@ -78,20 +80,14 @@ final class RenderPageCommand extends AbstractJsonCommand
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $pageId = is_numeric($input->getArgument('pageId')) ? (int) $input->getArgument('pageId') : null;
-        $urlOption = $this->stringOption($input->getOption('url'));
 
-        if (null !== $urlOption) {
-            $url = $this->absoluteUrl($urlOption);
-            if (null === $url) {
-                return $this->emit($output, ['error' => sprintf('Relative URL "%s" needs a site base — pass an absolute URL or a pageId.', $urlOption)], Command::FAILURE);
-            }
-        } elseif (null !== $pageId) {
-            $url = $this->urlForPage($pageId, Cast::int($input->getOption('language')));
-            if (null === $url) {
-                return $this->emit($output, ['error' => sprintf('Could not resolve a URL for page %d (no site configuration?).', $pageId)], Command::FAILURE);
-            }
-        } else {
-            return $this->emit($output, ['error' => 'Pass a pageId argument or a --url to render.'], Command::FAILURE);
+        [$url, $error] = $this->resolveTargetUrl(
+            $pageId,
+            $this->stringOption($input->getOption('url')),
+            Cast::int($input->getOption('language')),
+        );
+        if (null === $url) {
+            return $this->emit($output, ['error' => $error ?? 'Unable to resolve a URL to render.'], Command::FAILURE);
         }
 
         $boundary = time();
@@ -119,6 +115,38 @@ final class RenderPageCommand extends AbstractJsonCommand
         }
 
         return $this->emit($output, $payload);
+    }
+
+    /**
+     * Resolve the URL to render from an explicit --url or a page id.
+     *
+     * @return array{0: string|null, 1: string|null} [url, error] — error is set only when url is null
+     */
+    private function resolveTargetUrl(?int $pageId, ?string $urlOption, int $language): array
+    {
+        if (null !== $urlOption) {
+            return $this->resolveExplicitUrl($urlOption);
+        }
+        if (null !== $pageId) {
+            $url = $this->urlForPage($pageId, $language);
+
+            return [$url, null === $url ? sprintf('Could not resolve a URL for page %d (no site configuration?).', $pageId) : null];
+        }
+
+        return [null, 'Pass a pageId argument or a --url to render.'];
+    }
+
+    /**
+     * @return array{0: string|null, 1: string|null}
+     */
+    private function resolveExplicitUrl(string $urlOption): array
+    {
+        if (str_contains($urlOption, '://') && !$this->isAllowedHost($urlOption)) {
+            return [null, sprintf('URL host is not among the configured site bases: %s', $urlOption)];
+        }
+        $url = $this->absoluteUrl($urlOption);
+
+        return [$url, null === $url ? sprintf('Relative URL "%s" needs a site base — pass an absolute URL or a pageId.', $urlOption) : null];
     }
 
     private function urlForPage(int $pageId, int $language): ?string
@@ -163,6 +191,41 @@ final class RenderPageCommand extends AbstractJsonCommand
     }
 
     /**
+     * Whether the URL's host is one of the configured site hosts. Blocks the tool
+     * from being turned into a generic fetcher against internal/cloud-metadata
+     * endpoints (SSRF).
+     */
+    private function isAllowedHost(string $url): bool
+    {
+        $host = parse_url($url, \PHP_URL_HOST);
+        if (!is_string($host) || '' === $host) {
+            return false;
+        }
+
+        return in_array(strtolower($host), $this->siteHosts(), true);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function siteHosts(): array
+    {
+        $hosts = [];
+        try {
+            foreach ($this->siteFinder->getAllSites() as $site) {
+                $host = parse_url((string) $site->getBase(), \PHP_URL_HOST);
+                if (is_string($host) && '' !== $host) {
+                    $hosts[] = strtolower($host);
+                }
+            }
+        } catch (Throwable) {
+            return [];
+        }
+
+        return $hosts;
+    }
+
+    /**
      * @return array{status: int, bytes: int, error: string|null}
      */
     private function performRequest(string $url): array
@@ -170,7 +233,9 @@ final class RenderPageCommand extends AbstractJsonCommand
         try {
             // http_errors=false so a 500 error page (a common deprecation trigger)
             // still yields a response with its status rather than throwing.
-            $response = $this->requestFactory->request($url, 'GET', ['http_errors' => false, 'allow_redirects' => true]);
+            // allow_redirects=false so a redirect cannot pivot the request to an
+            // off-site (or internal) host after the initial host allowlist check.
+            $response = $this->requestFactory->request($url, 'GET', ['http_errors' => false, 'allow_redirects' => false]);
             $body = $response->getBody();
 
             return ['status' => $response->getStatusCode(), 'bytes' => $body->getSize() ?? strlen((string) $body), 'error' => null];
