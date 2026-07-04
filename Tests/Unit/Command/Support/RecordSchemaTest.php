@@ -90,4 +90,34 @@ final class RecordSchemaTest extends TestCase
         self::assertSame(['password', 'secret_token'], RecordSchema::sensitiveColumns($tcaColumns, $columns));
         self::assertSame([], RecordSchema::sensitiveColumns([], ['uid', 'username']));
     }
+
+    #[Test]
+    public function sensitiveColumnsMatchesSecretNamePatternsWithoutTca(): void
+    {
+        $columns = ['uid', 'api_key', 'access_token', 'client_secret', 'private_key', 'passwd', 'credentials', 'header'];
+
+        self::assertSame(
+            ['api_key', 'access_token', 'client_secret', 'private_key', 'passwd', 'credentials'],
+            RecordSchema::sensitiveColumns([], $columns),
+        );
+    }
+
+    #[Test]
+    public function sensitiveColumnsDoesNotFlagOrdinaryColumns(): void
+    {
+        $columns = ['uid', 'pid', 'header', 'bodytext', 'sorting', 'CType', 'tstamp'];
+
+        self::assertSame([], RecordSchema::sensitiveColumns([], $columns));
+    }
+
+    #[Test]
+    public function isBlockedTableRejectsSessionStorage(): void
+    {
+        self::assertTrue(RecordSchema::isBlockedTable('be_sessions'));
+        self::assertTrue(RecordSchema::isBlockedTable('fe_sessions'));
+        self::assertTrue(RecordSchema::isBlockedTable('FE_SESSIONS'));
+        self::assertTrue(RecordSchema::isBlockedTable('tx_myext_sessions'));
+        self::assertFalse(RecordSchema::isBlockedTable('tt_content'));
+        self::assertFalse(RecordSchema::isBlockedTable('fe_users'));
+    }
 }
