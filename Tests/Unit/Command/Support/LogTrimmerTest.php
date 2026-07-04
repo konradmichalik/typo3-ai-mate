@@ -54,11 +54,33 @@ final class LogTrimmerTest extends TestCase
     }
 
     #[Test]
-    public function entryLeavesTraceUntouchedWhenTraceLimitIsZero(): void
+    public function entryLeavesUnsensitiveTraceUntouchedWhenTraceLimitIsZero(): void
     {
         $trace = str_repeat('t', 5000);
         $entry = LogTrimmer::entry(['message' => 'ok', 'trace' => $trace], 100, 0);
 
         self::assertSame($trace, $entry['trace']);
+    }
+
+    #[Test]
+    public function messageRedactsPersonalDataBeforeCapping(): void
+    {
+        $redacted = LogTrimmer::message('User jane@example.com from 10.0.0.5 failed', 1000);
+
+        self::assertStringNotContainsString('jane@example.com', $redacted);
+        self::assertStringNotContainsString('10.0.0.5', $redacted);
+        self::assertStringContainsString('[redacted-email]', $redacted);
+        self::assertStringContainsString('[redacted-ip]', $redacted);
+    }
+
+    #[Test]
+    public function entryRedactsTheTraceEvenWithoutTruncation(): void
+    {
+        $entry = LogTrimmer::entry(['message' => 'ok', 'trace' => 'token=supersecretvalue in frame'], 100, 0);
+
+        $trace = $entry['trace'];
+        self::assertIsString($trace);
+        self::assertStringNotContainsString('supersecretvalue', $trace);
+        self::assertStringContainsString('token=[redacted]', $trace);
     }
 }

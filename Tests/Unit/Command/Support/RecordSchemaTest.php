@@ -90,4 +90,22 @@ final class RecordSchemaTest extends TestCase
         self::assertSame(['password', 'secret_token'], RecordSchema::sensitiveColumns($tcaColumns, $columns));
         self::assertSame([], RecordSchema::sensitiveColumns([], ['uid', 'username']));
     }
+
+    #[Test]
+    public function piiColumnsMasksPersonalDataOfUserTablesButKeepsUsername(): void
+    {
+        $columns = ['uid', 'username', 'email', 'first_name', 'last_name', 'city', 'header'];
+
+        self::assertSame(
+            ['email', 'first_name', 'last_name', 'city'],
+            RecordSchema::piiColumns('fe_users', $columns),
+        );
+        self::assertNotContains('username', RecordSchema::piiColumns('fe_users', $columns));
+    }
+
+    #[Test]
+    public function piiColumnsIsEmptyForNonUserTables(): void
+    {
+        self::assertSame([], RecordSchema::piiColumns('tt_content', ['uid', 'email', 'header']));
+    }
 }
