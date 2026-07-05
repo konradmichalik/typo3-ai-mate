@@ -40,6 +40,12 @@ use function strlen;
 )]
 final class RenderPageCommand extends AbstractJsonCommand
 {
+    /**
+     * Per-request wall-clock cap so a hanging frontend request fails fast with a
+     * readable error instead of stalling until the 120 s process timeout.
+     */
+    private const REQUEST_TIMEOUT_SECONDS = 60;
+
     private readonly LogsCommand $logSearch;
 
     public function __construct(
@@ -170,7 +176,7 @@ final class RenderPageCommand extends AbstractJsonCommand
         try {
             // http_errors=false so a 500 error page (a common deprecation trigger)
             // still yields a response with its status rather than throwing.
-            $response = $this->requestFactory->request($url, 'GET', ['http_errors' => false, 'allow_redirects' => true]);
+            $response = $this->requestFactory->request($url, 'GET', ['http_errors' => false, 'allow_redirects' => true, 'timeout' => self::REQUEST_TIMEOUT_SECONDS]);
             $body = $response->getBody();
 
             return ['status' => $response->getStatusCode(), 'bytes' => $body->getSize() ?? strlen((string) $body), 'error' => null];

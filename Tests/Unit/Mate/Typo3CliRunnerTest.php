@@ -62,7 +62,18 @@ final class Typo3CliRunnerTest extends TestCase
         $result = (new Typo3CliRunner($this->rootDir))->json('ok', ['tt_content'], ['list' => true, 'skip' => false]);
 
         self::assertSame('world', $result['hello']);
-        self::assertSame(['tt_content', '--list'], $result['args']);
+        // Options first, then the end-of-options separator, then positional args.
+        self::assertSame(['--list', '--', 'tt_content'], $result['args']);
+    }
+
+    #[Test]
+    public function jsonPassesOptionLikeArgumentValuesAfterTheSeparator(): void
+    {
+        $result = (new Typo3CliRunner($this->rootDir))->json('ok', ['--help']);
+
+        // The "--help" value stays a positional argument (after "--"), so it can
+        // never be interpreted as an option of the target command.
+        self::assertSame(['--', '--help'], $result['args']);
     }
 
     #[Test]
