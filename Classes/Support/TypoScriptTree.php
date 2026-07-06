@@ -32,6 +32,13 @@ final class TypoScriptTree
     private const PREVIEW_LIMIT = 80;
 
     /**
+     * Substrings (matched against the delimiter-stripped, lowercased key) that
+     * mark a resolved value as a secret. TypoScript constants/setup routinely
+     * carry SMTP, API and payment credentials.
+     */
+    private const SECRET_KEY_PATTERNS = ['password', 'passwd', 'secret', 'apikey', 'token', 'credential', 'privatekey'];
+
+    /**
      * A shallow, top-level overview of a resolved tree: each key mapped to a
      * short descriptor (child count for branches, a capped preview for scalars).
      * A full setup/TSconfig tree is often hundreds of kB; this keeps the default
@@ -53,13 +60,6 @@ final class TypoScriptTree
 
         return $out;
     }
-
-    /**
-     * Substrings (matched against the delimiter-stripped, lowercased key) that
-     * mark a resolved value as a secret. TypoScript constants/setup routinely
-     * carry SMTP, API and payment credentials.
-     */
-    private const SECRET_KEY_PATTERNS = ['password', 'passwd', 'secret', 'apikey', 'token', 'credential', 'privatekey'];
 
     /**
      * Recursively mask scalar values whose key names a secret, so resolved
