@@ -226,11 +226,12 @@ final class DeprecationsCommand extends AbstractJsonCommand
     }
 
     /**
-     * Read own (non-vendor) extension PHP/Fluid files into a flat index the
-     * resolver searches. Third-party packages under vendor/ are skipped — the
-     * point is to find the caller in code the user actually maintains.
+     * Index own (non-vendor) extension PHP/Fluid files (path + label only) for the
+     * resolver to search. Third-party packages under vendor/ are skipped — the
+     * point is to find the caller in code the user actually maintains. File
+     * contents are read lazily by the resolver, not held here.
      *
-     * @return list<array{path: string, label: string, content: string}>
+     * @return list<array{path: string, label: string}>
      */
     private function buildOwnFileIndex(): array
     {
@@ -252,7 +253,7 @@ final class DeprecationsCommand extends AbstractJsonCommand
     }
 
     /**
-     * @return list<array{path: string, label: string, content: string}>
+     * @return list<array{path: string, label: string}>
      */
     private function readPackageFiles(string $basePath, string $packageKey): array
     {
@@ -265,14 +266,9 @@ final class DeprecationsCommand extends AbstractJsonCommand
 
         $files = [];
         foreach ($finder as $file) {
-            $content = file_get_contents($file->getPathname());
-            if (false === $content) {
-                continue;
-            }
             $files[] = [
                 'path' => GeneralUtility::fixWindowsFilePath($file->getPathname()),
                 'label' => $packageKey.'/'.GeneralUtility::fixWindowsFilePath($file->getRelativePathname()),
-                'content' => $content,
             ];
         }
 
