@@ -30,14 +30,35 @@ use function sprintf;
 final class RecordSchema
 {
     /**
-     * Column names whose value is always redacted, independent of TCA — a
-     * safety net for secret columns that may not carry a `password` TCA type.
+     * Substrings (matched case-insensitively against the underscore-stripped
+     * column name) that mark a value as secret independent of TCA — a safety net
+     * for credential columns that do not carry a `password` TCA type (e.g.
+     * api_key, access_token, client_secret, private_key).
      */
-    private const SECRET_COLUMN_NAMES = ['password'];
+    private const SECRET_NAME_PATTERNS = ['password', 'passwd', 'secret', 'token', 'apikey', 'credential', 'privatekey'];
 
     /**
-     * Columns whose value must be redacted: known secret column names plus any
-     * column declared as a `password` TCA type.
+     * Tables never exposed regardless of column selection: raw session rows hold
+     * live session identifiers (be_sessions.ses_id is a valid backend session),
+     * so returning them would enable session hijacking if the value reaches an
+     * AI conversation log. Matched case-insensitively.
+     */
+    private const BLOCKED_TABLES = ['be_sessions', 'fe_sessions'];
+    private const BLOCKED_TABLE_SUFFIX = '_sessions';
+
+    /**
+     * Whether a table must not be queried at all (session storage).
+     */
+    public static function isBlockedTable(string $table): bool
+    {
+        $table = strtolower(trim($table));
+
+        return in_array($table, self::BLOCKED_TABLES, true) || str_ends_with($table, self::BLOCKED_TABLE_SUFFIX);
+    }
+
+    /**
+     * Columns whose value must be redacted: any column whose name matches a
+     * secret pattern plus any column declared as a `password` TCA type.
      *
      * @param array<mixed> $tcaColumns the TCA `columns` section of the table
      * @param list<string> $columns
@@ -49,7 +70,7 @@ final class RecordSchema
         $sensitive = [];
         foreach ($columns as $column) {
             $config = Cast::array(Cast::array($tcaColumns[$column] ?? null)['config'] ?? null);
-            if (in_array($column, self::SECRET_COLUMN_NAMES, true) || 'password' === Cast::string($config['type'] ?? '')) {
+            if (self::isSecretName($column) || 'password' === Cast::string($config['type'] ?? '')) {
                 $sensitive[] = $column;
             }
         }
@@ -142,6 +163,18 @@ final class RecordSchema
         $delete = Cast::string($ctrl['delete'] ?? '');
 
         return '' !== $delete && in_array($delete, $columns, true) ? $delete : null;
+    }
+
+    private static function isSecretName(string $column): bool
+    {
+        $normalized = str_replace('_', '', strtolower($column));
+        foreach (self::SECRET_NAME_PATTERNS as $pattern) {
+            if (str_contains($normalized, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

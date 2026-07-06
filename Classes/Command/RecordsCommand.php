@@ -66,6 +66,10 @@ final class RecordsCommand extends AbstractJsonCommand
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $table = Cast::string($input->getArgument('table'));
+        if (RecordSchema::isBlockedTable($table)) {
+            return $this->emit($output, ['error' => sprintf('Table "%s" is blocked: session storage is never exposed by typo3_ai_mate.', $table)], Command::FAILURE);
+        }
+
         $columns = $this->columns($table);
         if (null === $columns) {
             return $this->emit($output, ['error' => sprintf('Unknown table "%s".', $table)], Command::FAILURE);

@@ -127,6 +127,16 @@ final class RecordsCommandTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function blocksSessionTables(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['table' => 'be_sessions']);
+
+        self::assertSame(1, $exitCode);
+        self::assertArrayHasKey('error', $result);
+        self::assertStringContainsString('blocked', (string) $result['error']);
+    }
+
+    #[Test]
     public function failsForNonNumericUid(): void
     {
         [$exitCode, $result] = $this->runCommand(['table' => 'tt_content', '--uid' => 'abc']);
