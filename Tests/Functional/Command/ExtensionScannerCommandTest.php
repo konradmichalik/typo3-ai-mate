@@ -15,8 +15,10 @@ namespace KonradMichalik\Typo3AiMate\Tests\Functional\Command;
 
 use KonradMichalik\Typo3AiMate\Command\ExtensionScannerCommand;
 use PHPUnit\Framework\Attributes\Test;
+use ReflectionMethod;
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\Package\PackageManager;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 /**
@@ -93,6 +95,33 @@ final class ExtensionScannerCommandTest extends FunctionalTestCase
 
         self::assertSame(1, $exitCode);
         self::assertArrayHasKey('error', $result);
+    }
+
+    #[Test]
+    public function preloadMatcherConfigurationsResolvesEachConfigurationFileToAnInlineArrayOnce(): void
+    {
+        $command = new ExtensionScannerCommand($this->get(PackageManager::class));
+        $configurations = $command->buildMatcherConfigurations(['ArrayDimensionMatcher.php']);
+
+        $preloaded = (new ReflectionMethod($command, 'preloadMatcherConfigurations'))->invoke($command, $configurations);
+
+        self::assertCount(1, $preloaded);
+        self::assertArrayNotHasKey('configurationFile', $preloaded[0]);
+        self::assertSame(
+            require GeneralUtility::getFileAbsFileName('EXT:install/Configuration/ExtensionScanner/Php/ArrayDimensionMatcher.php'),
+            $preloaded[0]['configurationArray'],
+        );
+    }
+
+    #[Test]
+    public function lineContentReadsFromTheAlreadyParsedLinesInsteadOfRereadingTheFile(): void
+    {
+        $command = new ExtensionScannerCommand($this->get(PackageManager::class));
+        $lineContent = new ReflectionMethod($command, 'lineContent');
+        $lines = ['<?php', '  $foo = 1;  ', 'bar();'];
+
+        self::assertSame('$foo = 1;', $lineContent->invoke($command, $lines, 2));
+        self::assertSame('', $lineContent->invoke($command, $lines, 99));
     }
 
     /**
