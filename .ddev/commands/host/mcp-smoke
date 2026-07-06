@@ -75,6 +75,55 @@ for entry in "${TESTS[@]}"; do
   fi
 done
 
+# Security-behavior checks: assert the guard actually fired, not just that the
+# tool call succeeded at the protocol level (a rejected/guarded request still
+# comes back with "isError": false — the tool catches it and reports an error
+# payload instead of throwing).
+assert_behavior() {
+  local label="$1" description="$2"
+  local ok=0
+  for attempt in 1 2; do
+    if "$3"; then
+      ok=1
+      break
+    fi
+    sleep 1
+  done
+
+  if [ "${ok}" -eq 1 ]; then
+    printf "  \033[32m✔\033[0m %s\n" "${label}"
+    pass=$((pass + 1))
+  else
+    printf "  \033[31m✘\033[0m %s (%s)\n" "${label}" "${description}"
+    fail=$((fail + 1))
+    failed+=("${label}")
+  fi
+}
+
+# SSRF guard: an absolute URL whose host isn't a configured site must be rejected
+# rather than fetched.
+check_ssrf_guard() {
+  call_tool typo3-render-page "--tool-arg url=http://169.254.169.254/latest/meta-data/" \
+    | grep -q 'not among the configured site bases'
+}
+assert_behavior "typo3-render-page (SSRF guard)" "expected the cloud-metadata host to be rejected" check_ssrf_guard
+
+# Profile token validation: a path-traversal-shaped token must be rejected before
+# any file-based lookup, never leak filesystem content.
+check_token_validation() {
+  local result
+  result="$(call_tool typo3-profiler-get "--tool-arg token=../../../../etc/passwd")"
+  echo "${result}" | grep -qi 'error' && ! echo "${result}" | grep -q 'root:'
+}
+assert_behavior "typo3-profiler-get (token validation)" "expected the traversal-shaped token to be rejected" check_token_validation
+
+# PII/secret redaction: be_users PII columns must never reach the client verbatim.
+check_pii_redaction() {
+  call_tool typo3-records "--tool-arg table=be_users --tool-arg fields=email,realName,password --tool-arg mode=full" \
+    | grep -q '\*\*\*'
+}
+assert_behavior "typo3-records (PII/secret redaction)" "expected email/realName/password to be redacted" check_pii_redaction
+
 printf "\n%d passed, %d failed" "${pass}" "${fail}"
 [ "${fail}" -gt 0 ] && printf " (%s)" "${failed[*]}"
 printf "\n"
