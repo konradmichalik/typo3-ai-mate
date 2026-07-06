@@ -19,7 +19,7 @@
 		"helgesverre/toon": "^3.1",
 		"konradmichalik/typo3-request-profiler": "^0.3",
 		"mcp/sdk": "^0.6",
-		"nikic/php-parser": "^5.7.0",
+		"nikic/php-parser": "^5.8.0",
 		"psr/http-server-handler": "^1.0.2",
 		"psr/http-server-middleware": "^1.0.2",
 		"psr/log": "^3.0.2",

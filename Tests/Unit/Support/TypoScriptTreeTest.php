@@ -119,4 +119,45 @@ final class TypoScriptTreeTest extends TestCase
         self::assertStringEndsWith('…', $summary['long']);
         self::assertLessThan(200, mb_strlen($summary['long']));
     }
+
+    #[Test]
+    public function redactSecretsMasksScalarValuesUnderSecretKeys(): void
+    {
+        $tree = [
+            'plugin.' => [
+                'tx_foo.' => [
+                    'settings.' => [
+                        'apiKey' => 'live_abc123',
+                        'password' => 'hunter2',
+                        'endpoint' => 'https://api.example.com',
+                    ],
+                ],
+            ],
+            'config.' => ['no_cache' => '0'],
+        ];
+
+        $expected = [
+            'plugin.' => [
+                'tx_foo.' => [
+                    'settings.' => [
+                        'apiKey' => '***',
+                        'password' => '***',
+                        'endpoint' => 'https://api.example.com',
+                    ],
+                ],
+            ],
+            'config.' => ['no_cache' => '0'],
+        ];
+
+        self::assertSame($expected, TypoScriptTree::redactSecrets($tree));
+    }
+
+    #[Test]
+    public function redactSecretsLeavesSecretNamedObjectNodesTraversable(): void
+    {
+        $tree = ['secret.' => ['value' => 'kept']];
+
+        // A secret-named *object* node (trailing dot) is descended into, not masked.
+        self::assertSame(['secret.' => ['value' => 'kept']], TypoScriptTree::redactSecrets($tree));
+    }
 }

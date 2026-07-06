@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Command\Support;
 
-use KonradMichalik\Typo3AiMate\Support\Cast;
+use KonradMichalik\Typo3AiMate\Support\{Cast, Redactor};
 
 /**
  * LogTrimmer.
@@ -25,14 +25,22 @@ final class LogTrimmer
 {
     private const MARKER = '…[truncated]';
 
+    /**
+     * Redact PII/credentials, then cap the length. Redaction runs first so the
+     * summary grouping key is already anonymised and near-identical entries that
+     * differ only in personal data collapse into one.
+     */
     public static function message(string $message, int $limit): string
     {
+        $message = Redactor::redact($message);
+
         return mb_strlen($message) > $limit ? mb_substr($message, 0, $limit).self::MARKER : $message;
     }
 
     /**
-     * Cap both the (possibly trace-inlined) message and the separate trace field.
-     * A trace limit of 0 leaves the trace untouched.
+     * Redact and cap both the (possibly trace-inlined) message and the separate
+     * trace field. A trace limit of 0 leaves the trace length untouched but the
+     * trace is still redacted.
      *
      * @param array<string, mixed> $entry
      *
@@ -44,11 +52,12 @@ final class LogTrimmer
         if (isset($entry['message'])) {
             $changes['message'] = self::message(Cast::string($entry['message']), $messageLimit);
         }
-        if (0 !== $traceLimit && isset($entry['trace'])) {
-            $trace = Cast::string($entry['trace']);
-            if (mb_strlen($trace) > $traceLimit) {
-                $changes['trace'] = mb_substr($trace, 0, $traceLimit).self::MARKER;
+        if (isset($entry['trace'])) {
+            $trace = Redactor::redact(Cast::string($entry['trace']));
+            if (0 !== $traceLimit && mb_strlen($trace) > $traceLimit) {
+                $trace = mb_substr($trace, 0, $traceLimit).self::MARKER;
             }
+            $changes['trace'] = $trace;
         }
 
         return [] === $changes ? $entry : array_merge($entry, $changes);

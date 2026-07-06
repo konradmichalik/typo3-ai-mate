@@ -20,6 +20,7 @@ use function is_scalar;
 use function mb_strlen;
 use function mb_substr;
 use function sprintf;
+use function str_contains;
 
 /**
  * TypoScriptTree.
@@ -49,6 +50,37 @@ final class TypoScriptTree
                 : self::previewScalar($value);
         }
         $out['_hint'] = 'Top-level overview only. Pass a dotted path to drill into a branch, or full=true for the entire tree.';
+
+        return $out;
+    }
+
+    /**
+     * Substrings (matched against the delimiter-stripped, lowercased key) that
+     * mark a resolved value as a secret. TypoScript constants/setup routinely
+     * carry SMTP, API and payment credentials.
+     */
+    private const SECRET_KEY_PATTERNS = ['password', 'passwd', 'secret', 'apikey', 'token', 'credential', 'privatekey'];
+
+    /**
+     * Recursively mask scalar values whose key names a secret, so resolved
+     * credentials never reach the AI client. Array nodes are descended into.
+     *
+     * @param array<mixed> $tree
+     *
+     * @return array<mixed>
+     */
+    public static function redactSecrets(array $tree): array
+    {
+        $out = [];
+        foreach ($tree as $key => $value) {
+            if (is_array($value)) {
+                $out[$key] = self::redactSecrets($value);
+            } elseif (is_scalar($value) && self::isSecretKey((string) $key)) {
+                $out[$key] = '***';
+            } else {
+                $out[$key] = $value;
+            }
+        }
 
         return $out;
     }
@@ -93,5 +125,17 @@ final class TypoScriptTree
         $string = is_scalar($value) ? (string) $value : '';
 
         return mb_strlen($string) > self::PREVIEW_LIMIT ? mb_substr($string, 0, self::PREVIEW_LIMIT).'…' : $string;
+    }
+
+    private static function isSecretKey(string $key): bool
+    {
+        $normalized = str_replace([' ', '_', '.'], '', strtolower($key));
+        foreach (self::SECRET_KEY_PATTERNS as $pattern) {
+            if (str_contains($normalized, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

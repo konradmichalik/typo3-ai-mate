@@ -61,6 +61,8 @@ final class TypoScriptCommand extends AbstractJsonCommand
             return $this->emit($output, ['error' => $exception->getMessage()], Command::FAILURE);
         }
 
+        $tree = TypoScriptTree::redactSecrets($tree);
+
         $path = $input->getOption('path');
         if (is_string($path) && '' !== $path) {
             return $this->emit($output, TypoScriptTree::scope($tree, $path));
