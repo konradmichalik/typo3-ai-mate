@@ -44,7 +44,8 @@ final class TypoScriptCommand extends AbstractJsonCommand
         $this
             ->addArgument('pageId', InputArgument::REQUIRED, 'Page UID (TypoScript is page-context dependent)')
             ->addOption('type', null, InputOption::VALUE_REQUIRED, 'setup|constants', 'setup')
-            ->addOption('path', null, InputOption::VALUE_REQUIRED, 'Dotted path to scope the output, e.g. lib.foo');
+            ->addOption('path', null, InputOption::VALUE_REQUIRED, 'Dotted path to scope the output, e.g. lib.foo')
+            ->addOption('full', null, InputOption::VALUE_NONE, 'Return the entire resolved tree instead of the top-level overview');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -66,7 +67,10 @@ final class TypoScriptCommand extends AbstractJsonCommand
         if (is_string($path) && '' !== $path) {
             return $this->emit($output, TypoScriptTree::scope($tree, $path));
         }
+        if (true === $input->getOption('full')) {
+            return $this->emit($output, $tree);
+        }
 
-        return $this->emit($output, $tree);
+        return $this->emit($output, TypoScriptTree::summarize($tree));
     }
 }

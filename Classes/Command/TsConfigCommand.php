@@ -46,7 +46,8 @@ final class TsConfigCommand extends AbstractJsonCommand
             ->addArgument('pageId', InputArgument::REQUIRED, 'Page UID (Page TSconfig accumulates down the rootline)')
             ->addOption('type', null, InputOption::VALUE_REQUIRED, 'page|user', 'page')
             ->addOption('user', null, InputOption::VALUE_REQUIRED, 'BE user UID (required for --type=user)')
-            ->addOption('path', null, InputOption::VALUE_REQUIRED, 'Dotted scope, e.g. mod.web_layout / TCEFORM.pages / RTE.default');
+            ->addOption('path', null, InputOption::VALUE_REQUIRED, 'Dotted scope, e.g. mod.web_layout / TCEFORM.pages / RTE.default')
+            ->addOption('full', null, InputOption::VALUE_NONE, 'Return the entire resolved tree instead of the top-level overview');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -70,8 +71,11 @@ final class TsConfigCommand extends AbstractJsonCommand
         if (is_string($path) && '' !== $path) {
             return $this->emit($output, TypoScriptTree::scope($tree, $path));
         }
+        if (true === $input->getOption('full')) {
+            return $this->emit($output, $tree);
+        }
 
-        return $this->emit($output, $tree);
+        return $this->emit($output, TypoScriptTree::summarize($tree));
     }
 
     /**

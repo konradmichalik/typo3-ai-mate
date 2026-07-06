@@ -14,8 +14,11 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Support;
 
 use function array_key_exists;
+use function count;
 use function is_array;
 use function is_scalar;
+use function mb_strlen;
+use function mb_substr;
 use function sprintf;
 use function str_contains;
 
@@ -26,12 +29,37 @@ use function str_contains;
  */
 final class TypoScriptTree
 {
+    private const PREVIEW_LIMIT = 80;
+
     /**
      * Substrings (matched against the delimiter-stripped, lowercased key) that
      * mark a resolved value as a secret. TypoScript constants/setup routinely
      * carry SMTP, API and payment credentials.
      */
     private const SECRET_KEY_PATTERNS = ['password', 'passwd', 'secret', 'apikey', 'token', 'credential', 'privatekey'];
+
+    /**
+     * A shallow, top-level overview of a resolved tree: each key mapped to a
+     * short descriptor (child count for branches, a capped preview for scalars).
+     * A full setup/TSconfig tree is often hundreds of kB; this keeps the default
+     * output token-cheap while pointing the caller at how to drill in.
+     *
+     * @param array<mixed> $tree
+     *
+     * @return array<string, string>
+     */
+    public static function summarize(array $tree): array
+    {
+        $out = [];
+        foreach ($tree as $key => $value) {
+            $out[(string) $key] = is_array($value)
+                ? sprintf('{%d keys}', count($value))
+                : self::previewScalar($value);
+        }
+        $out['_hint'] = 'Top-level overview only. Pass a dotted path to drill into a branch, or full=true for the entire tree.';
+
+        return $out;
+    }
 
     /**
      * Recursively mask scalar values whose key names a secret, so resolved
@@ -90,6 +118,13 @@ final class TypoScriptTree
         $node = self::get($tree, $path);
 
         return $node ?? ['error' => sprintf('Path "%s" not found in resolved TypoScript.', $path)];
+    }
+
+    private static function previewScalar(mixed $value): string
+    {
+        $string = is_scalar($value) ? (string) $value : '';
+
+        return mb_strlen($string) > self::PREVIEW_LIMIT ? mb_substr($string, 0, self::PREVIEW_LIMIT).'…' : $string;
     }
 
     private static function isSecretKey(string $key): bool

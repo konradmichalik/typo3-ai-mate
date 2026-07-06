@@ -64,6 +64,14 @@ final readonly class ProfileProvider
      */
     public function rawByToken(string $token): ?array
     {
+        // Validate at the trust boundary: the token comes from an MCP resource URI
+        // and is passed to the profiler's file-based reader. Restricting it to the
+        // profiler token / RequestId alphabet rules out path traversal regardless
+        // of how the reader resolves it.
+        if (1 !== preg_match('/^[A-Za-z0-9]+$/', $token)) {
+            return null;
+        }
+
         $profile = $this->reader->byToken($token);
 
         return null === $profile ? null : $this->redact($profile);

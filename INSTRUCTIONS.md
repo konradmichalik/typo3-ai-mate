@@ -59,7 +59,8 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
   `respectEnableFields=true` for the frontend view.
 - `typo3-logs-search` / `-tail` / `-by-level` — TYPO3 logs.
 - `typo3-tca` — resolved (trimmed) TCA of a table, or all table names.
-- `typo3-typoscript` — resolved frontend TypoScript of a page (scope with `path`).
+- `typo3-typoscript` — resolved frontend TypoScript of a page. Returns a top-level
+  overview by default; scope with `path` or pass `full=true` for the whole tree.
 - `typo3-middlewares` — resolved PSR-15 middleware order of a stack.
 - `typo3-events` — resolved PSR-14 event listener registry (event => listeners).
 - `typo3-upgrade-wizards` — all upgrade wizards (pending/done) with status; which
