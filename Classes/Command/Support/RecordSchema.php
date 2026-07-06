@@ -38,6 +38,18 @@ final class RecordSchema
     private const SECRET_NAME_PATTERNS = ['password', 'passwd', 'secret', 'token', 'apikey', 'credential', 'privatekey'];
 
     /**
+     * User tables whose personal-data columns are masked by default, so GDPR-
+     * relevant fields never reach the AI client.
+     */
+    private const PII_TABLES = ['fe_users', 'be_users'];
+
+    /**
+     * Personal-data columns of the user tables (matched case-insensitively).
+     * Deliberately excludes `username` so records stay identifiable for debugging.
+     */
+    private const PII_COLUMNS = ['email', 'name', 'first_name', 'middle_name', 'last_name', 'realname', 'address', 'city', 'zip', 'country', 'telephone', 'fax', 'title', 'company', 'www', 'image'];
+
+    /**
      * Tables never exposed regardless of column selection: raw session rows hold
      * live session identifiers (be_sessions.ses_id is a valid backend session),
      * so returning them would enable session hijacking if the value reaches an
@@ -54,6 +66,30 @@ final class RecordSchema
         $table = strtolower(trim($table));
 
         return in_array($table, self::BLOCKED_TABLES, true) || str_ends_with($table, self::BLOCKED_TABLE_SUFFIX);
+    }
+
+    /**
+     * Personal-data columns to redact for a given table (empty for non-user
+     * tables).
+     *
+     * @param list<string> $columns
+     *
+     * @return list<string>
+     */
+    public static function piiColumns(string $table, array $columns): array
+    {
+        if (!in_array(strtolower($table), self::PII_TABLES, true)) {
+            return [];
+        }
+
+        $pii = [];
+        foreach ($columns as $column) {
+            if (in_array(strtolower($column), self::PII_COLUMNS, true)) {
+                $pii[] = $column;
+            }
+        }
+
+        return $pii;
     }
 
     /**

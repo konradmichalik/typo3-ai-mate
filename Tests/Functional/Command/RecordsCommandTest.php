@@ -127,6 +127,18 @@ final class RecordsCommandTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function redactsPersonalDataOfUserTables(): void
+    {
+        $this->importCSVDataSet(__DIR__.'/../Fixtures/be_users_records.csv');
+
+        [$exitCode, $result] = $this->runCommand(['table' => 'be_users', '--uid' => '1', '--fields' => 'uid,username,email']);
+
+        self::assertSame(0, $exitCode);
+        self::assertSame('admin', $result['rows'][0]['username']);
+        self::assertSame('***', $result['rows'][0]['email']);
+    }
+
+    #[Test]
     public function blocksSessionTables(): void
     {
         [$exitCode, $result] = $this->runCommand(['table' => 'be_sessions']);
