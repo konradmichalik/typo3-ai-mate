@@ -13,17 +13,15 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Command;
 
-use KonradMichalik\Typo3AiMate\Command\Support\LogTrimmer;
+use KonradMichalik\Typo3AiMate\Command\Support\LogAggregator;
 use KonradMichalik\Typo3AiMate\Support\Cast;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\{InputInterface, InputOption};
 use Symfony\Component\Console\Output\OutputInterface;
 use TYPO3\CMS\Core\Core\Environment;
 
-use function array_map;
-use function array_slice;
-use function count;
 use function is_string;
+use function strlen;
 
 /**
  * LogsCommand.
@@ -59,6 +57,14 @@ final class LogsCommand extends AbstractJsonCommand
     private const MESSAGE_LIMIT = 2000;
 
     /**
+     * Hard memory guard while accumulating a single entry's trace during parsing.
+     * A runaway (or maliciously huge) stack trace would otherwise be read into
+     * memory in full before the display trace-limit ever applies. 64 KiB keeps
+     * far more than the default output trace-limit while bounding worst-case RAM.
+     */
+    private const TRACE_ACCUMULATION_LIMIT = 65536;
+
+    /**
      * @return list<array<string, mixed>>
      */
     public function parseFile(string $file): array
@@ -79,7 +85,7 @@ final class LogsCommand extends AbstractJsonCommand
                 $current = $parsed;
             } elseif (null !== $current) {
                 // Continuation line (e.g. stack trace) of the current entry.
-                $current['trace'] = Cast::string($current['trace'] ?? '').$line;
+                $current = $this->appendTrace($current, $line);
             }
         }
         if (null !== $current) {
@@ -187,32 +193,7 @@ final class LogsCommand extends AbstractJsonCommand
      */
     public function aggregate(array $entries): array
     {
-        $grouped = [];
-        foreach ($entries as $entry) {
-            // Group by the capped message: near-identical entries whose only
-            // difference is deep in an inlined trace collapse into one.
-            $message = LogTrimmer::message(Cast::string($entry['message'] ?? ''), self::MESSAGE_LIMIT);
-            if ('' === $message) {
-                continue;
-            }
-            if (!isset($grouped[$message])) {
-                $grouped[$message] = [
-                    'message' => $message,
-                    'level' => Cast::string($entry['level'] ?? ''),
-                    'component' => Cast::string($entry['component'] ?? ''),
-                    'count' => 0,
-                    'lastSeen' => '',
-                    'exampleRequestId' => Cast::string($entry['request_id'] ?? ''),
-                ];
-            }
-            ++$grouped[$message]['count'];
-            $grouped[$message]['lastSeen'] = Cast::string($entry['time'] ?? '');
-        }
-
-        $summaries = array_values($grouped);
-        usort($summaries, static fn (array $a, array $b): int => $b['count'] <=> $a['count']);
-
-        return $summaries;
+        return (new LogAggregator(self::MESSAGE_LIMIT))->summaries($entries);
     }
 
     public function resolveMinSeverity(mixed $level): ?int
@@ -251,51 +232,97 @@ final class LogsCommand extends AbstractJsonCommand
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $entries = $this->filter($this->allEntries(), $input);
+        $since = $this->resolveSince($input->getOption('since'));
+        $filters = [
+            'minSeverity' => $this->resolveMinSeverity($input->getOption('level')),
+            'component' => $this->stringOption($input->getOption('component')),
+            'query' => $this->stringOption($input->getOption('query')),
+            'requestId' => $this->stringOption($input->getOption('request-id')),
+            'since' => $since,
+        ];
         $limit = max(1, Cast::int($input->getOption('limit')));
+        $entries = $this->matchingEntries($this->logFiles($since), $filters);
+        $aggregator = new LogAggregator(self::MESSAGE_LIMIT);
 
-        if ('full' === $this->resolveFormat($input->getOption('format'))) {
-            return $this->emit($output, $this->fullPayload($entries, $limit, max(0, Cast::int($input->getOption('trace-limit')))));
+        $isFull = 'full' === strtolower(trim(Cast::string($input->getOption('format'))));
+        $payload = $isFull
+            ? $aggregator->recent($entries, $limit, max(0, Cast::int($input->getOption('trace-limit'))))
+            : $aggregator->summary($entries, $limit);
+
+        return $this->emit($output, $payload);
+    }
+
+    /**
+     * Append a continuation line to the entry's trace, but stop once the memory
+     * guard is reached so a runaway trace cannot be read into memory unbounded.
+     *
+     * @param array<string, mixed> $entry
+     *
+     * @return array<string, mixed>
+     */
+    private function appendTrace(array $entry, string $line): array
+    {
+        $trace = Cast::string($entry['trace'] ?? '');
+        if (strlen($trace) < self::TRACE_ACCUMULATION_LIMIT) {
+            $entry['trace'] = $trace.$line;
         }
 
-        $summaries = $this->aggregate($entries);
-
-        return $this->emit($output, [
-            'mode' => 'summary',
-            'totalMatched' => count($entries),
-            'distinct' => count($summaries),
-            'entries' => array_slice($summaries, 0, $limit),
-        ]);
+        return $entry;
     }
 
     /**
-     * @param list<array<string, mixed>> $entries
+     * Yield every entry across the given files that passes all filters. Files are
+     * read one at a time so only a single file's entries are held at once.
      *
-     * @return array{mode: string, totalMatched: int, entries: list<array<string, mixed>>}
+     * @param list<string>                                                                                                      $files
+     * @param array{minSeverity: int|null, component: string|null, query: string|null, requestId: string|null, since: int|null} $filters
+     *
+     * @return iterable<array<string, mixed>>
      */
-    private function fullPayload(array $entries, int $limit, int $traceLimit): array
+    private function matchingEntries(array $files, array $filters): iterable
     {
-        $recent = array_slice($entries, -$limit);
-
-        return [
-            'mode' => 'full',
-            'totalMatched' => count($entries),
-            'entries' => array_map(static fn (array $entry): array => LogTrimmer::entry($entry, self::MESSAGE_LIMIT, $traceLimit), $recent),
-        ];
-    }
-
-    private function resolveFormat(mixed $format): string
-    {
-        return 'full' === strtolower(trim(Cast::string($format))) ? 'full' : 'summary';
+        foreach ($files as $file) {
+            yield from $this->matchingEntriesInFile($file, $filters);
+        }
     }
 
     /**
+     * @param array{minSeverity: int|null, component: string|null, query: string|null, requestId: string|null, since: int|null} $filters
+     *
+     * @return iterable<array<string, mixed>>
+     */
+    private function matchingEntriesInFile(string $file, array $filters): iterable
+    {
+        foreach ($this->parseFile($file) as $entry) {
+            if ($this->entryPasses($entry, $filters)) {
+                yield $entry;
+            }
+        }
+    }
+
+    /**
+     * @param array<string, mixed>                                                                                              $entry
+     * @param array{minSeverity: int|null, component: string|null, query: string|null, requestId: string|null, since: int|null} $filters
+     */
+    private function entryPasses(array $entry, array $filters): bool
+    {
+        return $this->entryMatches($entry, $filters['minSeverity'], $filters['component'], $filters['query'], $filters['requestId'])
+            && $this->entryReachesSince($entry, $filters['since']);
+    }
+
+    /**
+     * The log files to read. When a --since lower bound is given, files whose last
+     * modification predates it cannot contain newer entries and are skipped.
+     *
      * @return list<string>
      */
-    private function logFiles(): array
+    private function logFiles(?int $since = null): array
     {
         $files = glob(Environment::getVarPath().'/log/typo3_*.log') ?: [];
         sort($files);
+        if (null !== $since) {
+            $files = array_values(array_filter($files, static fn (string $file): bool => (int) @filemtime($file) >= $since));
+        }
 
         return $files;
     }
@@ -315,26 +342,6 @@ final class LogsCommand extends AbstractJsonCommand
         }
 
         return $entries;
-    }
-
-    /**
-     * @param list<array<string, mixed>> $entries
-     *
-     * @return list<array<string, mixed>>
-     */
-    private function filter(array $entries, InputInterface $input): array
-    {
-        $minSeverity = $this->resolveMinSeverity($input->getOption('level'));
-        $component = $this->stringOption($input->getOption('component'));
-        $query = $this->stringOption($input->getOption('query'));
-        $requestId = $this->stringOption($input->getOption('request-id'));
-        $since = $this->resolveSince($input->getOption('since'));
-
-        return array_values(array_filter(
-            $entries,
-            fn (array $entry): bool => $this->entryMatches($entry, $minSeverity, $component, $query, $requestId)
-                && $this->entryReachesSince($entry, $since),
-        ));
     }
 
     private function stringOption(mixed $value): ?string

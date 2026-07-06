@@ -60,8 +60,53 @@ final class ProfileProviderTest extends TestCase
         self::assertSame('/slow', $profile['url']);
 
         self::assertNull($provider->rawByToken('unknown'));
-        // Traversal-unsafe tokens are rejected by the profiler's reader.
+    }
+
+    #[Test]
+    public function rawByTokenRejectsNonAlphanumericTokens(): void
+    {
+        $provider = new ProfileProvider($this->rootDir);
+
+        // Validated at the trust boundary before reaching the file-based reader.
         self::assertNull($provider->rawByToken('../../etc/passwd'));
+        self::assertNull($provider->rawByToken('aaa/../bbb'));
+        self::assertNull($provider->rawByToken('aaa.json'));
+        self::assertNull($provider->rawByToken(''));
+    }
+
+    #[Test]
+    public function rawByTokenRedactsUrlAndSqlPii(): void
+    {
+        $this->writeProfile('ddd', [
+            'url' => '/form?email=jane@example.com&token=secret123',
+            'queries' => [['sql' => "SELECT * FROM fe_users WHERE email='bob@example.com'", 'ms' => 1.0]],
+        ], 1_000_000_400);
+
+        $profile = (new ProfileProvider($this->rootDir))->rawByToken('ddd');
+
+        self::assertIsArray($profile);
+        $url = $profile['url'];
+        self::assertIsString($url);
+        self::assertStringNotContainsString('jane@example.com', $url);
+        self::assertStringContainsString('[redacted-email]', $url);
+        self::assertStringContainsString('token=[redacted]', $url);
+
+        $queries = $profile['queries'];
+        self::assertIsArray($queries);
+        $firstQuery = $queries[0];
+        self::assertIsArray($firstQuery);
+        $sql = $firstQuery['sql'];
+        self::assertIsString($sql);
+        self::assertStringNotContainsString('bob@example.com', $sql);
+        self::assertStringContainsString('[redacted-email]', $sql);
+    }
+
+    #[Test]
+    public function summarizeRedactsTheUrl(): void
+    {
+        $summary = (new ProfileProvider($this->rootDir))->summarize(['token' => 'x', 'url' => '/p?token=abc123secret']);
+
+        self::assertSame('/p?token=[redacted]', $summary['url']);
     }
 
     #[Test]

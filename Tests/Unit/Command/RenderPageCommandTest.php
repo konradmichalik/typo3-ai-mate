@@ -130,7 +130,7 @@ final class RenderPageCommandTest extends TestCase
         $requestFactory = self::createStub(RequestFactory::class);
         $requestFactory->method('request')->willThrowException(new RuntimeException('Connection refused'));
 
-        $tester = new CommandTester(new RenderPageCommand(self::createStub(SiteFinder::class), $requestFactory));
+        $tester = new CommandTester(new RenderPageCommand($this->siteFinderWithBase('https://example.test/'), $requestFactory));
         $exitCode = $tester->execute(['--url' => 'https://example.test/']);
 
         self::assertSame(0, $exitCode);
@@ -138,6 +138,23 @@ final class RenderPageCommandTest extends TestCase
         self::assertIsArray($result);
         self::assertSame(0, $result['status']);
         self::assertSame('Connection refused', $result['requestError']);
+    }
+
+    #[Test]
+    public function executeRejectsAnAbsoluteUrlWhoseHostIsNotAConfiguredSite(): void
+    {
+        $tester = new CommandTester(new RenderPageCommand(
+            $this->siteFinderWithBase('https://example.test/'),
+            $this->requestFactoryReturning(200, 10),
+        ));
+        $exitCode = $tester->execute(['--url' => 'http://169.254.169.254/latest/meta-data/']);
+
+        self::assertSame(1, $exitCode);
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        self::assertArrayHasKey('error', $result);
+        self::assertIsString($result['error']);
+        self::assertStringContainsString('not among the configured site bases', $result['error']);
     }
 
     private function siteFinderReturning(string $url): SiteFinder

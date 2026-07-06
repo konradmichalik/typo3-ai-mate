@@ -13,11 +13,13 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Mate;
 
-use KonradMichalik\Typo3AiMate\Support\Cast;
+use KonradMichalik\Typo3AiMate\Support\{Cast, Redactor};
 use KonradMichalik\Typo3RequestProfiler\Profiling\ProfileReader;
 
 use function count;
+use function in_array;
 use function is_array;
+use function is_string;
 use function sprintf;
 
 /**
@@ -29,6 +31,14 @@ final readonly class ProfileProvider
 {
     public const RESOURCE_SCHEME = 'typo3-profiler';
     private const SUPPORTED_SCHEMA_VERSION = 1;
+
+    /**
+     * Profile fields whose string value may carry PII/credentials and is redacted
+     * before the profile reaches the AI client: the request URL (query strings
+     * routinely hold tokens/emails) and raw SQL (literal values in un-parameterised
+     * statements).
+     */
+    private const REDACTED_KEYS = ['url', 'sql'];
 
     private ProfileReader $reader;
 
@@ -46,7 +56,7 @@ final readonly class ProfileProvider
     {
         $profiles = $this->reader->latest(1);
 
-        return [] === $profiles ? null : $profiles[0];
+        return [] === $profiles ? null : $this->redact($profiles[0]);
     }
 
     /**
@@ -54,7 +64,17 @@ final readonly class ProfileProvider
      */
     public function rawByToken(string $token): ?array
     {
-        return $this->reader->byToken($token);
+        // Validate at the trust boundary: the token comes from an MCP resource URI
+        // and is passed to the profiler's file-based reader. Restricting it to the
+        // profiler token / RequestId alphabet rules out path traversal regardless
+        // of how the reader resolves it.
+        if (1 !== preg_match('/^[A-Za-z0-9]+$/', $token)) {
+            return null;
+        }
+
+        $profile = $this->reader->byToken($token);
+
+        return null === $profile ? null : $this->redact($profile);
     }
 
     /**
@@ -107,10 +127,12 @@ final readonly class ProfileProvider
         $timing = is_array($profile['timing'] ?? null) ? $profile['timing'] : [];
         $queries = is_array($profile['queries'] ?? null) ? $profile['queries'] : [];
 
+        $url = $profile['url'] ?? null;
+
         return [
             'token' => $profile['token'] ?? null,
             'time' => $profile['time'] ?? null,
-            'url' => $profile['url'] ?? null,
+            'url' => is_string($url) ? Redactor::redact($url) : $url,
             'status' => $profile['status'] ?? null,
             'page' => $profile['page'] ?? null,
             'cache_hit' => $cache['hit'] ?? null,
@@ -142,5 +164,35 @@ final readonly class ProfileProvider
         }
 
         return $profile;
+    }
+
+    /**
+     * Recursively redact PII/credentials from the sensitive string fields of a
+     * full profile (see {@see REDACTED_KEYS}) before it reaches the AI client.
+     *
+     * @param array<string, mixed> $profile
+     *
+     * @return array<string, mixed>
+     */
+    private function redact(array $profile): array
+    {
+        /** @var array<string, mixed> $redacted */
+        $redacted = $this->redactValue($profile, null);
+
+        return $redacted;
+    }
+
+    private function redactValue(mixed $value, int|string|null $key): mixed
+    {
+        if (is_array($value)) {
+            $out = [];
+            foreach ($value as $childKey => $childValue) {
+                $out[$childKey] = $this->redactValue($childValue, $childKey);
+            }
+
+            return $out;
+        }
+
+        return is_string($value) && in_array($key, self::REDACTED_KEYS, true) ? Redactor::redact($value) : $value;
     }
 }
