@@ -131,10 +131,6 @@ final readonly class Typo3CliRunner
     {
         $line = [\PHP_BINARY, $this->rootDir.'/vendor/bin/typo3', $command];
 
-        foreach ($arguments as $argument) {
-            $line[] = (string) $argument;
-        }
-
         foreach ($options as $name => $value) {
             if (false === $value) {
                 continue;
@@ -145,6 +141,16 @@ final readonly class Typo3CliRunner
             }
             $line[] = '--'.$name;
             $line[] = (string) $value;
+        }
+
+        // End-of-options separator before the positional arguments: a value that
+        // happens to start with "-"/"--" (e.g. a table or page id from the MCP
+        // client) is then always parsed as an argument, never as a CLI option.
+        if ([] !== $arguments) {
+            $line[] = '--';
+            foreach ($arguments as $argument) {
+                $line[] = (string) $argument;
+            }
         }
 
         return $line;

@@ -56,7 +56,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new TcaTool($this->runner))->dump('tt_content'));
 
         self::assertSame('typo3-ai-mate:tca:dump', $result['command']);
-        self::assertSame(['tt_content'], $result['args']);
+        self::assertSame(['--', 'tt_content'], $result['args']);
     }
 
     #[Test]
@@ -77,7 +77,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new PageTool($this->runner))->info(5));
 
         self::assertSame('typo3-ai-mate:page:info', $result['command']);
-        self::assertSame(['5'], $result['args']);
+        self::assertSame(['--', '5'], $result['args']);
     }
 
     #[Test]
@@ -95,7 +95,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new TypoScriptTool($this->runner))->dump(7, TypoScriptType::Constants, 'lib.foo'));
 
         self::assertSame('typo3-ai-mate:typoscript:dump', $result['command']);
-        self::assertSame(['7', '--type', 'constants', '--path', 'lib.foo'], $result['args']);
+        self::assertSame(['--type', 'constants', '--path', 'lib.foo', '--', '7'], $result['args']);
     }
 
     #[Test]
@@ -104,7 +104,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new TsConfigTool($this->runner))->dump(3));
 
         self::assertSame('typo3-ai-mate:tsconfig:dump', $result['command']);
-        self::assertSame(['3', '--type', 'page'], $result['args']);
+        self::assertSame(['--type', 'page', '--', '3'], $result['args']);
     }
 
     #[Test]
@@ -113,7 +113,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new TsConfigTool($this->runner))->dump(3, TsConfigType::User, 5, 'mod.web_layout'));
 
         self::assertSame('typo3-ai-mate:tsconfig:dump', $result['command']);
-        self::assertSame(['3', '--type', 'user', '--user', '5', '--path', 'mod.web_layout'], $result['args']);
+        self::assertSame(['--type', 'user', '--user', '5', '--path', 'mod.web_layout', '--', '3'], $result['args']);
     }
 
     #[Test]
@@ -122,7 +122,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new FluidResolveTool($this->runner))->resolve(9, 'plugin.tx_news_pi1', 'News/List'));
 
         self::assertSame('typo3-ai-mate:fluid:resolve', $result['command']);
-        self::assertSame(['9', '--plugin', 'plugin.tx_news_pi1', '--template', 'News/List', '--format', 'html'], $result['args']);
+        self::assertSame(['--plugin', 'plugin.tx_news_pi1', '--template', 'News/List', '--format', 'html', '--', '9'], $result['args']);
     }
 
     #[Test]
@@ -131,7 +131,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new FluidResolveTool($this->runner))->resolve(9, 'page.10', null, 'Header', 'Default', 'xml'));
 
         self::assertSame('typo3-ai-mate:fluid:resolve', $result['command']);
-        self::assertSame(['9', '--plugin', 'page.10', '--partial', 'Header', '--layout', 'Default', '--format', 'xml'], $result['args']);
+        self::assertSame(['--plugin', 'page.10', '--partial', 'Header', '--layout', 'Default', '--format', 'xml', '--', '9'], $result['args']);
     }
 
     #[Test]
@@ -158,7 +158,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new ExtensionScannerTool($this->runner))->scan('my_ext'));
 
         self::assertSame('typo3-ai-mate:upgrade:scan', $result['command']);
-        self::assertSame(['my_ext', '--format', 'summary'], $result['args']);
+        self::assertSame(['--format', 'summary', '--', 'my_ext'], $result['args']);
     }
 
     #[Test]
@@ -194,7 +194,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new RenderPageTool($this->runner))->render(5));
 
         self::assertSame('typo3-ai-mate:fe:render', $result['command']);
-        self::assertSame(['5', '--language', '0'], $result['args']);
+        self::assertSame(['--language', '0', '--', '5'], $result['args']);
     }
 
     #[Test]
@@ -221,7 +221,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new RecordsTool($this->runner))->query('tt_content'));
 
         self::assertSame('typo3-ai-mate:records:query', $result['command']);
-        self::assertSame(['tt_content', '--limit', '25', '--format', 'summary'], $result['args']);
+        self::assertSame(['--limit', '25', '--format', 'summary', '--', 'tt_content'], $result['args']);
     }
 
     #[Test]
@@ -230,7 +230,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new RecordsTool($this->runner))->query('tt_content', null, 42, 'CType=text'));
 
         self::assertSame('typo3-ai-mate:records:query', $result['command']);
-        self::assertSame(['tt_content', '--pid', '42', '--where', 'CType=text', '--limit', '25', '--format', 'summary'], $result['args']);
+        self::assertSame(['--pid', '42', '--where', 'CType=text', '--limit', '25', '--format', 'summary', '--', 'tt_content'], $result['args']);
     }
 
     #[Test]
@@ -239,7 +239,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new RecordsTool($this->runner))->query('pages', 5, null, null, 'uid,title', 10, 'title:desc', OutputMode::Full, true));
 
         self::assertSame('typo3-ai-mate:records:query', $result['command']);
-        self::assertSame(['pages', '--uid', '5', '--fields', 'uid,title', '--limit', '10', '--order-by', 'title:desc', '--format', 'full', '--respect-enable-fields'], $result['args']);
+        self::assertSame(['--uid', '5', '--fields', 'uid,title', '--limit', '10', '--order-by', 'title:desc', '--format', 'full', '--respect-enable-fields', '--', 'pages'], $result['args']);
     }
 
     #[Test]
