@@ -29,6 +29,7 @@ use TYPO3\CMS\Install\ExtensionScanner\CodeScannerInterface;
 use TYPO3\CMS\Install\ExtensionScanner\Php\{CodeStatistics, GeneratorClassesResolver, MatcherFactory};
 
 use function count;
+use function explode;
 use function is_array;
 use function sprintf;
 
@@ -96,7 +97,11 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $matcherConfigurations = $this->buildMatcherConfigurations($this->configFileBasenames());
+        // Load each matcher's configuration file once up front and pass it as an
+        // inline array. createAll() must build fresh (stateful) matcher instances
+        // per file, but this spares it the per-file file lookup and require of
+        // every config on every one of potentially thousands of scanned files.
+        $matcherConfigurations = $this->preloadMatcherConfigurations($this->buildMatcherConfigurations($this->configFileBasenames()));
         $format = $this->resolveFormat($input->getOption('format'));
         $extension = Cast::string($input->getArgument('extension'));
 
@@ -116,7 +121,7 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
      * Scan every active non-core extension (optionally own code only) and shape
      * the combined result for the requested format.
      *
-     * @param list<array{class: class-string, configurationFile: string}> $matcherConfigurations
+     * @param list<array{class: class-string, configurationArray: array<mixed>}> $matcherConfigurations
      *
      * @return array<string, mixed>
      */
@@ -142,7 +147,7 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
     }
 
     /**
-     * @param list<array{class: class-string, configurationFile: string}> $matcherConfigurations
+     * @param list<array{class: class-string, configurationArray: array<mixed>}> $matcherConfigurations
      *
      * @return array<string, mixed>
      */
@@ -235,12 +240,41 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
     }
 
     /**
+     * Resolve each matcher configuration file to an inline array a single time.
+     * MatcherFactory accepts a `configurationArray` in place of a
+     * `configurationFile`, so downstream per-file matcher creation no longer
+     * re-reads and re-evaluates every config from disk.
+     *
+     * @param list<array{class: class-string, configurationFile: string}> $matcherConfigurations
+     *
+     * @return list<array{class: class-string, configurationArray: array<mixed>}>
+     */
+    private function preloadMatcherConfigurations(array $matcherConfigurations): array
+    {
+        $preloaded = [];
+        foreach ($matcherConfigurations as $configuration) {
+            $file = GeneralUtility::getFileAbsFileName($configuration['configurationFile']);
+            if ('' === $file || !is_file($file)) {
+                continue;
+            }
+            $config = require $file;
+            if (is_array($config)) {
+                $preloaded[] = ['class' => $configuration['class'], 'configurationArray' => $config];
+            }
+        }
+
+        return $preloaded;
+    }
+
+    /**
      * @return array<string, string> relative file name => absolute path
      */
     private function phpFiles(string $basePath): array
     {
         $finder = new Finder();
-        $finder->files()->ignoreUnreadableDirs()->in($basePath)->name('*.php')->sortByName();
+        // Skip pathologically large (often generated) PHP files: parsing them to an
+        // AST and running every matcher would dominate the scan for little value.
+        $finder->files()->ignoreUnreadableDirs()->in($basePath)->name('*.php')->size('< 512K')->sortByName();
 
         $files = [];
         foreach ($finder as $file) {
@@ -251,7 +285,7 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
     }
 
     /**
-     * @param list<array{class: class-string, configurationFile: string}> $matcherConfigurations
+     * @param list<array{class: class-string, configurationArray: array<mixed>}> $matcherConfigurations
      *
      * @return array{matches: list<array<string, mixed>>, effectiveCodeLines: int, ignoredLines: int}|null
      */
@@ -261,6 +295,7 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
         if (false === $code) {
             return null;
         }
+        $lines = explode("\n", $code);
 
         // A single matcher can throw on an edge-case AST node (the backend
         // module isolates this per file via separate AJAX calls). Wrap the whole
@@ -305,7 +340,7 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
                         'line' => $line,
                         'indicator' => Cast::string($match['indicator'] ?? ''),
                         'message' => Cast::string($match['message'] ?? ''),
-                        'lineContent' => $this->lineFromFile($absolutePath, $line),
+                        'lineContent' => $this->lineContent($lines, $line),
                     ];
                 }
             }
@@ -320,13 +355,11 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
         ];
     }
 
-    private function lineFromFile(string $absolutePath, int $lineNumber): string
+    /**
+     * @param list<string> $lines the file's lines, already read for parsing
+     */
+    private function lineContent(array $lines, int $lineNumber): string
     {
-        $content = file($absolutePath, \FILE_IGNORE_NEW_LINES);
-        if (!is_array($content) || !isset($content[$lineNumber - 1])) {
-            return '';
-        }
-
-        return trim($content[$lineNumber - 1]);
+        return trim($lines[$lineNumber - 1] ?? '');
     }
 }
