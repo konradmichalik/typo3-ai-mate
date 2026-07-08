@@ -183,6 +183,17 @@ final class DeprecationOriginResolverTest extends TestCase
     }
 
     #[Test]
+    public function staticSearchSkipsFilesWhoseContentCannotBeRead(): void
+    {
+        // No 'content' key and an unreadable path: the file is skipped silently.
+        $resolver = new DeprecationOriginResolver([
+            ['path' => '/does/not/exist/Lazy.php', 'label' => 'my_ext/Classes/Lazy.php'],
+        ]);
+
+        self::assertSame([], $resolver->resolve('Argument $useNonce is deprecated and will be removed.'));
+    }
+
+    #[Test]
     public function resolveCapsTheNumberOfStaticOrigins(): void
     {
         $lines = ['<?php'];

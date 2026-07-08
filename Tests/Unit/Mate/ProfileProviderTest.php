@@ -146,6 +146,15 @@ final class ProfileProviderTest extends TestCase
     }
 
     #[Test]
+    public function searchStopsAtTheRequestedLimit(): void
+    {
+        // Both aaa and bbb have status 200; limit 1 keeps only the newest match.
+        $matches = (new ProfileProvider($this->rootDir))->search(null, 200, 1);
+
+        self::assertSame(['bbb'], array_column($matches, 'token'));
+    }
+
+    #[Test]
     public function annotateFlagsAnUnsupportedSchemaVersion(): void
     {
         $provider = new ProfileProvider($this->rootDir);

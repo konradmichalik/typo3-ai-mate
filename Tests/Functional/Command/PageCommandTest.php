@@ -13,10 +13,15 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Functional\Command;
 
+use KonradMichalik\Typo3AiMate\Command\PageCommand;
+use KonradMichalik\Typo3AiMate\Service\TypoScriptResolver;
 use PHPUnit\Framework\Attributes\Test;
+use RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\Configuration\SiteWriter;
 use TYPO3\CMS\Core\Console\CommandRegistry;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -75,6 +80,54 @@ final class PageCommandTest extends FunctionalTestCase
 
         self::assertSame(1, $exitCode);
         self::assertArrayHasKey('error', $result);
+    }
+
+    #[Test]
+    public function failsWhenNeitherPageIdNorUrlIsGiven(): void
+    {
+        [$exitCode, $result] = $this->runCommand([]);
+
+        self::assertSame(1, $exitCode);
+        self::assertSame('No resolvable page id (pass a pageId argument or a matching --url).', $result['error']);
+    }
+
+    #[Test]
+    public function failsForAUrlOutsideTheConfiguredSites(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['--url' => 'https://not-configured.example/']);
+
+        self::assertSame(1, $exitCode);
+        self::assertArrayHasKey('error', $result);
+    }
+
+    #[Test]
+    public function urlResolutionSurvivesASiteFinderFailure(): void
+    {
+        $siteFinder = self::createStub(SiteFinder::class);
+        $siteFinder->method('getAllSites')->willThrowException(new RuntimeException('sites unavailable'));
+        $command = new PageCommand($this->get(ConnectionPool::class), $siteFinder, $this->get(TypoScriptResolver::class));
+
+        $tester = new CommandTester($command);
+        $exitCode = $tester->execute(['--url' => 'https://example.com/']);
+
+        self::assertSame(1, $exitCode);
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        self::assertArrayHasKey('error', $result);
+    }
+
+    #[Test]
+    public function reportsThePageEvenWhenItsTypoScriptCannotBeResolved(): void
+    {
+        // Page 2 is a standalone root without a site configuration: resolving its
+        // TypoScript for USER_INT detection fails, the page info itself survives.
+        $this->importCSVDataSet(__DIR__.'/../Fixtures/pages_no_site.csv');
+
+        [$exitCode, $result] = $this->runCommand(['pageId' => '2']);
+
+        self::assertSame(0, $exitCode);
+        self::assertSame(2, $result['page']['id']);
+        self::assertNull($result['user_int_plugins']);
     }
 
     /**

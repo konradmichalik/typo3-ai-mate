@@ -80,6 +80,20 @@ final class LogAggregatorTest extends TestCase
     }
 
     #[Test]
+    public function summarySkipsEntriesWithoutAMessage(): void
+    {
+        $entries = [
+            ['message' => '', 'level' => 'ERROR', 'component' => 'c', 'time' => 'T1', 'request_id' => 'a'],
+            ['message' => 'Boom', 'level' => 'ERROR', 'component' => 'c', 'time' => 'T2', 'request_id' => 'b'],
+        ];
+
+        $payload = (new LogAggregator(2000))->summary($entries, 50);
+
+        self::assertSame(2, $payload['totalMatched']);
+        self::assertSame(1, $payload['distinct']);
+    }
+
+    #[Test]
     public function summaryAcceptsAGeneratorSource(): void
     {
         $generator = (static function (): iterable {
