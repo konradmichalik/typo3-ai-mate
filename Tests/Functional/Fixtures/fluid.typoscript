@@ -1,0 +1,14 @@
+plugin.tx_fixture {
+    view {
+        templateRootPaths {
+            10 = EXT:typo3_ai_mate/Tests/Functional/Fixtures/Fluid/Base/Templates/
+            20 = EXT:typo3_ai_mate/Tests/Functional/Fixtures/Fluid/Override/Templates/
+        }
+        partialRootPaths {
+            10 = EXT:typo3_ai_mate/Tests/Functional/Fixtures/Fluid/Base/Partials/
+        }
+        layoutRootPaths {
+            10 = EXT:typo3_ai_mate/Tests/Functional/Fixtures/Fluid/Missing/Layouts/
+        }
+    }
+}
