@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7b0427e361f230ee863d154d7ffef370",
+    "content-hash": "de58f9540d2b27ef63b4af67c5796e67",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -1204,23 +1204,24 @@
         },
         {
             "name": "helgesverre/toon",
-            "version": "v3.1.0",
+            "version": "v3.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/HelgeSverre/toon-php.git",
-                "reference": "3744bbb34aeaf1e524eb6af5a4a19f15e4980c89"
+                "reference": "55ca6ba93846bde75eeb04dac70a99fe0bb435dd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/HelgeSverre/toon-php/zipball/3744bbb34aeaf1e524eb6af5a4a19f15e4980c89",
-                "reference": "3744bbb34aeaf1e524eb6af5a4a19f15e4980c89",
+                "url": "https://api.github.com/repos/HelgeSverre/toon-php/zipball/55ca6ba93846bde75eeb04dac70a99fe0bb435dd",
+                "reference": "55ca6ba93846bde75eeb04dac70a99fe0bb435dd",
                 "shasum": ""
             },
             "require": {
                 "php": "^8.1"
             },
             "require-dev": {
-                "laravel/pint": "^1.10",
+                "infection/infection": "*",
+                "laravel/pint": "1.20.0",
                 "phpbench/phpbench": "^1.4",
                 "phpstan/phpstan": "^1.10",
                 "phpunit/phpunit": "^10.0"
@@ -1263,9 +1264,9 @@
             ],
             "support": {
                 "issues": "https://github.com/HelgeSverre/toon-php/issues",
-                "source": "https://github.com/HelgeSverre/toon-php/tree/v3.1.0"
+                "source": "https://github.com/HelgeSverre/toon-php/tree/v3.2.1"
             },
-            "time": "2025-12-06T05:24:46+00:00"
+            "time": "2026-07-08T15:55:13+00:00"
         },
         {
             "name": "konradmichalik/typo3-request-profiler",
