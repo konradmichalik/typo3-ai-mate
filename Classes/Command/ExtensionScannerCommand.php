@@ -291,7 +291,7 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
      */
     private function scanFile(string $absolutePath, string $relativeName, array $matcherConfigurations): ?array
     {
-        $code = file_get_contents($absolutePath);
+        $code = @file_get_contents($absolutePath);
         if (false === $code) {
             return null;
         }
@@ -304,7 +304,10 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
         try {
             $statements = (new ParserFactory())->createForVersion(PhpVersion::fromComponents(8, 2))->parse($code);
             if (null === $statements) {
+                // The throwing error handler never yields null.
+                // @codeCoverageIgnoreStart
                 return null;
+                // @codeCoverageIgnoreEnd
             }
 
             // First pass: resolve `use` aliases to fully qualified names so the
@@ -330,7 +333,10 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
             $matches = [];
             foreach ($matchers as $matcher) {
                 if (!$matcher instanceof CodeScannerInterface) {
+                    // MatcherFactory::createAll() already rejects such matchers.
+                    // @codeCoverageIgnoreStart
                     continue;
+                    // @codeCoverageIgnoreEnd
                 }
                 foreach ($matcher->getMatches() as $rawMatch) {
                     $match = Cast::array($rawMatch);

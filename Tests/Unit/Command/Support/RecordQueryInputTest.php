@@ -53,6 +53,20 @@ final class RecordQueryInputTest extends TestCase
     }
 
     #[Test]
+    public function parseWhereSkipsEmptyPairs(): void
+    {
+        self::assertSame([['CType', 'text']], RecordQueryInput::parseWhere('CType=text, ,', self::COLUMNS));
+    }
+
+    #[Test]
+    public function parseWhereRejectsPairsWithoutAnEqualsSign(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionCode(2337432224);
+        RecordQueryInput::parseWhere('CType', self::COLUMNS);
+    }
+
+    #[Test]
     public function parseFieldsKeepsOnlyExistingColumnsOrThrowsWhenNoneMatch(): void
     {
         self::assertNull(RecordQueryInput::parseFields(null, self::COLUMNS));

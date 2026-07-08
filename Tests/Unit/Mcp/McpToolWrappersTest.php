@@ -99,6 +99,15 @@ final class McpToolWrappersTest extends TestCase
     }
 
     #[Test]
+    public function typoScriptToolForwardsTheFullFlag(): void
+    {
+        $result = $this->decode((new TypoScriptTool($this->runner))->dump(7, TypoScriptType::Setup, null, true));
+
+        self::assertSame('typo3-ai-mate:typoscript:dump', $result['command']);
+        self::assertSame(['--type', 'setup', '--full', '--', '7'], $result['args']);
+    }
+
+    #[Test]
     public function tsConfigToolDefaultsToPageTypeAndForwardsPageId(): void
     {
         $result = $this->decode((new TsConfigTool($this->runner))->dump(3));
@@ -114,6 +123,15 @@ final class McpToolWrappersTest extends TestCase
 
         self::assertSame('typo3-ai-mate:tsconfig:dump', $result['command']);
         self::assertSame(['--type', 'user', '--user', '5', '--path', 'mod.web_layout', '--', '3'], $result['args']);
+    }
+
+    #[Test]
+    public function tsConfigToolForwardsTheFullFlag(): void
+    {
+        $result = $this->decode((new TsConfigTool($this->runner))->dump(3, TsConfigType::Page, null, null, true));
+
+        self::assertSame('typo3-ai-mate:tsconfig:dump', $result['command']);
+        self::assertSame(['--type', 'page', '--full', '--', '3'], $result['args']);
     }
 
     #[Test]

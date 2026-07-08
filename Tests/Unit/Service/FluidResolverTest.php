@@ -90,6 +90,15 @@ final class FluidResolverTest extends TestCase
     }
 
     #[Test]
+    public function pickExistingSkipsCandidatesWithoutAnAbsolutePath(): void
+    {
+        $result = FluidResolver::pickExisting([['absolute' => '']], 'News/List', 'html');
+
+        self::assertNull($result['file']);
+        self::assertSame([], $result['checked']);
+    }
+
+    #[Test]
     public function pickExistingReturnsNullFileWhenNoCandidateMatches(): void
     {
         $result = FluidResolver::pickExisting([

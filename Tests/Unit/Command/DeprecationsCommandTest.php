@@ -17,6 +17,7 @@ use KonradMichalik\Typo3AiMate\Command\DeprecationsCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
+use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Package\{PackageInterface, PackageManager};
 
 /**
@@ -76,6 +77,18 @@ final class DeprecationsCommandTest extends TestCase
 
         self::assertSame('Bar is deprecated', $deprecations[1]['message']);
         self::assertSame(1, $deprecations[1]['count']);
+    }
+
+    #[Test]
+    public function aggregateSkipsEntriesWithoutAMessage(): void
+    {
+        $deprecations = $this->command->aggregate([
+            ['message' => '', 'component' => 'TYPO3.CMS.deprecations', 'time' => 'T1', 'request_id' => 'r1'],
+            ['message' => 'Foo is deprecated', 'component' => 'TYPO3.CMS.deprecations', 'time' => 'T2', 'request_id' => 'r2'],
+        ]);
+
+        self::assertCount(1, $deprecations);
+        self::assertSame('Foo is deprecated', $deprecations[0]['message']);
     }
 
     #[Test]
@@ -146,8 +159,17 @@ final class DeprecationsCommandTest extends TestCase
         $package->method('getValueFromComposerManifest')->willReturn('typo3-cms-extension');
         $package->method('getPackagePath')->willReturn($packageDir);
         $package->method('getPackageKey')->willReturn('my_ext');
+
+        // Filtered out of the own-file index: wrong composer type / vendor path.
+        $frameworkPackage = self::createStub(PackageInterface::class);
+        $frameworkPackage->method('getValueFromComposerManifest')->willReturn('typo3-cms-framework');
+        $vendorPackage = self::createStub(PackageInterface::class);
+        $vendorPackage->method('getValueFromComposerManifest')->willReturn('typo3-cms-extension');
+        $projectPath = realpath(Environment::getProjectPath()) ?: Environment::getProjectPath();
+        $vendorPackage->method('getPackagePath')->willReturn($projectPath.'/vendor/psr/log');
+
         $packageManager = self::createStub(PackageManager::class);
-        $packageManager->method('getActivePackages')->willReturn([$package]);
+        $packageManager->method('getActivePackages')->willReturn([$frameworkPackage, $vendorPackage, $package]);
 
         $GLOBALS['TYPO3_CONF_VARS'] = ['LOG' => ['TYPO3' => ['CMS' => ['deprecations' => ['writerConfiguration' => [
             'NOTICE' => ['TYPO3\\CMS\\Core\\Log\\Writer\\FileWriter' => ['logFileInfix' => 'deprecations']],
@@ -175,6 +197,51 @@ final class DeprecationsCommandTest extends TestCase
         self::assertSame('my_ext/Classes/Caller.php', $origin['file']);
         self::assertSame('useNonce', $origin['symbol']);
         self::assertSame('static', $origin['via']);
+    }
+
+    #[Test]
+    public function executeResolvesTheCallerFromATraceContinuationLine(): void
+    {
+        $packageDir = sys_get_temp_dir().'/typo3-ai-mate-own-'.bin2hex(random_bytes(8));
+        mkdir($packageDir.'/Classes', 0o777, true);
+        file_put_contents($packageDir.'/Classes/Caller.php', "<?php\n\$renderer->render();\n");
+
+        $package = self::createStub(PackageInterface::class);
+        $package->method('getValueFromComposerManifest')->willReturn('typo3-cms-extension');
+        $package->method('getPackagePath')->willReturn($packageDir);
+        $package->method('getPackageKey')->willReturn('my_ext');
+        $packageManager = self::createStub(PackageManager::class);
+        $packageManager->method('getActivePackages')->willReturn([$package]);
+
+        $GLOBALS['TYPO3_CONF_VARS'] = ['LOG' => ['TYPO3' => ['CMS' => ['deprecations' => ['writerConfiguration' => [
+            'NOTICE' => ['TYPO3\\CMS\\Core\\Log\\Writer\\FileWriter' => ['logFileInfix' => 'deprecations']],
+        ]]]]]];
+        // Lines without a timestamp are continuation lines and accumulate as trace.
+        $this->writeLog('deprecations', [
+            'Mon, 15 Jun 2026 16:16:25 +0200 [NOTICE] request="r1" component="TYPO3.CMS.deprecations": Something is deprecated',
+            '#0 /var/www/vendor/typo3/cms-core/Classes/Foo.php(10): TYPO3\\CMS\\Core\\Foo->bar()',
+            '#1 '.$packageDir.'/Classes/Caller.php(2): Vendor\\MyExt\\Caller->run()',
+        ]);
+
+        $tester = new CommandTester(new DeprecationsCommand($packageManager));
+        $tester->execute([]);
+
+        $this->removeDir($packageDir);
+
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        $deprecations = $result['deprecations'];
+        self::assertIsArray($deprecations);
+        $first = $deprecations[0];
+        self::assertIsArray($first);
+        $origins = $first['origins'];
+        self::assertIsArray($origins);
+        self::assertNotEmpty($origins);
+        $origin = $origins[0];
+        self::assertIsArray($origin);
+        self::assertSame('my_ext/Classes/Caller.php', $origin['file']);
+        self::assertSame(2, $origin['line']);
+        self::assertSame('trace', $origin['via']);
     }
 
     #[Test]

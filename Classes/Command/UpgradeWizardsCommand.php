@@ -67,7 +67,10 @@ final class UpgradeWizardsCommand extends AbstractJsonCommand
 
         $serviceClass = 'TYPO3\\CMS\\Core\\Service\\UpgradeWizardsService';
         if (!class_exists($serviceClass)) {
+            // Only reachable on TYPO3 v13.
+            // @codeCoverageIgnoreStart
             $serviceClass = 'TYPO3\\CMS\\Install\\Service\\UpgradeWizardsService';
+            // @codeCoverageIgnoreEnd
         }
         /** @var UpgradeWizardsService $service */
         $service = $container->get($serviceClass);

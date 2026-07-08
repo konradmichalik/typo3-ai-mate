@@ -78,6 +78,17 @@ final class TypoScriptCommandTest extends FunctionalTestCase
         self::assertStringContainsString('keys', (string) $result['lib.']);
     }
 
+    #[Test]
+    public function failsWithAReadableErrorForAnUnresolvablePage(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['pageId' => '999']);
+
+        self::assertSame(1, $exitCode);
+        self::assertArrayHasKey('error', $result);
+        self::assertIsString($result['error']);
+        self::assertStringContainsString('999', $result['error']);
+    }
+
     /**
      * @param array<string, string> $input
      *
