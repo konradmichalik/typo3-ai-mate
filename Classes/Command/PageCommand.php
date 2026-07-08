@@ -178,7 +178,10 @@ final class PageCommand extends AbstractJsonCommand
         $hasListType = array_key_exists('list_type', $ttContentColumns);
         $columns = ['uid', 'colPos', 'CType', 'header', 'hidden'];
         if ($hasListType) {
+            // list_type only exists on TYPO3 v13.
+            // @codeCoverageIgnoreStart
             $columns[] = 'list_type';
+            // @codeCoverageIgnoreEnd
         }
 
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tt_content');
