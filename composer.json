@@ -34,6 +34,7 @@
 	},
 	"require-dev": {
 		"composer/class-map-generator": "^1.7.3",
+		"konradmichalik/ttt": "^0.2.0",
 		"phpunit/phpcov": "^9.0 || ^10.0 || ^11.0 || ^13.0",
 		"phpunit/phpunit": "^10.5 || ^11.0 || ^12.0 || ^13.0",
 		"psr/http-message": "^1.0 || ^2.0",

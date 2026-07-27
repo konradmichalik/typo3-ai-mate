@@ -13,12 +13,13 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Log;
 
+use KonradMichalik\Ttt\Attribute\WithEnvironment;
 use KonradMichalik\Typo3AiMate\Log\DeprecationBacktraceProcessor;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Server\{MiddlewareInterface, RequestHandlerInterface};
 use Psr\Log\LogLevel;
-use TYPO3\CMS\Core\Core\{ApplicationContext, Environment};
+use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Log\LogRecord;
 
 /**
@@ -27,6 +28,7 @@ use TYPO3\CMS\Core\Log\LogRecord;
  * @author Konrad Michalik <hej@konradmichalik.dev>
  * @license GPL-2.0-or-later
  */
+#[WithEnvironment]
 final class DeprecationBacktraceProcessorTest extends TestCase
 {
     private string $base;
@@ -34,9 +36,9 @@ final class DeprecationBacktraceProcessorTest extends TestCase
 
     protected function setUp(): void
     {
-        // Distinct project and var paths (the shared WithTemporaryVarPath trait
-        // makes them equal, which would defeat the var/ plumbing check).
-        $this->base = sys_get_temp_dir().'/typo3-ai-mate-proc-'.bin2hex(random_bytes(8));
+        // WithEnvironment provides distinct project, public and var paths - the
+        // var/ plumbing check relies on var/ not being equal to the project root.
+        $this->base = Environment::getProjectPath();
         mkdir($this->base.'/packages/my_ext/Classes', 0o777, true);
         mkdir($this->base.'/var/cache/code', 0o777, true);
         mkdir($this->base.'/vendor/typo3/cms-core', 0o777, true);
@@ -45,26 +47,9 @@ final class DeprecationBacktraceProcessorTest extends TestCase
         touch($this->base.'/packages/my_ext/Classes/NewsMiddleware.php');
         touch($this->base.'/var/cache/code/Template.php');
         touch($this->base.'/vendor/typo3/cms-core/Logger.php');
-        touch($this->base.'/index.php'); // front controller (public path entry)
-
-        Environment::initialize(
-            new ApplicationContext('Testing'),
-            true,
-            false,
-            $this->base,
-            $this->base,
-            $this->base.'/var',
-            $this->base.'/config',
-            '',
-            'UNIX',
-        );
+        touch(Environment::getPublicPath().'/index.php'); // front controller (public path entry)
 
         $this->processor = new DeprecationBacktraceProcessor();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->removeDir($this->base);
     }
 
     #[Test]
@@ -138,7 +123,7 @@ final class DeprecationBacktraceProcessorTest extends TestCase
         // A vendor-only deprecation leaves only the public/index.php Application->run()
         // frame as "own" — it bootstraps the request and must not be reported.
         $origin = $this->processor->firstOwnFrame([
-            ['file' => $this->base.'/index.php', 'line' => 28, 'class' => 'TYPO3\\CMS\\Frontend\\Http\\Application', 'function' => 'run'],
+            ['file' => Environment::getPublicPath().'/index.php', 'line' => 28, 'class' => 'TYPO3\\CMS\\Frontend\\Http\\Application', 'function' => 'run'],
         ]);
 
         self::assertNull($origin);
@@ -188,14 +173,5 @@ final class DeprecationBacktraceProcessorTest extends TestCase
         $result = $this->processor->processLogRecord($record);
 
         self::assertSame('packages/my_ext/Classes/Caller.php:1', $result->getData()[DeprecationBacktraceProcessor::DATA_KEY]);
-    }
-
-    private function removeDir(string $dir): void
-    {
-        $entries = glob($dir.'/*') ?: [];
-        foreach ($entries as $entry) {
-            is_dir($entry) ? $this->removeDir($entry) : unlink($entry);
-        }
-        @rmdir($dir);
     }
 }

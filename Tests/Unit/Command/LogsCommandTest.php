@@ -13,31 +13,28 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 
+use KonradMichalik\Ttt\Attribute\WithEnvironment;
+use KonradMichalik\Ttt\Fixture\LogFixtures;
 use KonradMichalik\Typo3AiMate\Command\LogsCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
+use TYPO3\CMS\Core\Core\Environment;
 
 /**
  * LogsCommandTest.
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
+ * @license GPL-2.0-or-later
  */
+#[WithEnvironment]
 final class LogsCommandTest extends TestCase
 {
-    use WithTemporaryVarPath;
-
     private LogsCommand $command;
 
     protected function setUp(): void
     {
         $this->command = new LogsCommand();
-        $this->initVarPath();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->cleanupVarPath();
     }
 
     #[Test]
@@ -152,10 +149,10 @@ final class LogsCommandTest extends TestCase
     #[Test]
     public function allEntriesParsesEveryLogFileInVarLog(): void
     {
-        $this->writeLog('test', [
+        LogFixtures::write(Environment::getVarPath().'/log/typo3_test.log', [
             'Mon, 15 Jun 2026 16:16:25 +0200 [ERROR] request="a" component="TYPO3.CMS.Core": One',
         ]);
-        $this->writeLog('deprecations', [
+        LogFixtures::write(Environment::getVarPath().'/log/typo3_deprecations.log', [
             'Mon, 15 Jun 2026 16:16:26 +0200 [NOTICE] request="b" component="TYPO3.CMS.deprecations": Two',
         ]);
 
@@ -218,7 +215,7 @@ final class LogsCommandTest extends TestCase
     #[Test]
     public function executeReturnsSummaryByDefault(): void
     {
-        $this->writeLog('test', [
+        LogFixtures::write(Environment::getVarPath().'/log/typo3_test.log', [
             'Mon, 15 Jun 2026 16:16:25 +0200 [ERROR] request="abc" component="TYPO3.CMS.Core": First failure',
             'Mon, 15 Jun 2026 16:16:26 +0200 [ERROR] request="def" component="TYPO3.CMS.Core": First failure',
             'Mon, 15 Jun 2026 16:16:27 +0200 [INFO] request="ghi" component="TYPO3.CMS.Foo": Just info',
@@ -245,7 +242,7 @@ final class LogsCommandTest extends TestCase
     #[Test]
     public function executeFullFormatAppliesTheMostRecentLimit(): void
     {
-        $this->writeLog('test', [
+        LogFixtures::write(Environment::getVarPath().'/log/typo3_test.log', [
             'Mon, 15 Jun 2026 16:16:25 +0200 [INFO] request="a" component="TYPO3.CMS.Core": One',
             'Mon, 15 Jun 2026 16:16:26 +0200 [INFO] request="b" component="TYPO3.CMS.Core": Two',
             'Mon, 15 Jun 2026 16:16:27 +0200 [INFO] request="c" component="TYPO3.CMS.Core": Three',
@@ -270,7 +267,7 @@ final class LogsCommandTest extends TestCase
     public function executeFullFormatTruncatesLongTraces(): void
     {
         $longTrace = str_repeat('#0 /very/long/stack/frame.php ', 200);
-        $this->writeLog('test', array_merge(
+        LogFixtures::write(Environment::getVarPath().'/log/typo3_test.log', array_merge(
             ['Mon, 15 Jun 2026 16:16:25 +0200 [ERROR] request="abc" component="TYPO3.CMS.Core": Boom'],
             [$longTrace],
         ));

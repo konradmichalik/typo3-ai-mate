@@ -13,10 +13,11 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Support;
 
+use KonradMichalik\Ttt\Attribute\WithEnvironment;
 use KonradMichalik\Typo3AiMate\Support\OwnPackages;
-use KonradMichalik\Typo3AiMate\Tests\Unit\Command\WithTemporaryVarPath;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use TYPO3\CMS\Core\Core\Environment;
 
 /**
  * OwnPackagesTest.
@@ -24,29 +25,18 @@ use PHPUnit\Framework\TestCase;
  * @author Konrad Michalik <hej@konradmichalik.dev>
  * @license GPL-2.0-or-later
  */
+#[WithEnvironment]
 final class OwnPackagesTest extends TestCase
 {
-    use WithTemporaryVarPath;
-
     private string $projectPath;
 
     protected function setUp(): void
     {
-        $this->initVarPath();
-        $this->projectPath = $this->varPath;
+        $this->projectPath = Environment::getProjectPath();
         mkdir($this->projectPath.'/vendor/acme/dependency', 0o777, true);
         mkdir($this->projectPath.'/packages/site_package', 0o777, true);
         // Composer path repository: the package is symlinked into vendor/.
         symlink($this->projectPath.'/packages/site_package', $this->projectPath.'/vendor/acme/site_package');
-    }
-
-    protected function tearDown(): void
-    {
-        @unlink($this->projectPath.'/vendor/acme/site_package');
-        foreach (['vendor/acme/dependency', 'vendor/acme', 'vendor', 'packages/site_package', 'packages'] as $relative) {
-            @rmdir($this->projectPath.'/'.$relative);
-        }
-        $this->cleanupVarPath();
     }
 
     #[Test]
