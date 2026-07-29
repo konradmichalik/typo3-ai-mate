@@ -34,7 +34,7 @@ final readonly class DeprecationOriginResolver
     private const STOP_WORDS = ['typo3', 'getInstance', '__construct'];
 
     /**
-     * @param list<array{path: string, label: string, content: string}> $ownFiles
+     * @param list<array{path: string, label: string, content?: string}> $ownFiles indexed own-code files; `content` is an optional pre-read cache, otherwise the file is read from `path` on demand
      */
     public function __construct(private array $ownFiles) {}
 
@@ -147,24 +147,31 @@ final readonly class DeprecationOriginResolver
     }
 
     /**
-     * @param array{path: string, label: string, content: string} $ownFile
-     * @param list<array{class: string|null, method: string}>     $calls
+     * @param array{path: string, label: string, content?: string} $ownFile
+     * @param list<array{class: string|null, method: string}>      $calls
      *
      * @return list<array{file: string, line: int, snippet: string, symbol: string, via: string, confidence: string}>
      */
     private function matchCallsInFile(array $ownFile, array $calls): array
     {
+        // Read on demand (unless a content cache was supplied) so the whole own-code
+        // corpus is never held in memory at once.
+        $content = $ownFile['content'] ?? (string) @file_get_contents($ownFile['path']);
+        if ('' === $content) {
+            return [];
+        }
+
         // A qualified call only counts when its class is referenced in the file.
         $active = array_values(array_filter(
             $calls,
-            fn (array $call): bool => null === $call['class'] || $this->mentions($ownFile['content'], $call['class']),
+            fn (array $call): bool => null === $call['class'] || $this->mentions($content, $call['class']),
         ));
         if ([] === $active) {
             return [];
         }
 
         $origins = [];
-        foreach (explode("\n", $ownFile['content']) as $index => $line) {
+        foreach (explode("\n", $content) as $index => $line) {
             $call = $this->firstMatchingCall($line, $active);
             if (null !== $call) {
                 $origins[] = [
@@ -203,7 +210,7 @@ final readonly class DeprecationOriginResolver
     }
 
     /**
-     * @return array{path: string, label: string, content: string}|null
+     * @return array{path: string, label: string, content?: string}|null
      */
     private function ownFileForPath(string $path): ?array
     {

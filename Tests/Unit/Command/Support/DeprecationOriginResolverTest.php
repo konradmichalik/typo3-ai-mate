@@ -163,6 +163,37 @@ final class DeprecationOriginResolverTest extends TestCase
     }
 
     #[Test]
+    public function staticSearchReadsFileContentLazilyWhenNotCached(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'typo3-ai-mate-dep-');
+        file_put_contents($file, "<?php\n\$renderer->useNonce(true);\n");
+
+        // No 'content' key: the resolver must read it from 'path' on demand.
+        $resolver = new DeprecationOriginResolver([
+            ['path' => $file, 'label' => 'my_ext/Classes/Lazy.php'],
+        ]);
+
+        $origins = $resolver->resolve('Argument $useNonce is deprecated and will be removed.');
+        @unlink($file);
+
+        self::assertCount(1, $origins);
+        self::assertSame('my_ext/Classes/Lazy.php', $origins[0]['file']);
+        self::assertSame(2, $origins[0]['line']);
+        self::assertSame('useNonce', $origins[0]['symbol']);
+    }
+
+    #[Test]
+    public function staticSearchSkipsFilesWhoseContentCannotBeRead(): void
+    {
+        // No 'content' key and an unreadable path: the file is skipped silently.
+        $resolver = new DeprecationOriginResolver([
+            ['path' => '/does/not/exist/Lazy.php', 'label' => 'my_ext/Classes/Lazy.php'],
+        ]);
+
+        self::assertSame([], $resolver->resolve('Argument $useNonce is deprecated and will be removed.'));
+    }
+
+    #[Test]
     public function resolveCapsTheNumberOfStaticOrigins(): void
     {
         $lines = ['<?php'];

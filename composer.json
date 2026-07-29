@@ -16,14 +16,14 @@
 		"php": "~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0",
 		"ext-mbstring": "*",
 		"doctrine/dbal": "^4",
-		"helgesverre/toon": "^3.1",
-		"konradmichalik/typo3-request-profiler": "^0.3",
-		"mcp/sdk": "^0.6",
-		"nikic/php-parser": "^5.7.0",
+		"helgesverre/toon": "^3.2.1",
+		"konradmichalik/typo3-request-profiler": "^0.4",
+		"mcp/sdk": "^0.7",
+		"nikic/php-parser": "^5.8.0",
 		"psr/http-server-handler": "^1.0.2",
 		"psr/http-server-middleware": "^1.0.2",
 		"psr/log": "^3.0.2",
-		"symfony/ai-mate": "^0.10",
+		"symfony/ai-mate": "^0.12",
 		"symfony/console": "^6.4 || ^7.0 || ^8.0",
 		"symfony/dependency-injection": "^6.4 || ^7.0 || ^8.0",
 		"symfony/finder": "^6.4 || ^7.0 || ^8.0",
@@ -34,12 +34,13 @@
 	},
 	"require-dev": {
 		"composer/class-map-generator": "^1.7.3",
-		"konradmichalik/ttt": "^0.2.0",
+		"eliashaeussler/version-bumper": "^4.0.3",
+		"konradmichalik/ttt": "^0.3.0",
 		"phpunit/phpcov": "^9.0 || ^10.0 || ^11.0 || ^13.0",
 		"phpunit/phpunit": "^10.5 || ^11.0 || ^12.0 || ^13.0",
 		"psr/http-message": "^1.0 || ^2.0",
 		"typo3/cms-base-distribution": "^13.4 || ^14.3",
-		"typo3/testing-framework": "^9.5"
+		"typo3/testing-framework": "^9.6.1"
 	},
 	"autoload": {
 		"psr-4": {
@@ -53,6 +54,7 @@
 	},
 	"config": {
 		"allow-plugins": {
+			"eliashaeussler/version-bumper": true,
 			"php-http/discovery": true,
 			"symfony/ai-mate-composer-plugin": true,
 			"typo3/class-alias-loader": true,
@@ -82,7 +84,7 @@
 			},
 			"cms-package-dir": "{$vendor-dir}/typo3/cms",
 			"extension-key": "typo3_ai_mate",
-			"version": "0.1.0",
+			"version": "0.2.0",
 			"web-dir": "public"
 		}
 	},

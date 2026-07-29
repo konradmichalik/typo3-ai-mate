@@ -26,6 +26,8 @@ use TYPO3\CMS\Core\Database\{Connection, ConnectionPool};
 
 use function array_map;
 use function array_slice;
+use function array_unique;
+use function array_values;
 use function count;
 use function sprintf;
 
@@ -66,6 +68,10 @@ final class RecordsCommand extends AbstractJsonCommand
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $table = Cast::string($input->getArgument('table'));
+        if (RecordSchema::isBlockedTable($table)) {
+            return $this->emit($output, ['error' => sprintf('Table "%s" is blocked: session storage is never exposed by typo3_ai_mate.', $table)], Command::FAILURE);
+        }
+
         $columns = $this->columns($table);
         if (null === $columns) {
             return $this->emit($output, ['error' => sprintf('Unknown table "%s".', $table)], Command::FAILURE);
@@ -86,7 +92,10 @@ final class RecordsCommand extends AbstractJsonCommand
 
         $enableColumns = RecordSchema::enableColumns($ctrl, $columns);
         $deleteField = RecordSchema::deleteField($ctrl, $columns);
-        $sensitiveColumns = RecordSchema::sensitiveColumns(Cast::array($tcaTable['columns'] ?? null), $columns);
+        $redactColumns = array_values(array_unique([
+            ...RecordSchema::sensitiveColumns(Cast::array($tcaTable['columns'] ?? null), $columns),
+            ...RecordSchema::piiColumns($table, $columns),
+        ]));
 
         $isFull = 'full' === strtolower(trim(Cast::string($input->getOption('format'))));
         $selectFields = $requestedFields
@@ -106,7 +115,7 @@ final class RecordsCommand extends AbstractJsonCommand
             'limited' => $limited,
             'restrictionsApplied' => $respectEnableFields,
             'fields' => $selectFields,
-            'rows' => $this->shape($rows, $enableColumns, $deleteField, $sensitiveColumns, $isFull),
+            'rows' => $this->shape($rows, $enableColumns, $deleteField, $redactColumns, $isFull),
         ]);
     }
 
@@ -181,18 +190,18 @@ final class RecordsCommand extends AbstractJsonCommand
     /**
      * @param list<array<string, mixed>> $rows
      * @param array<string, string>      $enableColumns
-     * @param list<string>               $sensitiveColumns
+     * @param list<string>               $redactColumns
      *
      * @return list<array<string, mixed>>
      */
-    private function shape(array $rows, array $enableColumns, ?string $deleteField, array $sensitiveColumns, bool $isFull): array
+    private function shape(array $rows, array $enableColumns, ?string $deleteField, array $redactColumns, bool $isFull): array
     {
         $now = Cast::int(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Context\Context::class)->getPropertyFromAspect('date', 'timestamp') ?? time());
         $valueLimit = $isFull ? 0 : self::VALUE_LIMIT;
 
-        return array_map(static function (array $row) use ($enableColumns, $deleteField, $sensitiveColumns, $now, $valueLimit): array {
+        return array_map(static function (array $row) use ($enableColumns, $deleteField, $redactColumns, $now, $valueLimit): array {
             $flags = RecordTrimmer::flags($row, $enableColumns, $deleteField, $now);
-            $row = RecordTrimmer::redact($row, $sensitiveColumns);
+            $row = RecordTrimmer::redact($row, $redactColumns);
 
             return RecordTrimmer::truncateRow($row, $valueLimit) + ['_flags' => $flags];
         }, $rows);

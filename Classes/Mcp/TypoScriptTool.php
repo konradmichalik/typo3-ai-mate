@@ -30,14 +30,18 @@ final readonly class TypoScriptTool
     /**
      * @param int            $pageId page UID whose resolved frontend TypoScript should be dumped
      * @param TypoScriptType $type   setup (default, the object/setup tree) | constants (the constants tree)
-     * @param string|null    $path   Dotted scope to limit large output to one branch, e.g. lib.foo; omit for the whole tree.
+     * @param string|null    $path   Dotted scope to limit large output to one branch, e.g. lib.foo. Omitted returns a top-level overview.
+     * @param bool           $full   return the entire resolved tree instead of the top-level overview (can be very large)
      */
-    #[McpTool(name: 'typo3-typoscript', title: 'TYPO3 TypoScript', description: 'Resolved frontend TypoScript (setup|constants) of a page. Scope large output with a dotted path, e.g. lib.foo.')]
-    public function dump(int $pageId, TypoScriptType $type = TypoScriptType::Setup, ?string $path = null): string
+    #[McpTool(name: 'typo3-typoscript', title: 'TYPO3 TypoScript', description: 'Resolved frontend TypoScript (setup|constants) of a page. Without a path you get a top-level overview; drill in with a dotted path (e.g. lib.foo) or pass full=true for the whole tree.')]
+    public function dump(int $pageId, TypoScriptType $type = TypoScriptType::Setup, ?string $path = null, bool $full = false): string
     {
         $options = ['type' => $type->value];
         if (null !== $path && '' !== $path) {
             $options['path'] = $path;
+        }
+        if ($full) {
+            $options['full'] = true;
         }
 
         return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:typoscript:dump', [$pageId], $options));

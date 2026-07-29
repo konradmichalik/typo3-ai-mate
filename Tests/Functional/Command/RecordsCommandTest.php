@@ -60,6 +60,25 @@ final class RecordsCommandTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function filtersRowsByWhereConstraints(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['table' => 'tt_content', '--where' => 'header=Intro']);
+
+        self::assertSame(0, $exitCode);
+        self::assertSame(1, $result['count']);
+        self::assertSame(1, $result['rows'][0]['uid']);
+    }
+
+    #[Test]
+    public function failsForAnEmptyTableName(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['table' => '']);
+
+        self::assertSame(1, $exitCode);
+        self::assertSame('Unknown table "".', $result['error']);
+    }
+
+    #[Test]
     public function compactModeReturnsCoreFieldsAndTruncatesLongText(): void
     {
         [$exitCode, $result] = $this->runCommand(['table' => 'tt_content', '--uid' => '1', '--fields' => 'uid,bodytext']);
@@ -124,6 +143,28 @@ final class RecordsCommandTest extends FunctionalTestCase
         self::assertSame(0, $exitCode);
         self::assertSame('admin', $result['rows'][0]['username']);
         self::assertSame('***', $result['rows'][0]['password']);
+    }
+
+    #[Test]
+    public function redactsPersonalDataOfUserTables(): void
+    {
+        $this->importCSVDataSet(__DIR__.'/../Fixtures/be_users_records.csv');
+
+        [$exitCode, $result] = $this->runCommand(['table' => 'be_users', '--uid' => '1', '--fields' => 'uid,username,email']);
+
+        self::assertSame(0, $exitCode);
+        self::assertSame('admin', $result['rows'][0]['username']);
+        self::assertSame('***', $result['rows'][0]['email']);
+    }
+
+    #[Test]
+    public function blocksSessionTables(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['table' => 'be_sessions']);
+
+        self::assertSame(1, $exitCode);
+        self::assertArrayHasKey('error', $result);
+        self::assertStringContainsString('blocked', (string) $result['error']);
     }
 
     #[Test]

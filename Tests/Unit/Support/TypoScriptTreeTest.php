@@ -93,4 +93,71 @@ final class TypoScriptTreeTest extends TestCase
             TypoScriptTree::scope($tree, 'lib.foo.deeper'),
         );
     }
+
+    #[Test]
+    public function summarizeDescribesTopLevelKeysAndAddsAHint(): void
+    {
+        $tree = [
+            'lib.' => ['foo.' => [], 'bar.' => []],
+            'config.' => ['no_cache' => '0'],
+            'page' => 'PAGE',
+        ];
+
+        $summary = TypoScriptTree::summarize($tree);
+
+        self::assertSame('{2 keys}', $summary['lib.']);
+        self::assertSame('{1 keys}', $summary['config.']);
+        self::assertSame('PAGE', $summary['page']);
+        self::assertArrayHasKey('_hint', $summary);
+    }
+
+    #[Test]
+    public function summarizeCapsLongScalarPreviews(): void
+    {
+        $summary = TypoScriptTree::summarize(['long' => str_repeat('x', 200)]);
+
+        self::assertStringEndsWith('…', $summary['long']);
+        self::assertLessThan(200, mb_strlen($summary['long']));
+    }
+
+    #[Test]
+    public function redactSecretsMasksScalarValuesUnderSecretKeys(): void
+    {
+        $tree = [
+            'plugin.' => [
+                'tx_foo.' => [
+                    'settings.' => [
+                        'apiKey' => 'live_abc123',
+                        'password' => 'hunter2',
+                        'endpoint' => 'https://api.example.com',
+                    ],
+                ],
+            ],
+            'config.' => ['no_cache' => '0'],
+        ];
+
+        $expected = [
+            'plugin.' => [
+                'tx_foo.' => [
+                    'settings.' => [
+                        'apiKey' => '***',
+                        'password' => '***',
+                        'endpoint' => 'https://api.example.com',
+                    ],
+                ],
+            ],
+            'config.' => ['no_cache' => '0'],
+        ];
+
+        self::assertSame($expected, TypoScriptTree::redactSecrets($tree));
+    }
+
+    #[Test]
+    public function redactSecretsLeavesSecretNamedObjectNodesTraversable(): void
+    {
+        $tree = ['secret.' => ['value' => 'kept']];
+
+        // A secret-named *object* node (trailing dot) is descended into, not masked.
+        self::assertSame(['secret.' => ['value' => 'kept']], TypoScriptTree::redactSecrets($tree));
+    }
 }

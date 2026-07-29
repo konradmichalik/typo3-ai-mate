@@ -21,6 +21,8 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\Core\Environment;
 
+use function strlen;
+
 /**
  * LogsCommandTest.
  *
@@ -104,6 +106,52 @@ final class LogsCommandTest extends TestCase
     public function parseFileReturnsEmptyForUnreadableFile(): void
     {
         self::assertSame([], $this->command->parseFile('/does/not/exist.log'));
+    }
+
+    #[Test]
+    public function parseFileCapsRunawayTraceAccumulation(): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'typo3-ai-mate-log-');
+        $lines = ['Mon, 15 Jun 2026 16:16:25 +0200 [ERROR] request="abc" component="TYPO3.CMS.Core": Boom'];
+        for ($i = 0; $i < 200; ++$i) {
+            $lines[] = str_repeat('x', 1000);
+        }
+        file_put_contents($file, implode("\n", [...$lines, '']));
+
+        $entries = $this->command->parseFile($file);
+        @unlink($file);
+
+        $trace = $entries[0]['trace'] ?? null;
+        self::assertIsString($trace);
+        // Bounded near the 64 KiB accumulation guard, far below the ~200 KiB input.
+        self::assertGreaterThanOrEqual(65536, strlen($trace));
+        self::assertLessThan(70000, strlen($trace));
+    }
+
+    #[Test]
+    public function executeSkipsLogFilesModifiedBeforeTheSinceBound(): void
+    {
+        // A recent-looking entry that would pass the timestamp filter, but its
+        // file's mtime predates --since, so the whole file is skipped.
+        $recentEntryTime = date('D, d M Y H:i:s O');
+        LogFixtures::write(Environment::getVarPath().'/log/typo3_stale.log', [
+            $recentEntryTime.' [ERROR] request="old" component="TYPO3.CMS.Core": From a stale file',
+        ]);
+        touch(Environment::getVarPath().'/log/typo3_stale.log', time() - 100000);
+        LogFixtures::write(Environment::getVarPath().'/log/typo3_fresh.log', [
+            $recentEntryTime.' [ERROR] request="new" component="TYPO3.CMS.Core": From a fresh file',
+        ]);
+
+        $tester = new CommandTester($this->command);
+        $tester->execute(['--since' => '1h']);
+
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        $entries = $result['entries'];
+        self::assertIsArray($entries);
+        $messages = array_column($entries, 'message');
+        self::assertContains('From a fresh file', $messages);
+        self::assertNotContains('From a stale file', $messages);
     }
 
     #[Test]

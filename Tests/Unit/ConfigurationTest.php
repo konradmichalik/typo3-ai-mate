@@ -78,9 +78,7 @@ final class ConfigurationTest extends TestCase
 
         Configuration::registerDeprecationBacktraceProcessor();
 
-        $confVars = $GLOBALS['TYPO3_CONF_VARS'];
-        self::assertIsArray($confVars);
-        self::assertTrue(ArrayUtility::isValidPath($confVars, $this->processorPath()));
+        self::assertTrue(ArrayUtility::isValidPath($GLOBALS['TYPO3_CONF_VARS'], $this->processorPath()));
     }
 
     #[Test]
@@ -91,9 +89,7 @@ final class ConfigurationTest extends TestCase
 
         Configuration::registerDeprecationBacktraceProcessor();
 
-        $confVars = $GLOBALS['TYPO3_CONF_VARS'];
-        self::assertIsArray($confVars);
-        self::assertSame($existing, ArrayUtility::getValueByPath($confVars, $this->processorPath()));
+        self::assertSame($existing, ArrayUtility::getValueByPath($GLOBALS['TYPO3_CONF_VARS'], $this->processorPath()));
     }
 
     /**

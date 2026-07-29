@@ -60,10 +60,33 @@ final class TypoScriptCommandTest extends FunctionalTestCase
     #[Test]
     public function dumpsResolvedConstants(): void
     {
-        [$exitCode, $result] = $this->runCommand(['pageId' => '1', '--type' => 'constants']);
+        [$exitCode, $result] = $this->runCommand(['pageId' => '1', '--type' => 'constants', '--full' => true]);
 
         self::assertSame(0, $exitCode);
         self::assertSame('1', $result['myconst']);
+    }
+
+    #[Test]
+    public function returnsTopLevelOverviewByDefault(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['pageId' => '1']);
+
+        self::assertSame(0, $exitCode);
+        self::assertArrayHasKey('_hint', $result);
+        // lib is an object branch, shown as a child-count descriptor rather than expanded.
+        self::assertArrayHasKey('lib.', $result);
+        self::assertStringContainsString('keys', (string) $result['lib.']);
+    }
+
+    #[Test]
+    public function failsWithAReadableErrorForAnUnresolvablePage(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['pageId' => '999']);
+
+        self::assertSame(1, $exitCode);
+        self::assertArrayHasKey('error', $result);
+        self::assertIsString($result['error']);
+        self::assertStringContainsString('999', $result['error']);
     }
 
     /**
