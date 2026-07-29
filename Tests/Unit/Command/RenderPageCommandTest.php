@@ -13,12 +13,15 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 
+use KonradMichalik\Ttt\Attribute\WithEnvironment;
+use KonradMichalik\Ttt\Fixture\LogFixtures;
 use KonradMichalik\Typo3AiMate\Command\RenderPageCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\{ResponseInterface, StreamInterface, UriInterface};
 use RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;
+use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Http\RequestFactory;
 use TYPO3\CMS\Core\Routing\RouterInterface;
 use TYPO3\CMS\Core\Site\Entity\Site;
@@ -30,20 +33,9 @@ use TYPO3\CMS\Core\Site\SiteFinder;
  * @author Konrad Michalik <hej@konradmichalik.dev>
  * @license GPL-2.0-or-later
  */
+#[WithEnvironment]
 final class RenderPageCommandTest extends TestCase
 {
-    use WithTemporaryVarPath;
-
-    protected function setUp(): void
-    {
-        $this->initVarPath();
-    }
-
-    protected function tearDown(): void
-    {
-        $this->cleanupVarPath();
-    }
-
     #[Test]
     public function newEntriesSinceKeepsOnlyEntriesAtOrAfterTheBoundary(): void
     {
@@ -62,7 +54,7 @@ final class RenderPageCommandTest extends TestCase
     #[Test]
     public function executeRendersTheResolvedUrlAndReportsStatusAndNewLogs(): void
     {
-        $this->writeLog('test', [
+        LogFixtures::write(Environment::getVarPath().'/log/typo3_test.log', [
             'Sun, 17 Jun 2035 10:00:00 +0200 [WARNING] request="r1" component="TYPO3.CMS.deprecations": Something is deprecated',
             'Mon, 15 Jun 2020 10:00:00 +0200 [INFO] request="r0" component="TYPO3.CMS.Core": Ancient unrelated entry',
         ]);

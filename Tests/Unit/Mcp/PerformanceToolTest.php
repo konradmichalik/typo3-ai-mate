@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
+use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3AiMate\Mate\ProfileProvider;
 use KonradMichalik\Typo3AiMate\Mcp\PerformanceTool;
 use KonradMichalik\Typo3AiMate\Tests\Unit\ProfileFixtures;
@@ -23,10 +24,12 @@ use PHPUnit\Framework\TestCase;
  * PerformanceToolTest.
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
+ * @license GPL-2.0-or-later
  */
 final class PerformanceToolTest extends TestCase
 {
     use DecodesResponses;
+    use JsonAssertions;
     use ProfileFixtures;
 
     protected function setUp(): void
@@ -49,10 +52,10 @@ final class PerformanceToolTest extends TestCase
     {
         $summary = $this->decode($this->tool()->latest());
 
-        self::assertSame('ccc', $summary['token']);
-        self::assertSame('/error', $summary['url']);
-        self::assertSame(500, $summary['status']);
-        self::assertSame('typo3-profiler://profile/ccc', $summary['resource_uri']);
+        self::assertJsonPath($summary, 'token', 'ccc');
+        self::assertJsonPath($summary, 'url', '/error');
+        self::assertJsonPath($summary, 'status', 500);
+        self::assertJsonPath($summary, 'resource_uri', 'typo3-profiler://profile/ccc');
     }
 
     #[Test]
@@ -60,7 +63,7 @@ final class PerformanceToolTest extends TestCase
     {
         $empty = new PerformanceTool(new ProfileProvider(sys_get_temp_dir().'/typo3-ai-mate-empty-'.bin2hex(random_bytes(8))));
 
-        self::assertArrayHasKey('error', $this->decode($empty->latest()));
+        self::assertJsonHasPath($this->decode($empty->latest()), 'error');
     }
 
     #[Test]
@@ -116,22 +119,22 @@ final class PerformanceToolTest extends TestCase
     {
         $summary = $this->decode($this->tool()->get('bbb'));
 
-        self::assertSame('bbb', $summary['token']);
-        self::assertSame('/slow', $summary['url']);
-        self::assertSame('typo3-profiler://profile/bbb', $summary['resource_uri']);
+        self::assertJsonPath($summary, 'token', 'bbb');
+        self::assertJsonPath($summary, 'url', '/slow');
+        self::assertJsonPath($summary, 'resource_uri', 'typo3-profiler://profile/bbb');
     }
 
     #[Test]
     public function getReportsAnErrorForUnknownToken(): void
     {
-        self::assertArrayHasKey('error', $this->decode($this->tool()->get('does-not-exist')));
+        self::assertJsonHasPath($this->decode($this->tool()->get('does-not-exist')), 'error');
     }
 
     #[Test]
     public function getReportsAnErrorForAnInvalidToken(): void
     {
         // The profiler's reader rejects traversal-unsafe tokens -> treated as not found.
-        self::assertArrayHasKey('error', $this->decode($this->tool()->get('../../etc/passwd')));
+        self::assertJsonHasPath($this->decode($this->tool()->get('../../etc/passwd')), 'error');
     }
 
     /**

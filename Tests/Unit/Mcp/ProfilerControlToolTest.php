@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
+use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3AiMate\Mate\{ProfilerStateProvider, Typo3CliRunner};
 use KonradMichalik\Typo3AiMate\Mcp\ProfilerControlTool;
 use PHPUnit\Framework\Attributes\Test;
@@ -26,6 +27,7 @@ use PHPUnit\Framework\TestCase;
 final class ProfilerControlToolTest extends TestCase
 {
     use DecodesResponses;
+    use JsonAssertions;
 
     private string $rootDir;
 
@@ -59,8 +61,8 @@ final class ProfilerControlToolTest extends TestCase
     {
         $result = $this->decode($this->tool()->start('15m'));
 
-        self::assertTrue($result['active']);
-        self::assertIsString($result['expires_at']);
+        self::assertJsonPath($result, 'active', true);
+        self::assertJsonHasPath($result, 'expires_at');
     }
 
     #[Test]
@@ -68,7 +70,7 @@ final class ProfilerControlToolTest extends TestCase
     {
         $result = $this->decode($this->tool()->start('99h'));
 
-        self::assertIsString($result['error']);
+        self::assertJsonHasPath($result, 'error');
     }
 
     #[Test]
@@ -76,7 +78,7 @@ final class ProfilerControlToolTest extends TestCase
     {
         $result = $this->decode($this->tool()->stop());
 
-        self::assertFalse($result['active']);
+        self::assertJsonPath($result, 'active', false);
     }
 
     #[Test]
@@ -86,8 +88,8 @@ final class ProfilerControlToolTest extends TestCase
         // for profiler:activate — an "inactive" answer proves status reads the file.
         $result = $this->decode($this->tool()->status());
 
-        self::assertFalse($result['active']);
-        self::assertNull($result['ttl_seconds']);
+        self::assertJsonPath($result, 'active', false);
+        self::assertJsonPath($result, 'ttl_seconds', null);
     }
 
     private function tool(): ProfilerControlTool
