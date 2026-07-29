@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
+use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3AiMate\Mate\ProfileProvider;
 use KonradMichalik\Typo3AiMate\Mcp\ProfileResource;
 use KonradMichalik\Typo3AiMate\Tests\Unit\ProfileFixtures;
@@ -23,10 +24,12 @@ use PHPUnit\Framework\TestCase;
  * ProfileResourceTest.
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
+ * @license GPL-2.0-or-later
  */
 final class ProfileResourceTest extends TestCase
 {
     use DecodesResponses;
+    use JsonAssertions;
     use ProfileFixtures;
 
     protected function setUp(): void
@@ -51,8 +54,8 @@ final class ProfileResourceTest extends TestCase
         self::assertSame('text/plain', $result['mimeType']);
 
         $profile = $this->decode($result['text']);
-        self::assertSame('/slow', $profile['url']);
-        self::assertArrayHasKey('duplicate_queries', $profile);
+        self::assertJsonPath($profile, 'url', '/slow');
+        self::assertJsonHasPath($profile, 'duplicate_queries');
         self::assertArrayNotHasKey('_schema_warning', $profile);
     }
 
@@ -61,13 +64,13 @@ final class ProfileResourceTest extends TestCase
     {
         $profile = $this->decode($this->resource()->profile('ddd')['text']);
 
-        self::assertArrayHasKey('_schema_warning', $profile);
+        self::assertJsonHasPath($profile, '_schema_warning');
     }
 
     #[Test]
     public function profileReportsAnErrorForUnknownToken(): void
     {
-        self::assertArrayHasKey('error', $this->decode($this->resource()->profile('unknown')['text']));
+        self::assertJsonHasPath($this->decode($this->resource()->profile('unknown')['text']), 'error');
     }
 
     #[Test]
@@ -75,21 +78,20 @@ final class ProfileResourceTest extends TestCase
     {
         $payload = $this->decode($this->resource()->section('bbb', 'queries')['text']);
 
-        self::assertArrayHasKey('queries', $payload);
-        self::assertIsArray($payload['queries']);
-        self::assertSame(30, $payload['queries']['count']);
+        self::assertJsonHasPath($payload, 'queries');
+        self::assertJsonPath($payload, 'queries.count', 30);
     }
 
     #[Test]
     public function sectionReportsAnErrorForAMissingSection(): void
     {
-        self::assertArrayHasKey('error', $this->decode($this->resource()->section('bbb', 'nope')['text']));
+        self::assertJsonHasPath($this->decode($this->resource()->section('bbb', 'nope')['text']), 'error');
     }
 
     #[Test]
     public function sectionReportsAnErrorForUnknownToken(): void
     {
-        self::assertArrayHasKey('error', $this->decode($this->resource()->section('unknown', 'queries')['text']));
+        self::assertJsonHasPath($this->decode($this->resource()->section('unknown', 'queries')['text']), 'error');
     }
 
     private function resource(): ProfileResource

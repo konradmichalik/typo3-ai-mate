@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 
+use KonradMichalik\Ttt\Attribute\WithEnvironment;
+use KonradMichalik\Ttt\Fixture\LogFixtures;
 use KonradMichalik\Typo3AiMate\Command\DeprecationsCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -24,11 +26,11 @@ use TYPO3\CMS\Core\Package\{PackageInterface, PackageManager};
  * DeprecationsCommandTest.
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
+ * @license GPL-2.0-or-later
  */
+#[WithEnvironment]
 final class DeprecationsCommandTest extends TestCase
 {
-    use WithTemporaryVarPath;
-
     private DeprecationsCommand $command;
 
     private mixed $originalConfVars = null;
@@ -39,12 +41,10 @@ final class DeprecationsCommandTest extends TestCase
         $packageManager->method('getActivePackages')->willReturn([]);
         $this->command = new DeprecationsCommand($packageManager);
         $this->originalConfVars = $GLOBALS['TYPO3_CONF_VARS'] ?? null;
-        $this->initVarPath();
     }
 
     protected function tearDown(): void
     {
-        $this->cleanupVarPath();
         if (null === $this->originalConfVars) {
             unset($GLOBALS['TYPO3_CONF_VARS']);
         } else {
@@ -123,7 +123,7 @@ final class DeprecationsCommandTest extends TestCase
             'NOTICE' => ['TYPO3\\CMS\\Core\\Log\\Writer\\FileWriter' => ['logFileInfix' => 'deprecations']],
         ]]]]]];
 
-        $this->writeLog('deprecations', [
+        LogFixtures::write(Environment::getVarPath().'/log/typo3_deprecations.log', [
             'Mon, 15 Jun 2026 16:16:25 +0200 [NOTICE] request="r1" component="TYPO3.CMS.deprecations": Foo is deprecated',
             'Mon, 15 Jun 2026 16:16:26 +0200 [NOTICE] request="r2" component="TYPO3.CMS.deprecations": Foo is deprecated',
             'Mon, 15 Jun 2026 16:16:27 +0200 [INFO] request="r3" component="TYPO3.CMS.Core": Not a deprecation',
@@ -174,7 +174,7 @@ final class DeprecationsCommandTest extends TestCase
         $GLOBALS['TYPO3_CONF_VARS'] = ['LOG' => ['TYPO3' => ['CMS' => ['deprecations' => ['writerConfiguration' => [
             'NOTICE' => ['TYPO3\\CMS\\Core\\Log\\Writer\\FileWriter' => ['logFileInfix' => 'deprecations']],
         ]]]]]];
-        $this->writeLog('deprecations', [
+        LogFixtures::write(Environment::getVarPath().'/log/typo3_deprecations.log', [
             'Mon, 15 Jun 2026 16:16:25 +0200 [NOTICE] request="r1" component="TYPO3.CMS.deprecations": Argument $useNonce is deprecated',
         ]);
 
@@ -217,7 +217,7 @@ final class DeprecationsCommandTest extends TestCase
             'NOTICE' => ['TYPO3\\CMS\\Core\\Log\\Writer\\FileWriter' => ['logFileInfix' => 'deprecations']],
         ]]]]]];
         // Lines without a timestamp are continuation lines and accumulate as trace.
-        $this->writeLog('deprecations', [
+        LogFixtures::write(Environment::getVarPath().'/log/typo3_deprecations.log', [
             'Mon, 15 Jun 2026 16:16:25 +0200 [NOTICE] request="r1" component="TYPO3.CMS.deprecations": Something is deprecated',
             '#0 /var/www/vendor/typo3/cms-core/Classes/Foo.php(10): TYPO3\\CMS\\Core\\Foo->bar()',
             '#1 '.$packageDir.'/Classes/Caller.php(2): Vendor\\MyExt\\Caller->run()',
@@ -251,7 +251,7 @@ final class DeprecationsCommandTest extends TestCase
             'NOTICE' => ['TYPO3\\CMS\\Core\\Log\\Writer\\FileWriter' => ['logFileInfix' => 'deprecations']],
         ]]]]]];
         // FileWriter appends the processor's data as " - {json}" (slashes escaped).
-        $this->writeLog('deprecations', [
+        LogFixtures::write(Environment::getVarPath().'/log/typo3_deprecations.log', [
             'Mon, 15 Jun 2026 16:16:25 +0200 [NOTICE] request="r1" component="TYPO3.CMS.deprecations": Foo is deprecated - {"typo3-ai-mate-origin":"packages\\/my_ext\\/Classes\\/Caller.php:42"}',
         ]);
 
