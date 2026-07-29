@@ -58,6 +58,8 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
   (`duration=15m`, max `60m`), off again, and check the remaining time. `-status` covers only
   this window; profiling can also be on via the Development context or a per-request header,
   so read `activation_mode` on a recorded profile to see which mode actually applied.
+  `-start`/`-stop` need the profiler's `profiler:activate`/`:deactivate` console commands; if
+  they are not registered, the tools say so and profiling stays controlled by the context.
 - `typo3-page` — page composition + cache signals (expand a profile `page.id`).
 - `typo3-records` — read-only record query for any table (`table=<name>`, equality
   filters via `uid`/`pid`/`where=field=value,…`). Compact rows with a `_flags` list

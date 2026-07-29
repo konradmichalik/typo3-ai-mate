@@ -36,9 +36,13 @@ final class ProfilerControlToolTest extends TestCase
         $this->rootDir = sys_get_temp_dir().'/typo3-ai-mate-ctrl-'.bin2hex(random_bytes(8));
         mkdir($this->rootDir.'/var/log', 0777, true);
         mkdir($this->rootDir.'/vendor/bin', 0777, true);
+        // Records every invocation, so a test can assert that a tool did *not*
+        // shell out, and mimics the profiler commands' effect on the state file.
         file_put_contents($this->rootDir.'/vendor/bin/typo3', <<<'PHP'
             <?php
-            $state = dirname(__DIR__, 2).'/var/log/profiler-activation-state.json';
+            $root = dirname(__DIR__, 2);
+            file_put_contents($root.'/cli-invoked', $argv[1] ?? '');
+            $state = $root.'/var/log/profiler-activation-state.json';
             'profiler:activate' === ($argv[1] ?? null)
                 ? file_put_contents($state, json_encode(['expiresAt' => time() + 900]))
                 : @unlink($state);
@@ -48,7 +52,7 @@ final class ProfilerControlToolTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (['/var/log/profiler-activation-state.json', '/vendor/bin/typo3'] as $file) {
+        foreach (['/var/log/profiler-activation-state.json', '/vendor/bin/typo3', '/cli-invoked'] as $file) {
             @unlink($this->rootDir.$file);
         }
         foreach (['/vendor/bin', '/vendor', '/var/log', '/var', ''] as $dir) {
@@ -76,20 +80,35 @@ final class ProfilerControlToolTest extends TestCase
     #[Test]
     public function stopEncodesTheDeactivatedState(): void
     {
+        // Starting from an *active* state, so the reported "false" can only come
+        // from the command having run — not from there being nothing to clear.
+        $this->writeActiveState();
+
         $result = $this->decode($this->tool()->stop());
 
         self::assertJsonPath($result, 'active', false);
+        self::assertStringEqualsFile($this->rootDir.'/cli-invoked', 'profiler:deactivate');
     }
 
     #[Test]
     public function statusEncodesTheCurrentStateWithoutInvokingTheCommand(): void
     {
-        // No state file written, and the fake binary would have created one only
-        // for profiler:activate — an "inactive" answer proves status reads the file.
+        $this->writeActiveState();
+
         $result = $this->decode($this->tool()->status());
 
-        self::assertJsonPath($result, 'active', false);
-        self::assertJsonPath($result, 'ttl_seconds', null);
+        // Reads the seeded state as-is, and the absent marker proves it got there
+        // without shelling out — a CLI round trip would have cleared the state.
+        self::assertJsonPath($result, 'active', true);
+        self::assertFileDoesNotExist($this->rootDir.'/cli-invoked');
+    }
+
+    private function writeActiveState(): void
+    {
+        file_put_contents(
+            $this->rootDir.'/var/log/profiler-activation-state.json',
+            json_encode(['expiresAt' => time() + 600], \JSON_THROW_ON_ERROR),
+        );
     }
 
     private function tool(): ProfilerControlTool
