@@ -136,6 +136,25 @@ final class ProfileProviderTest extends TestCase
     }
 
     #[Test]
+    public function summarizeSurfacesTheActivationModeFromTheProvenanceMeta(): void
+    {
+        $summary = (new ProfileProvider($this->rootDir))->summarize([
+            'token' => 'x',
+            'meta' => ['activationMode' => 'stateFile', 'applicationContext' => 'Development'],
+        ]);
+
+        self::assertSame('stateFile', $summary['activation_mode']);
+    }
+
+    #[Test]
+    public function summarizeReportsANullActivationModeWhenTheProfileHasNoMeta(): void
+    {
+        $summary = (new ProfileProvider($this->rootDir))->summarize(['token' => 'x']);
+
+        self::assertNull($summary['activation_mode']);
+    }
+
+    #[Test]
     public function searchFiltersByUrlAndStatus(): void
     {
         $provider = new ProfileProvider($this->rootDir);

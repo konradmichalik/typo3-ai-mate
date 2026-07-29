@@ -33,6 +33,10 @@ TESTS=(
   "typo3-profiler-latest|"
   "typo3-profiler-list|--tool-arg limit=5"
   "typo3-profiler-search|--tool-arg url=/"
+  # Ordered so the run ends with profiling switched back off.
+  "typo3-profiler-status|"
+  "typo3-profiler-start|--tool-arg duration=1m"
+  "typo3-profiler-stop|"
 )
 [ -n "${TOKEN}" ] && TESTS+=("typo3-profiler-get|--tool-arg token=${TOKEN}")
 

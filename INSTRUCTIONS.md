@@ -18,6 +18,9 @@ actually computed, not what the code might do.
 ## Diagnose instead of guessing
 
 **"This page is slow":**
+0. If no profile exists yet, or `typo3-profiler-latest` returns a stale one:
+   `typo3-profiler-start duration=15m`, exercise the page, then continue below.
+   `typo3-profiler-stop` when done — profiling every request is expensive.
 1. `typo3-profiler-latest` — a compact summary: timing, `query_count`, `duplicate_queries`
    count (N+1), `cache_hit`, the `page.id` and a `resource_uri`.
 2. For the raw SQL / per-section detail, read the profile as a resource:
@@ -51,6 +54,12 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
   summaries, each with a `resource_uri`; read the full profile or a single section via the
   `typo3-profiler://profile/{token}[/{section}]` resources. (Requires the
   `typo3-request-profiler` extension and a triggered FE request in the Development context.)
+- `typo3-profiler-start` / `-stop` / `-status` — switch profiling on for a bounded window
+  (`duration=15m`, max `60m`), off again, and check the remaining time. `-status` covers only
+  this window; profiling can also be on via the Development context or a per-request header,
+  so read `activation_mode` on a recorded profile to see which mode actually applied.
+  `-start`/`-stop` need the profiler's `profiler:activate`/`:deactivate` console commands; if
+  they are not registered, the tools say so and profiling stays controlled by the context.
 - `typo3-page` — page composition + cache signals (expand a profile `page.id`).
 - `typo3-records` — read-only record query for any table (`table=<name>`, equality
   filters via `uid`/`pid`/`where=field=value,…`). Compact rows with a `_flags` list

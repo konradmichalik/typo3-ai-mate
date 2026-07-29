@@ -11,8 +11,8 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-use KonradMichalik\Typo3AiMate\Mate\{ProfileProvider, Typo3CliRunner};
-use KonradMichalik\Typo3AiMate\Mcp\{DeprecationsTool, EventsTool, ExtensionScannerTool, FluidResolveTool, LogsTool, MiddlewaresTool, PageTool, PerformanceTool, ProfileResource, RenderPageTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
+use KonradMichalik\Typo3AiMate\Mate\{ProfileProvider, ProfilerStateProvider, Typo3CliRunner};
+use KonradMichalik\Typo3AiMate\Mcp\{DeprecationsTool, EventsTool, ExtensionScannerTool, FluidResolveTool, LogsTool, MiddlewaresTool, PageTool, PerformanceTool, ProfileResource, ProfilerControlTool, RenderPageTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 /*
@@ -54,4 +54,10 @@ return static function (ContainerConfigurator $container): void {
         ->arg('$rootDir', '%mate.root_dir%');
     $services->set(PerformanceTool::class);
     $services->set(ProfileResource::class);
+
+    // Toggling profiling reads the state file below the project root and writes
+    // through the profiler's console commands, so it needs both collaborators.
+    $services->set(ProfilerStateProvider::class)
+        ->arg('$rootDir', '%mate.root_dir%');
+    $services->set(ProfilerControlTool::class);
 };
