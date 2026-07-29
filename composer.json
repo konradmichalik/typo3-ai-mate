@@ -17,7 +17,7 @@
 		"ext-mbstring": "*",
 		"doctrine/dbal": "^4",
 		"helgesverre/toon": "^3.2.1",
-		"konradmichalik/typo3-request-profiler": "^0.4",
+		"konradmichalik/typo3-request-profiler": "^0.5",
 		"mcp/sdk": "^0.7",
 		"nikic/php-parser": "^5.8.0",
 		"psr/http-server-handler": "^1.0.2",

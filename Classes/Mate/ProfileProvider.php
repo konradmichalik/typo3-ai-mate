@@ -126,6 +126,7 @@ final readonly class ProfileProvider
         $cache = is_array($profile['cache'] ?? null) ? $profile['cache'] : [];
         $timing = is_array($profile['timing'] ?? null) ? $profile['timing'] : [];
         $queries = is_array($profile['queries'] ?? null) ? $profile['queries'] : [];
+        $meta = is_array($profile['meta'] ?? null) ? $profile['meta'] : [];
 
         $url = $profile['url'] ?? null;
 
@@ -139,6 +140,9 @@ final readonly class ProfileProvider
             'total_ms' => $timing['total_ms'] ?? null,
             'query_count' => $queries['count'] ?? null,
             'duplicate_queries' => count(is_array($profile['duplicate_queries'] ?? null) ? $profile['duplicate_queries'] : []),
+            // Why this profile was recorded (stateFile, context, header). Tells a
+            // near-empty profile from one taken under the wrong activation mode.
+            'activation_mode' => $meta['activationMode'] ?? null,
             'resource_uri' => $this->resourceUri(Cast::string($profile['token'] ?? '')),
         ];
     }
