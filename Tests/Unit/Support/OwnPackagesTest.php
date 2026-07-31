@@ -28,36 +28,55 @@ use TYPO3\CMS\Core\Core\Environment;
 #[WithEnvironment]
 final class OwnPackagesTest extends TestCase
 {
-    private string $projectPath;
-
-    protected function setUp(): void
-    {
-        $this->projectPath = Environment::getProjectPath();
-        mkdir($this->projectPath.'/vendor/acme/dependency', 0o777, true);
-        mkdir($this->projectPath.'/packages/site_package', 0o777, true);
-        // Composer path repository: the package is symlinked into vendor/.
-        symlink($this->projectPath.'/packages/site_package', $this->projectPath.'/vendor/acme/site_package');
-    }
+    private ?string $projectPath = null;
 
     #[Test]
     public function ownCodeOutsideVendorIsOwn(): void
     {
-        self::assertTrue(OwnPackages::isOwn($this->projectPath.'/packages/site_package'));
-        self::assertSame('own', OwnPackages::origin($this->projectPath.'/packages/site_package'));
+        $projectPath = $this->projectPath();
+
+        self::assertTrue(OwnPackages::isOwn($projectPath.'/packages/site_package'));
+        self::assertSame('own', OwnPackages::origin($projectPath.'/packages/site_package'));
     }
 
     #[Test]
     public function aRealVendorPackageIsThirdParty(): void
     {
-        self::assertFalse(OwnPackages::isOwn($this->projectPath.'/vendor/acme/dependency'));
-        self::assertSame('thirdParty', OwnPackages::origin($this->projectPath.'/vendor/acme/dependency'));
+        $projectPath = $this->projectPath();
+
+        self::assertFalse(OwnPackages::isOwn($projectPath.'/vendor/acme/dependency'));
+        self::assertSame('thirdParty', OwnPackages::origin($projectPath.'/vendor/acme/dependency'));
     }
 
     #[Test]
     public function aPathRepositorySymlinkedIntoVendorIsStillOwn(): void
     {
+        $projectPath = $this->projectPath();
+
         // getPackagePath() reports the vendor/ symlink, but realpath resolves it
         // back to packages/* — so it must classify as own, not third-party.
-        self::assertTrue(OwnPackages::isOwn($this->projectPath.'/vendor/acme/site_package'));
+        self::assertTrue(OwnPackages::isOwn($projectPath.'/vendor/acme/site_package'));
+    }
+
+    /**
+     * Lazily bootstraps the fixture files under Environment::getProjectPath().
+     *
+     * Must be called from within a test method, not setUp(): ttt applies
+     * #[WithEnvironment] after setUp() runs, so setUp() would still observe
+     * the pre-sandbox Environment. See vendor/konradmichalik/ttt/docs/lifecycle.md.
+     */
+    private function projectPath(): string
+    {
+        if (null !== $this->projectPath) {
+            return $this->projectPath;
+        }
+
+        $this->projectPath = Environment::getProjectPath();
+        mkdir($this->projectPath.'/vendor/acme/dependency', 0o777, true);
+        mkdir($this->projectPath.'/packages/site_package', 0o777, true);
+        // Composer path repository: the package is symlinked into vendor/.
+        symlink($this->projectPath.'/packages/site_package', $this->projectPath.'/vendor/acme/site_package');
+
+        return $this->projectPath;
     }
 }
