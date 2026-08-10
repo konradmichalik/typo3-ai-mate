@@ -15,7 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{CommandsTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FluidResolveTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
+use KonradMichalik\Typo3AiMate\Mcp\{CommandsTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FluidResolveTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\{LogLevel, MiddlewareStack, OutputMode, TsConfigType, TypoScriptType};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -194,6 +194,33 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new CommandsTool($this->runner))->list());
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:commands:list');
+        self::assertJsonPath($result, 'args', []);
+    }
+
+    #[Test]
+    public function dbSchemaToolForwardsTheTableArgument(): void
+    {
+        $result = $this->decode((new DbSchemaTool($this->runner))->dump('tt_content'));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:db-schema:dump');
+        self::assertJsonPath($result, 'args', ['--', 'tt_content']);
+    }
+
+    #[Test]
+    public function dbSchemaToolForwardsThePatternFilterWhenNoTableGiven(): void
+    {
+        $result = $this->decode((new DbSchemaTool($this->runner))->dump(null, 'tt_'));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:db-schema:dump');
+        self::assertJsonPath($result, 'args', ['--pattern', 'tt_']);
+    }
+
+    #[Test]
+    public function dbSchemaToolListsAllTablesWithoutOptionsByDefault(): void
+    {
+        $result = $this->decode((new DbSchemaTool($this->runner))->dump());
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:db-schema:dump');
         self::assertJsonPath($result, 'args', []);
     }
 
