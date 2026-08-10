@@ -69,7 +69,12 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
   SQL to answer "why is this record not showing?". `mode=full` for all columns,
   `respectEnableFields=true` for the frontend view.
 - `typo3-logs-search` / `-tail` / `-by-level` — TYPO3 logs.
-- `typo3-tca` — resolved (trimmed) TCA of a table, or all table names.
+- `typo3-tca` — resolved TCA of a table, or all table names. Built on the core
+  Schema API: `capabilities` (softDelete/workspace/language/sorting field),
+  `recordTypes` (type value => visible field names) and `relations` (field =>
+  resolved target table + relationship type — a file field resolves to
+  `sys_file_reference` instead of leaving `type: file` for you to interpret),
+  plus the trimmed `columns` as before.
 - `typo3-db-schema` — the physical schema, counterpart to `typo3-tca`: without a
   `table`, every table name with a row-count estimate (optional `pattern` substring
   filter); with a `table`, its real columns (name, type, length, nullable, default),

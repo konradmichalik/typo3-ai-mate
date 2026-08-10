@@ -30,7 +30,7 @@ final readonly class TcaTool
      * @param string|null $table table name whose resolved (trimmed) TCA to return; omit (or set list=true) to get only the table names
      * @param bool        $list  true returns just the list of all TCA table names instead of a table's TCA
      */
-    #[McpTool(name: 'typo3-tca', title: 'TYPO3 TCA', description: 'Resolved (trimmed) TCA of a table, or the list of all TCA table names when no table is given.')]
+    #[McpTool(name: 'typo3-tca', title: 'TYPO3 TCA', description: 'Resolved TCA of a table, or the list of all TCA table names when no table is given. Output changed: a table now additionally returns capabilities (softDelete/workspace/language/sorting), recordTypes (type value => visible field names) and relations (field => resolved target table + relationship type, e.g. a file field resolves to sys_file_reference instead of leaving type=file for you to interpret) alongside the trimmed columns.')]
     public function dump(?string $table = null, bool $list = false): string
     {
         if ($list || null === $table || '' === $table) {
