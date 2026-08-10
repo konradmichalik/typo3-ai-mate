@@ -109,9 +109,20 @@ flowchart LR
 | Deprecations | `typo3-deprecations` | Report runtime deprecation notices, deduplicated and counted. Each one carries `origins` — the likely caller in own code. With deprecation logging enabled, a dev-only log processor records the caller's backtrace at log time for a high-confidence file:line; otherwise it falls back to a class-aware static reverse search across own PHP/Fluid files. |
 | Rendering | `typo3-render-page` | Render a frontend page via an internal HTTP request (no external curl/Playwright) so runtime notices fire, and report the HTTP status plus the log entries written during that request. Requires a running webserver (e.g. DDEV). An explicit `--url` is only allowed for the installation's configured site hosts (SSRF guard) and the request is capped at 60s. |
 
+## 🔒 Security model
+
+**Read-only by default.** 19 of the 22 tools only read resolved runtime state and are annotated `readOnlyHint: true` in `tools/list`, so an MCP client can run them without a confirmation prompt. The exceptions are annotated explicitly, never left to prose:
+
+- `typo3-profiler-start` / `-stop` — the only tools that write anything, and only a time-boxed dev switch (max 60 minutes); they touch no records.
+- `typo3-render-page` — issues a real internal HTTP request, so it has side effects in caches and logs (`readOnlyHint: false`, `openWorldHint: true`). Its URL is restricted to the installation's configured site hosts (SSRF guard).
+
+No tool executes arbitrary code and none expose a raw SQL surface — `typo3-records` is a structured, parameterised query (equality filters only), never a `SELECT` string. Every command runs only in a Development context (`Environment::getContext()->isDevelopment()`).
+
+See [`DEVELOPMENT.md`](DEVELOPMENT.md) for the full security notes (redaction, path-traversal guards, CLI argument hardening).
+
 ## 💡 Development
 
-Custom `typo3-*` tools, the `Typo3CliRunner` recipe and security notes live in [`DEVELOPMENT.md`](DEVELOPMENT.md).
+Custom `typo3-*` tools and the `Typo3CliRunner` recipe live in [`DEVELOPMENT.md`](DEVELOPMENT.md).
 
 ## 🔗 Related
 
