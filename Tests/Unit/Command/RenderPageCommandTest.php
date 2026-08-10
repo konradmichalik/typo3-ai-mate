@@ -16,6 +16,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 use KonradMichalik\Ttt\Attribute\WithEnvironment;
 use KonradMichalik\Ttt\Fixture\LogFixtures;
 use KonradMichalik\Typo3AiMate\Command\RenderPageCommand;
+use KonradMichalik\Typo3AiMate\Service\SiteUrlResolver;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\{ResponseInterface, StreamInterface, UriInterface};
@@ -39,7 +40,7 @@ final class RenderPageCommandTest extends TestCase
     #[Test]
     public function newEntriesSinceKeepsOnlyEntriesAtOrAfterTheBoundary(): void
     {
-        $command = new RenderPageCommand(self::createStub(SiteFinder::class), self::createStub(RequestFactory::class));
+        $command = new RenderPageCommand(new SiteUrlResolver(self::createStub(SiteFinder::class)), self::createStub(RequestFactory::class));
         $boundary = strtotime('Mon, 15 Jun 2026 16:00:00 +0200');
 
         $entries = $command->newEntriesSince([
@@ -105,7 +106,7 @@ final class RenderPageCommandTest extends TestCase
     public function executeFailsWhenNeitherPageIdNorUrlIsGiven(): void
     {
         $tester = new CommandTester(new RenderPageCommand(
-            self::createStub(SiteFinder::class),
+            new SiteUrlResolver(self::createStub(SiteFinder::class)),
             self::createStub(RequestFactory::class),
         ));
         $exitCode = $tester->execute([]);
@@ -155,7 +156,7 @@ final class RenderPageCommandTest extends TestCase
         $siteFinder = self::createStub(SiteFinder::class);
         $siteFinder->method('getSiteByPageId')->willThrowException(new RuntimeException('no site'));
 
-        $tester = new CommandTester(new RenderPageCommand($siteFinder, self::createStub(RequestFactory::class)));
+        $tester = new CommandTester(new RenderPageCommand(new SiteUrlResolver($siteFinder), self::createStub(RequestFactory::class)));
         $exitCode = $tester->execute(['pageId' => 5]);
 
         self::assertSame(1, $exitCode);
@@ -187,7 +188,7 @@ final class RenderPageCommandTest extends TestCase
         $siteFinder = self::createStub(SiteFinder::class);
         $siteFinder->method('getAllSites')->willThrowException(new RuntimeException('sites unavailable'));
 
-        $tester = new CommandTester(new RenderPageCommand($siteFinder, self::createStub(RequestFactory::class)));
+        $tester = new CommandTester(new RenderPageCommand(new SiteUrlResolver($siteFinder), self::createStub(RequestFactory::class)));
         $exitCode = $tester->execute(['--url' => '/some/path']);
 
         self::assertSame(1, $exitCode);
@@ -203,7 +204,7 @@ final class RenderPageCommandTest extends TestCase
         $siteFinder = self::createStub(SiteFinder::class);
         $siteFinder->method('getAllSites')->willThrowException(new RuntimeException('sites unavailable'));
 
-        $tester = new CommandTester(new RenderPageCommand($siteFinder, self::createStub(RequestFactory::class)));
+        $tester = new CommandTester(new RenderPageCommand(new SiteUrlResolver($siteFinder), self::createStub(RequestFactory::class)));
         $exitCode = $tester->execute(['--url' => 'https://example.test/']);
 
         self::assertSame(1, $exitCode);
@@ -229,7 +230,7 @@ final class RenderPageCommandTest extends TestCase
         self::assertStringContainsString('not among the configured site bases', $result['error']);
     }
 
-    private function siteFinderReturning(string $url): SiteFinder
+    private function siteFinderReturning(string $url): SiteUrlResolver
     {
         $uri = self::createStub(UriInterface::class);
         $uri->method('__toString')->willReturn($url);
@@ -240,10 +241,10 @@ final class RenderPageCommandTest extends TestCase
         $siteFinder = self::createStub(SiteFinder::class);
         $siteFinder->method('getSiteByPageId')->willReturn($site);
 
-        return $siteFinder;
+        return new SiteUrlResolver($siteFinder);
     }
 
-    private function siteFinderWithBase(string $base): SiteFinder
+    private function siteFinderWithBase(string $base): SiteUrlResolver
     {
         $uri = self::createStub(UriInterface::class);
         $uri->method('__toString')->willReturn($base);
@@ -252,7 +253,7 @@ final class RenderPageCommandTest extends TestCase
         $siteFinder = self::createStub(SiteFinder::class);
         $siteFinder->method('getAllSites')->willReturn(['example' => $site]);
 
-        return $siteFinder;
+        return new SiteUrlResolver($siteFinder);
     }
 
     private function requestFactoryReturning(int $status, int $bytes): RequestFactory
