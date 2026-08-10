@@ -16,6 +16,7 @@ actually computed, not what the code might do.
 | `tail -f var/log/*.log`              | `typo3-logs-tail`     |
 | raw `SELECT` / `ddev mysql`          | `typo3-records`       |
 | `ext_tables.sql` / a DB client       | `typo3-db-schema`     |
+| `settings.php` / `additional.php`    | `typo3-config`        |
 
 ## Diagnose instead of guessing
 
@@ -89,6 +90,11 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
   over from other frameworks or older TYPO3 versions. Optional `pattern` substring
   filter on the command name; `ownOnly=true` hides core and third-party (vendor)
   commands.
+- `typo3-config` — `TYPO3_CONF_VARS`, feature toggles (`section=features`) or one
+  extension's configuration (`section=extension`, `path=<extension key>`). Omit
+  `path` for a compact overview (top-level keys plus feature toggles by default).
+  Secrets are masked recursively by key, plus a second pass over string values
+  for embedded credentials (DSNs); masking cannot be disabled.
 - `typo3-upgrade-wizards` — all upgrade wizards (pending/done) with status; which
   DB/config migrations are still outstanding. Read-only.
 - `typo3-extension-scanner` — static scan of an extension's PHP against the core
