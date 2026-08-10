@@ -12,6 +12,7 @@ actually computed, not what the code might do.
 | `*.typoscript` / guessing the setup  | `typo3-typoscript`    |
 | `RequestMiddlewares.php`             | `typo3-middlewares`   |
 | event listeners in `Services.yaml`   | `typo3-events`        |
+| guessing available CLI commands      | `typo3-commands`      |
 | `tail -f var/log/*.log`              | `typo3-logs-tail`     |
 | raw `SELECT` / `ddev mysql`          | `typo3-records`       |
 
@@ -72,6 +73,11 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
   overview by default; scope with `path` or pass `full=true` for the whole tree.
 - `typo3-middlewares` — resolved PSR-15 middleware order of a stack.
 - `typo3-events` — resolved PSR-14 event listener registry (event => listeners).
+- `typo3-commands` — every registered console command (name, description, synopsis),
+  third-party extensions included. Read this instead of guessing CLI commands carried
+  over from other frameworks or older TYPO3 versions. Optional `pattern` substring
+  filter on the command name; `ownOnly=true` hides core and third-party (vendor)
+  commands.
 - `typo3-upgrade-wizards` — all upgrade wizards (pending/done) with status; which
   DB/config migrations are still outstanding. Read-only.
 - `typo3-extension-scanner` — static scan of an extension's PHP against the core
