@@ -138,7 +138,7 @@ final class DescriptionAwareDiscovererTest extends TestCase
             /**
              * @param array<string, ToolReference> $tools
              */
-            public function __construct(private array $tools) {}
+            public function __construct(private readonly array $tools) {}
 
             public function discover(string $basePath, array $directories, array $excludeDirs = [], array $namePatterns = self::DEFAULT_NAME_PATERNS): DiscoveryState
             {
