@@ -15,8 +15,8 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FluidResolveTool, InfoTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
-use KonradMichalik\Typo3AiMate\Mcp\Enum\{ConfigSection, LogLevel, MiddlewareStack, OutputMode, TsConfigType, TypoScriptType};
+use KonradMichalik\Typo3AiMate\Mcp\{ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FluidResolveTool, InfoTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
+use KonradMichalik\Typo3AiMate\Mcp\Enum\{ChangelogType, ConfigSection, LogLevel, MiddlewareStack, OutputMode, TsConfigType, TypoScriptType};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -60,6 +60,24 @@ final class McpToolWrappersTest extends TestCase
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:info:dump');
         self::assertJsonPath($result, 'args', []);
+    }
+
+    #[Test]
+    public function changelogSearchToolForwardsTheQueryWithDefaultLimit(): void
+    {
+        $result = $this->decode((new ChangelogSearchTool($this->runner))->search('sys_file_reference'));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:changelog:search');
+        self::assertJsonPath($result, 'args', ['--limit', '10', '--', 'sys_file_reference']);
+    }
+
+    #[Test]
+    public function changelogSearchToolForwardsTypeVersionAndLimit(): void
+    {
+        $result = $this->decode((new ChangelogSearchTool($this->runner))->search('CType', ChangelogType::Breaking, '13', 5));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:changelog:search');
+        self::assertJsonPath($result, 'args', ['--limit', '5', '--type', 'Breaking', '--version', '13', '--', 'CType']);
     }
 
     #[Test]

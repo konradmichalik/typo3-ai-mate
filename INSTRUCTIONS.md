@@ -120,6 +120,12 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
   `extension` to scan all non-core extensions (own + third-party) at once.
 - `typo3-deprecations` — runtime deprecation notices, deduplicated and grouped by
   message with counts (`loggingEnabled` flag — see below).
+- `typo3-changelog-search` — search the installed core's shipped changelog
+  (Breaking/Deprecation/Feature/Important RST files) offline for migration
+  guidance. Scoped to the installed TYPO3 major by default — the core ships
+  every historical version, so pass `version` explicitly to widen the search.
+  Each result has `type`, `issue`, `version`, `title`, a bounded `excerpt` and
+  the relative `path` to read the full file.
 
 ## Output size
 
@@ -136,17 +142,22 @@ picture, and re-query with a narrower filter:
 
 ## Planning a major upgrade (v13 → v14)
 
-Combine the three upgrade tools — the same building blocks as the backend upgrade
-module — to reason from the installation's real state instead of the changelog:
+*Which of my own code breaks* is answered from the installation's real state, not
+the changelog — the changelog does not know your code. *How do I migrate a specific
+hit*, once found, is answered from the changelog itself (`typo3-changelog-search`):
 
 1. `typo3-extension-scanner extension=<key>` — static analysis: which lines in your
    own code break / are deprecated in the installed target version (`message`,
    `line`, `strong`/`weak` `indicator`). Biggest lever, runs headless. Omit
    `extension` to sweep all non-core extensions in one call.
-2. `typo3-upgrade-wizards` — which DB/config migrations are still `AVAILABLE` vs
+2. `typo3-changelog-search query="<the affected class/method/hook>"` — the
+   migration path for a specific hit from (1), read straight from the installed
+   core's shipped changelog.
+3. `typo3-upgrade-wizards` — which DB/config migrations are still `AVAILABLE` vs
    `DONE`. Read-only; the assistant must not run wizards autonomously.
-3. `typo3-deprecations` — what actually logged a deprecation at runtime,
+4. `typo3-deprecations` — what actually logged a deprecation at runtime,
    deduplicated by message. Complements (1). If `loggingEnabled` is `false`, the
    `deprecations` log channel is off (the default) — an empty list means "not
    measured", **not** "no deprecations". Enable
-   `[LOG][TYPO3][CMS][deprecations][writerConfiguration]` to collect data.
+   `[LOG][TYPO3][CMS][deprecations][writerConfiguration]` to collect data. Feed a
+   hit back into (2) to close the loop.
