@@ -15,6 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\ProfileProvider;
 use Mcp\Capability\Attribute\McpTool;
+use Mcp\Schema\ToolAnnotations;
 use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
 use function sprintf;
@@ -28,7 +29,7 @@ final readonly class PerformanceTool
 {
     public function __construct(private ProfileProvider $profiles) {}
 
-    #[McpTool(name: 'typo3-profiler-latest', title: 'TYPO3 Profiler: Latest', description: 'Compact summary of the most recent request profile (timing, query count, N+1, cache, page.id) plus a resource_uri to read the full profile. Primary tool for a "slow page".')]
+    #[McpTool(name: 'typo3-profiler-latest', title: 'TYPO3 Profiler: Latest', description: 'Compact summary of the most recent request profile (timing, query count, N+1, cache, page.id) plus a resource_uri to read the full profile. Primary tool for a "slow page".', annotations: new ToolAnnotations(readOnlyHint: true))]
     public function latest(): string
     {
         $profile = $this->profiles->rawLatest();
@@ -41,7 +42,7 @@ final readonly class PerformanceTool
     /**
      * @param int $limit maximum number of recent profiles to list
      */
-    #[McpTool(name: 'typo3-profiler-list', title: 'TYPO3 Profiler: List', description: 'List the most recent request profiles as compact summaries (token, url, status, timing, queries, cache), each with a resource_uri for the full profile.')]
+    #[McpTool(name: 'typo3-profiler-list', title: 'TYPO3 Profiler: List', description: 'List the most recent request profiles as compact summaries (token, url, status, timing, queries, cache), each with a resource_uri for the full profile.', annotations: new ToolAnnotations(readOnlyHint: true))]
     public function list(int $limit = 20): string
     {
         // Label the list so the AI gets a named field instead of a bare top-level array.
@@ -53,7 +54,7 @@ final readonly class PerformanceTool
      * @param int|null    $status HTTP status code to match (e.g. 500); omit to match any status.
      * @param int         $limit  maximum number of matching profiles to return
      */
-    #[McpTool(name: 'typo3-profiler-search', title: 'TYPO3 Profiler: Search', description: 'Search request profiles by url substring and/or HTTP status; returns matching summaries (with resource_uri), newest first.')]
+    #[McpTool(name: 'typo3-profiler-search', title: 'TYPO3 Profiler: Search', description: 'Search request profiles by url substring and/or HTTP status; returns matching summaries (with resource_uri), newest first.', annotations: new ToolAnnotations(readOnlyHint: true))]
     public function search(?string $url = null, ?int $status = null, int $limit = 20): string
     {
         // Label the list so the AI gets a named field instead of a bare top-level array.
@@ -63,7 +64,7 @@ final readonly class PerformanceTool
     /**
      * @param string $token profiler token (= request_id, correlates with logs) identifying the profile
      */
-    #[McpTool(name: 'typo3-profiler-get', title: 'TYPO3 Profiler: Get', description: 'Compact summary of a single request profile by its token (= request_id, correlates with logs), plus a resource_uri to read the full profile.')]
+    #[McpTool(name: 'typo3-profiler-get', title: 'TYPO3 Profiler: Get', description: 'Compact summary of a single request profile by its token (= request_id, correlates with logs), plus a resource_uri to read the full profile.', annotations: new ToolAnnotations(readOnlyHint: true))]
     public function get(string $token): string
     {
         $profile = $this->profiles->rawByToken($token);

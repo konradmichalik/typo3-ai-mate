@@ -16,6 +16,7 @@ namespace KonradMichalik\Typo3AiMate\Mcp;
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
 use KonradMichalik\Typo3AiMate\Mcp\Enum\TsConfigType;
 use Mcp\Capability\Attribute\McpTool;
+use Mcp\Schema\ToolAnnotations;
 use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
 /**
@@ -34,7 +35,7 @@ final readonly class TsConfigTool
      * @param string|null  $path   Dotted scope to limit large output to one branch, e.g. mod.web_layout. Omitted returns a top-level overview.
      * @param bool         $full   return the entire resolved tree instead of the top-level overview (can be very large)
      */
-    #[McpTool(name: 'typo3-tsconfig', title: 'TYPO3 Page/User TSconfig', description: 'Resolved Page TSconfig (rootline-merged: mod.*, TCEFORM, TCEMAIN, RTE) or User TSconfig — the backend configuration layer that no single file reveals. Distinct from frontend TypoScript (typo3-typoscript). Without a path you get a top-level overview; drill in with a dotted path (e.g. mod.web_layout.BackendLayouts) or pass full=true for the whole tree.')]
+    #[McpTool(name: 'typo3-tsconfig', title: 'TYPO3 Page/User TSconfig', description: 'Resolved Page TSconfig (rootline-merged: mod.*, TCEFORM, TCEMAIN, RTE) or User TSconfig — the backend configuration layer that no single file reveals. Distinct from frontend TypoScript (typo3-typoscript). Without a path you get a top-level overview; drill in with a dotted path (e.g. mod.web_layout.BackendLayouts) or pass full=true for the whole tree.', annotations: new ToolAnnotations(readOnlyHint: true))]
     public function dump(int $pageId, TsConfigType $type = TsConfigType::Page, ?int $user = null, ?string $path = null, bool $full = false): string
     {
         $options = ['type' => $type->value];

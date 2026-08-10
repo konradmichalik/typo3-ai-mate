@@ -15,6 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
 use Mcp\Capability\Attribute\McpTool;
+use Mcp\Schema\ToolAnnotations;
 use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
 /**
@@ -27,7 +28,7 @@ final readonly class DeprecationsTool
 {
     public function __construct(private Typo3CliRunner $typo3) {}
 
-    #[McpTool(name: 'typo3-deprecations', title: 'TYPO3 Deprecations', description: 'Runtime deprecation notices, deduplicated and grouped by message with occurrence counts. Each entry carries origins: the likely caller in own code — a backtrace frame when available (high confidence), otherwise a static reverse search for the deprecated symbol across own (non-vendor) PHP/Fluid files (low confidence). Reports loggingEnabled=false when the (default-disabled) deprecations log channel is off, so an empty list is not misread as "no deprecations".')]
+    #[McpTool(name: 'typo3-deprecations', title: 'TYPO3 Deprecations', description: 'Runtime deprecation notices, deduplicated and grouped by message with occurrence counts. Each entry carries origins: the likely caller in own code — a backtrace frame when available (high confidence), otherwise a static reverse search for the deprecated symbol across own (non-vendor) PHP/Fluid files (low confidence). Reports loggingEnabled=false when the (default-disabled) deprecations log channel is off, so an empty list is not misread as "no deprecations".', annotations: new ToolAnnotations(readOnlyHint: true))]
     public function list(): string
     {
         return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:upgrade:deprecations'));

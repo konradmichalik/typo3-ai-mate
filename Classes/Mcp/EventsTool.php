@@ -15,6 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
 use Mcp\Capability\Attribute\McpTool;
+use Mcp\Schema\ToolAnnotations;
 use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
 /**
@@ -30,7 +31,7 @@ final readonly class EventsTool
     /**
      * @param string|null $event substring matched against the event class name to filter the registry; omit to list all events
      */
-    #[McpTool(name: 'typo3-events', title: 'TYPO3 Event Listeners', description: 'Resolved PSR-14 event listener registry (which listeners fire for which event), optionally filtered by event class substring.')]
+    #[McpTool(name: 'typo3-events', title: 'TYPO3 Event Listeners', description: 'Resolved PSR-14 event listener registry (which listeners fire for which event), optionally filtered by event class substring.', annotations: new ToolAnnotations(readOnlyHint: true))]
     public function list(?string $event = null): string
     {
         $options = null !== $event && '' !== $event ? ['event' => $event] : [];
