@@ -90,7 +90,7 @@ final class ChangelogSearchCommand extends AbstractJsonCommand
         $words = preg_split('/\s+/', trim($query)) ?: [];
 
         return array_values(array_filter(
-            array_map(static fn (string $word): string => strtolower($word), $words),
+            array_map(strtolower(...), $words),
             static fn (string $word): bool => '' !== $word,
         ));
     }
@@ -220,16 +220,19 @@ final class ChangelogSearchCommand extends AbstractJsonCommand
         }
 
         // Filename matches name the affected API directly and are the stronger
-        // signal; usort is stable (PHP 8+), so equal scores keep scan order.
-        usort($scored, static fn (array $a, array $b): int => $b[0] <=> $a[0]);
+        // signal. Filename is the tiebreaker for equal scores rather than scan
+        // order: Finder's iteration order is filesystem-dependent and differs
+        // between a developer machine and CI, which would make the result order
+        // (and any test asserting it) flaky.
+        usort($scored, static fn (array $a, array $b): int => $b[0] <=> $a[0] ?: $a[1] <=> $b[1]);
 
-        return array_map(static fn (array $entry): array => $entry[1], $scored);
+        return array_map(static fn (array $entry): array => $entry[2], $scored);
     }
 
     /**
      * @param list<string> $words
      *
-     * @return array{0: int, 1: array{type: string, issue: int, version: string, title: string, excerpt: string, path: string}}|null
+     * @return array{0: int, 1: string, 2: array{type: string, issue: int, version: string, title: string, excerpt: string, path: string}}|null
      */
     private function evaluateFile(string $filename, string $absolutePath, string $versionName, array $words, ?ChangelogType $type): ?array
     {
@@ -251,7 +254,7 @@ final class ChangelogSearchCommand extends AbstractJsonCommand
             }
         }
 
-        return [$filenameScore, [
+        return [$filenameScore, $filename, [
             'type' => $parsed['type'],
             'issue' => $parsed['issue'],
             'version' => $versionName,
