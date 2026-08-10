@@ -139,7 +139,13 @@ final class TcaCommand extends AbstractJsonCommand
             if (!$subSchema instanceof TcaSchema) {
                 continue;
             }
-            $recordTypes[Cast::string($typeValue)] = array_values(array_map(Cast::string(...), $subSchema->getFields()->getNames()));
+            // FieldCollection::getNames() is a v14-only addition (undefined on
+            // TYPO3 v13.4) - iterate instead, which both versions support.
+            $fieldNames = [];
+            foreach ($subSchema->getFields() as $fieldName => $field) {
+                $fieldNames[] = Cast::string($fieldName);
+            }
+            $recordTypes[Cast::string($typeValue)] = $fieldNames;
         }
 
         return $recordTypes;
