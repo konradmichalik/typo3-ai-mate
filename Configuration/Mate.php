@@ -12,7 +12,7 @@ declare(strict_types=1);
  */
 
 use KonradMichalik\Typo3AiMate\Mate\{ProfileProvider, ProfilerStateProvider, Typo3CliRunner};
-use KonradMichalik\Typo3AiMate\Mcp\{CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FluidResolveTool, LogsTool, MiddlewaresTool, PageTool, PerformanceTool, ProfileResource, ProfilerControlTool, RenderPageTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
+use KonradMichalik\Typo3AiMate\Mcp\{CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FluidResolveTool, InfoTool, LogsTool, MiddlewaresTool, PageTool, PerformanceTool, ProfileResource, ProfilerControlTool, RenderPageTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 /*
@@ -51,6 +51,7 @@ return static function (ContainerConfigurator $container): void {
     $services->set(DbSchemaTool::class);
     $services->set(ConfigTool::class);
     $services->set(SiteTool::class);
+    $services->set(InfoTool::class);
 
     // Shared profile access needs the project root to locate var/log/profiles;
     // the profiler tools and the profile resource autowire it.
