@@ -161,3 +161,78 @@ hit*, once found, is answered from the changelog itself (`typo3-changelog-search
    measured", **not** "no deprecations". Enable
    `[LOG][TYPO3][CMS][deprecations][writerConfiguration]` to collect data. Feed a
    hit back into (2) to close the loop.
+
+---
+
+Everything above answers *what does this installation actually do* — a tool
+wayfinder. Everything below answers *how do I write TYPO3 code here*,
+independent of any tool: apply these whenever writing or editing PHP/Fluid in
+this project, not just during an upgrade.
+
+## TYPO3 coding conventions
+
+**Database access — use DBAL, never raw SQL strings.**
+Get a `QueryBuilder` from `TYPO3\CMS\Core\Database\ConnectionPool`
+(`getQueryBuilderForTable()`) instead of writing SQL by hand or reaching for
+PDO/mysqli directly. Always bind values via `$queryBuilder->createNamedParameter()`
+— never interpolate a variable into the query string (SQL injection). Both
+v13.4 and v14 ship Doctrine DBAL 4 (introduced in TYPO3 13.0, not a v13/v14
+split), which removed `execute()` and changed a few signatures — write new
+code against the current API directly rather than the DBAL 3 style:
+
+| Instead of (DBAL 3 / TYPO3 ≤12)         | Use (DBAL 4 / TYPO3 13.4+)                          |
+| ---------------------------------------- | ---------------------------------------------------- |
+| `$queryBuilder->execute()` (select)      | `->executeQuery()`                                   |
+| `$queryBuilder->execute()` (insert/update/delete) | `->executeStatement()`                      |
+| `$queryBuilder->setMaxResults(0)` for "no limit" | `->setMaxResults(null)` (`0` now returns nothing) |
+| `$queryBuilder->add('where', $x)` / `resetQueryPart(...)` | the dedicated method: `->where()`, `->resetWhere()`, etc. |
+
+**Enable-field restrictions are automatic — do not bypass them by accident.**
+A `QueryBuilder` from `getQueryBuilderForTable()` applies the table's
+`enablecolumns` restrictions (deleted/hidden/start-and-endtime, plus the
+frontend user-group restriction in FE context) by default. Raw SQL, or a
+`QueryBuilder` with `->getRestrictions()->removeAll()` called without a
+reason, silently shows hidden/deleted/time-restricted rows — a frequent
+source of "why does this appear in production" bugs. Only call
+`removeAll()` deliberately (e.g. a backend admin listing), and say why in a
+comment. `typo3-records` shows exactly which flags apply to a given row.
+
+**Prefer PSR-14 events over legacy hooks in new code.**
+TYPO3 has migrated most extension points to PSR-14 events; write new
+extension points as events and use them instead of registering into an old
+hook array. `typo3-events` shows the resolved listener registry for this
+installation before you decide whether a hook still exists to attach to.
+
+**Fluid escapes output by default — do not disable that carelessly.**
+`{variable}` in a Fluid template is HTML-escaped automatically. Never wrap
+user-controlled or otherwise untrusted data in `f:format.raw()` (or set
+`escapeOutput = false` on a custom ViewHelper) without a specific,
+deliberate reason — that is the direct path to a stored-XSS bug.
+
+*v14 only — Fluid 5 (`Breaking-108148-*`):* ViewHelper argument validation
+is stricter (a previously-tolerated but wrong argument type now fails
+instead of silently misbehaving); a `null` passed to a tag-based ViewHelper
+(`f:form.*`, `f:image`, `f:media`, `f:link.*`, `f:asset.*`, …) now omits the
+HTML attribute entirely instead of rendering it empty (`attr=""`); and a
+custom ViewHelper's `initializeArguments()` must declare `void` and
+`render()` must declare a real return type (`mixed` is acceptable, `void`
+for `render()` is not).
+
+**Dependency injection — constructor injection over `GeneralUtility::makeInstance()`.**
+For your own service classes, declare dependencies as constructor
+parameters and let TYPO3's DI container (autowiring, `Services.yaml`)
+supply them; do not reach for `GeneralUtility::makeInstance()` in new
+service code. `makeInstance()` remains the correct (only) way to instantiate
+objects that TYPO3 itself creates outside DI — TCA-referenced classes,
+ViewHelpers, hook targets — so its presence there is not a smell.
+
+*v14 only:* the `tt_content.list_type` column is gone — third-party plugins
+that used to register under `list_type` now register a dedicated `CType`
+instead. Do not write code that reads or writes `list_type` when targeting
+v14; check `typo3-tca` before assuming the column exists.
+
+**Version awareness.** `typo3-info` reports the exact installed TYPO3
+version and major up front — read it before writing version-conditional
+code instead of guessing from `composer.json`'s constraint range (this
+package's own `^13.4 || ^14.3` does not resolve to a single version by
+inspection alone).
