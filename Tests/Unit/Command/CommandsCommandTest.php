@@ -124,8 +124,10 @@ final class CommandsCommandTest extends TestCase
         $commands = $result['commands'];
         self::assertIsArray($commands);
         self::assertSame(['broken:command', 'help'], array_column($commands, 'name'));
-        self::assertFalse($commands[0]['available']);
-        self::assertSame('Constructor failed', $commands[0]['error']);
+        $broken = $commands[0];
+        self::assertIsArray($broken);
+        self::assertFalse($broken['available']);
+        self::assertSame('Constructor failed', $broken['error']);
     }
 
     #[Test]
