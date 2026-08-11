@@ -31,6 +31,7 @@ use Mcp\Schema\Tool;
  * this against the SDK's discovery internals on every minor bump.
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
+ * @license GPL-2.0-or-later
  */
 final readonly class DescriptionAwareDiscoverer implements DiscovererInterface
 {
@@ -54,8 +55,11 @@ final readonly class DescriptionAwareDiscoverer implements DiscovererInterface
     private function withComputedDescription(string $name, ToolReference $reference): ToolReference
     {
         $tool = $reference->tool;
-        $description = $this->descriptions->compute($name, (string) $tool->description);
+        if (null === $tool->description) {
+            return $reference;
+        }
 
+        $description = $this->descriptions->compute($name, $tool->description);
         if ($description === $tool->description) {
             return $reference;
         }

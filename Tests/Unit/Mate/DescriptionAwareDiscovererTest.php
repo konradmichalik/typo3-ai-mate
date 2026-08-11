@@ -15,8 +15,8 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mate;
 
 use KonradMichalik\Typo3AiMate\Mate\{DescriptionAwareDiscoverer, ProfileProvider, ProfilerStateProvider, SiteHostsProvider, ToolDescriptionComputer, Typo3CliRunner};
 use Mcp\Capability\Discovery\{DiscovererInterface, DiscoveryState};
-use Mcp\Capability\Registry\ToolReference;
-use Mcp\Schema\Tool;
+use Mcp\Capability\Registry\{PromptReference, ResourceReference, ResourceTemplateReference, ToolReference};
+use Mcp\Schema\{Prompt, ResourceDefinition, ResourceTemplate, Tool};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -103,14 +103,16 @@ final class DescriptionAwareDiscovererTest extends TestCase
     #[Test]
     public function passesResourcesPromptsAndResourceTemplatesThroughUnchanged(): void
     {
-        $state = new DiscoveryState();
-        $decorator = new DescriptionAwareDiscoverer($this->innerReturning([]), $this->computer());
+        $resources = ['sentinel' => new ResourceReference(new ResourceDefinition(uri: 'test://sentinel', name: 'sentinel_resource'), static fn (): null => null)];
+        $prompts = ['sentinel' => new PromptReference(new Prompt(name: 'sentinel_prompt'), static fn (): null => null)];
+        $resourceTemplates = ['sentinel' => new ResourceTemplateReference(new ResourceTemplate(uriTemplate: 'test://sentinel/{id}', name: 'sentinel_template'), static fn (): null => null)];
+        $decorator = new DescriptionAwareDiscoverer($this->innerReturning([], $resources, $prompts, $resourceTemplates), $this->computer());
 
         $result = $decorator->discover('/root', []);
 
-        self::assertSame($state->getResources(), $result->getResources());
-        self::assertSame($state->getPrompts(), $result->getPrompts());
-        self::assertSame($state->getResourceTemplates(), $result->getResourceTemplates());
+        self::assertSame($resources, $result->getResources());
+        self::assertSame($prompts, $result->getPrompts());
+        self::assertSame($resourceTemplates, $result->getResourceTemplates());
     }
 
     private function tool(string $name, string $description): Tool
@@ -130,19 +132,30 @@ final class DescriptionAwareDiscovererTest extends TestCase
     }
 
     /**
-     * @param array<string, ToolReference> $tools
+     * @param array<string, ToolReference>             $tools
+     * @param array<string, ResourceReference>         $resources
+     * @param array<string, PromptReference>           $prompts
+     * @param array<string, ResourceTemplateReference> $resourceTemplates
      */
-    private function innerReturning(array $tools): DiscovererInterface
+    private function innerReturning(array $tools, array $resources = [], array $prompts = [], array $resourceTemplates = []): DiscovererInterface
     {
-        return new class($tools) implements DiscovererInterface {
+        return new class($tools, $resources, $prompts, $resourceTemplates) implements DiscovererInterface {
             /**
-             * @param array<string, ToolReference> $tools
+             * @param array<string, ToolReference>             $tools
+             * @param array<string, ResourceReference>         $resources
+             * @param array<string, PromptReference>           $prompts
+             * @param array<string, ResourceTemplateReference> $resourceTemplates
              */
-            public function __construct(private readonly array $tools) {}
+            public function __construct(
+                private readonly array $tools,
+                private readonly array $resources,
+                private readonly array $prompts,
+                private readonly array $resourceTemplates,
+            ) {}
 
             public function discover(string $basePath, array $directories, array $excludeDirs = [], array $namePatterns = self::DEFAULT_NAME_PATERNS): DiscoveryState
             {
-                return new DiscoveryState($this->tools);
+                return new DiscoveryState($this->tools, $this->resources, $this->prompts, $this->resourceTemplates);
             }
         };
     }

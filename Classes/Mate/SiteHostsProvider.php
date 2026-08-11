@@ -22,13 +22,14 @@ use function is_string;
 /**
  * SiteHostsProvider.
  *
- * Reads the `base` of every `config/sites/*\/config.yaml` directly, without
+ * Reads the `base` of every `config/sites/{identifier}/config.yaml` directly, without
  * booting TYPO3 (the Mate process has no SiteFinder). Advisory only, for
  * describing typo3-render-page's SSRF guard in its tool description — the
  * guard itself stays in RenderPageCommand::isAllowedHost(), sourced from the
  * booted SiteFinder, which is the actual security boundary.
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
+ * @license GPL-2.0-or-later
  */
 final readonly class SiteHostsProvider
 {

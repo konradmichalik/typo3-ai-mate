@@ -34,6 +34,7 @@ use function sprintf;
  * the README already documents for schema changes after `composer update`.
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
+ * @license GPL-2.0-or-later
  */
 final readonly class ToolDescriptionComputer
 {
@@ -49,25 +50,39 @@ final readonly class ToolDescriptionComputer
 
     private const RENDER_PAGE_TOOL = 'typo3-render-page';
 
+    /**
+     * Read once here rather than per matching tool: a discovery pass calls
+     * {@see compute()} for every discovered tool, and without this, four
+     * profile-read tools and three profiler-control tools would each trigger
+     * their own filesystem read of the same, unchanged state.
+     */
+    private string $profileAvailabilitySentence;
+    private string $profilerActiveSentence;
+    private string $allowedHostsSentence;
+
     public function __construct(
         private ProfileProvider $profiles,
         private ProfilerStateProvider $profilerState,
         private SiteHostsProvider $siteHosts,
-    ) {}
+    ) {
+        $this->profileAvailabilitySentence = $this->buildProfileAvailabilitySentence();
+        $this->profilerActiveSentence = $this->buildProfilerActiveSentence();
+        $this->allowedHostsSentence = $this->buildAllowedHostsSentence();
+    }
 
     public function compute(string $toolName, string $staticDescription): string
     {
         $suffix = match (true) {
-            in_array($toolName, self::PROFILE_READ_TOOLS, true) => $this->profileAvailabilitySentence(),
-            in_array($toolName, self::PROFILER_CONTROL_TOOLS, true) => $this->profilerActiveSentence(),
-            self::RENDER_PAGE_TOOL === $toolName => $this->allowedHostsSentence(),
+            in_array($toolName, self::PROFILE_READ_TOOLS, true) => $this->profileAvailabilitySentence,
+            in_array($toolName, self::PROFILER_CONTROL_TOOLS, true) => $this->profilerActiveSentence,
+            self::RENDER_PAGE_TOOL === $toolName => $this->allowedHostsSentence,
             default => null,
         };
 
         return null === $suffix ? $staticDescription : $staticDescription.' '.$suffix;
     }
 
-    private function profileAvailabilitySentence(): string
+    private function buildProfileAvailabilitySentence(): string
     {
         $latest = $this->profiles->rawLatest();
         if (null === $latest) {
@@ -77,7 +92,7 @@ final readonly class ToolDescriptionComputer
         return sprintf('Current state: the newest recorded profile is from %s.', Cast::string($latest['time'] ?? 'an unknown time'));
     }
 
-    private function profilerActiveSentence(): string
+    private function buildProfilerActiveSentence(): string
     {
         $status = $this->profilerState->status();
         if (!$status['active']) {
@@ -87,7 +102,7 @@ final readonly class ToolDescriptionComputer
         return sprintf('Current state: profiling is active, %ds remaining.', $status['ttl_seconds'] ?? 0);
     }
 
-    private function allowedHostsSentence(): string
+    private function buildAllowedHostsSentence(): string
     {
         $hosts = $this->siteHosts->hosts();
         if ([] === $hosts) {
