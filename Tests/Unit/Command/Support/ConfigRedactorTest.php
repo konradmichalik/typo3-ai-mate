@@ -111,6 +111,16 @@ final class ConfigRedactorTest extends TestCase
     }
 
     #[Test]
+    public function masksExactKeysWrittenWithUnderscoresOrHyphens(): void
+    {
+        $redacted = $this->redactArray(['api_key' => 'x', 'api-key' => 'y', 'auth_code' => 'z']);
+
+        self::assertSame('[redacted]', $redacted['api_key']);
+        self::assertSame('[redacted]', $redacted['api-key']);
+        self::assertSame('[redacted]', $redacted['auth_code']);
+    }
+
+    #[Test]
     public function keyMatchingIsCaseInsensitive(): void
     {
         $redacted = $this->redactArray(['PASSWORD' => 'x', 'ApiKey' => 'y']);

@@ -67,6 +67,11 @@ final class ConfigRedactor
     {
         $normalized = strtolower($key);
 
-        return in_array($normalized, self::SENSITIVE_KEYS, true) || 1 === preg_match(self::SENSITIVE_KEY_PATTERN, $normalized);
+        // "api_key"/"api-key" must mask the same as "apikey"; the substring
+        // pattern below already ignores separators (it matches anywhere in
+        // the string), only the exact-match list needs this normalization.
+        $collapsed = str_replace(['_', '-'], '', $normalized);
+
+        return in_array($collapsed, self::SENSITIVE_KEYS, true) || 1 === preg_match(self::SENSITIVE_KEY_PATTERN, $normalized);
     }
 }

@@ -64,7 +64,7 @@ final class ConfigCommand extends AbstractJsonCommand
     protected function configure(): void
     {
         $this
-            ->addOption('path', null, InputOption::VALUE_REQUIRED, 'Slash-separated path into the section, e.g. FE, SYS/features, my_ext')
+            ->addOption('path', null, InputOption::VALUE_REQUIRED, 'Slash-separated path scoped to --section: e.g. FE or SYS/features for confvars (default); a feature toggle name (e.g. security.frontend.enforceContentSecurityPolicy) for features; an extension key, optionally with a sub-path, for extension')
             ->addOption('section', null, InputOption::VALUE_REQUIRED, 'confvars (default) | features | extension');
     }
 
