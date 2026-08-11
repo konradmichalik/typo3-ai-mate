@@ -81,6 +81,7 @@ final class TcaCommandTest extends FunctionalTestCase
         self::assertArrayHasKey('image', $relations);
         $imageRelation = $relations['image'];
         self::assertIsArray($imageRelation);
+        self::assertSame('1:n', $imageRelation['type']);
         self::assertSame(['sys_file_reference'], $imageRelation['toTables']);
 
         $columns = $result['columns'];

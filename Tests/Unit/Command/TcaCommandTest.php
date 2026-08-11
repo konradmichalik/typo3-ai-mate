@@ -25,6 +25,7 @@ use TYPO3\CMS\Core\Schema\{SchemaCollection, TcaSchema, TcaSchemaFactory};
  * TcaCommandTest.
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
+ * @license GPL-2.0-or-later
  */
 final class TcaCommandTest extends TestCase
 {
@@ -293,7 +294,15 @@ final class TcaCommandTest extends TestCase
         self::assertSame(['title' => 'Pages', 'sortby' => 'sorting'], $result['ctrl']);
         self::assertSame(['softDelete' => null, 'workspace' => false, 'language' => false, 'sorting' => 'sorting'], $result['capabilities']);
         self::assertSame([], $result['recordTypes']);
-        self::assertSame(['media' => ['type' => '', 'toTables' => ['sys_file_reference']]], $result['relations']);
+        $relations = $result['relations'];
+        self::assertIsArray($relations);
+        self::assertArrayHasKey('media', $relations);
+        $mediaRelation = $relations['media'];
+        self::assertIsArray($mediaRelation);
+        // The relationship type ('1:n' etc.) depends on real TCA config
+        // (foreign_field/MM/...); the stub field above has none, so only the
+        // resolved target table — the actual contract here — is asserted.
+        self::assertSame(['sys_file_reference'], $mediaRelation['toTables']);
 
         $columns = $result['columns'];
         self::assertIsArray($columns);
