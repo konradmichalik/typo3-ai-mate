@@ -187,21 +187,29 @@ code against the current API directly rather than the DBAL 3 style:
 | `$queryBuilder->setMaxResults(0)` for "no limit" | `->setMaxResults(null)` (`0` now returns nothing) |
 | `$queryBuilder->add('where', $x)` / `resetQueryPart(...)` | the dedicated method: `->where()`, `->resetWhere()`, etc. |
 
-**Enable-field restrictions are automatic — do not bypass them by accident.**
+**Enable-field restrictions are automatic for reads only — do not assume they cover writes.**
 A `QueryBuilder` from `getQueryBuilderForTable()` applies the table's
-`enablecolumns` restrictions (deleted/hidden/start-and-endtime, plus the
-frontend user-group restriction in FE context) by default. Raw SQL, or a
-`QueryBuilder` with `->getRestrictions()->removeAll()` called without a
-reason, silently shows hidden/deleted/time-restricted rows — a frequent
-source of "why does this appear in production" bugs. Only call
+`enablecolumns` restrictions (deleted/hidden/start-and-endtime) by default,
+but only to `SELECT`/`COUNT` (`executeQuery()`); `UPDATE`/`DELETE`
+(`executeStatement()`) build no such `WHERE` clause and silently affect
+every matching row regardless of those flags — write it explicitly if a
+write must respect them. The frontend user-group restriction is not part
+of this default either: it only applies once the restriction container is
+explicitly swapped to `TYPO3\CMS\Core\Database\Query\Restriction\FrontendRestrictionContainer`
+(which also adds the workspace restriction), not merely by running in FE
+context. Raw SQL, or a `QueryBuilder` with `->getRestrictions()->removeAll()`
+called without a reason, silently shows hidden/deleted/time-restricted rows
+— a frequent source of "why does this appear in production" bugs. Only call
 `removeAll()` deliberately (e.g. a backend admin listing), and say why in a
 comment. `typo3-records` shows exactly which flags apply to a given row.
 
 **Prefer PSR-14 events over legacy hooks in new code.**
 TYPO3 has migrated most extension points to PSR-14 events; write new
 extension points as events and use them instead of registering into an old
-hook array. `typo3-events` shows the resolved listener registry for this
-installation before you decide whether a hook still exists to attach to.
+hook array. `typo3-events` shows the resolved PSR-14 listener registry for
+this installation — use it to see which listeners are already attached to
+an event, not to check whether a legacy hook array still exists (it only
+reads the PSR-14 registry, not `SC_OPTIONS` or other hook arrays).
 
 **Fluid escapes output by default — do not disable that carelessly.**
 `{variable}` in a Fluid template is HTML-escaped automatically. Never wrap
@@ -218,13 +226,19 @@ custom ViewHelper's `initializeArguments()` must declare `void` and
 `render()` must declare a real return type (`mixed` is acceptable, `void`
 for `render()` is not).
 
-**Dependency injection — constructor injection over `GeneralUtility::makeInstance()`.**
+**Dependency injection — constructor injection over `GeneralUtility::makeInstance()`, with one exception.**
 For your own service classes, declare dependencies as constructor
 parameters and let TYPO3's DI container (autowiring, `Services.yaml`)
 supply them; do not reach for `GeneralUtility::makeInstance()` in new
-service code. `makeInstance()` remains the correct (only) way to instantiate
-objects that TYPO3 itself creates outside DI — TCA-referenced classes,
-ViewHelpers, hook targets — so its presence there is not a smell.
+service code to get a shared, cached instance. Two on-demand cases remain
+correct: objects TYPO3 itself creates outside DI (TCA-referenced classes,
+ViewHelpers, hook targets), and a *stateful* service that must get a
+genuinely fresh instance per use — constructor-injecting it would silently
+turn a per-use object into a de-facto singleton for the lifetime of the
+injecting service, a shared-state bug. Only a class implementing
+`TYPO3\CMS\Core\SingletonInterface` is safe to hold as a long-lived
+injected property; `makeInstance()` on anything else always returns a new
+instance.
 
 *v14 only:* the `tt_content.list_type` column is gone — third-party plugins
 that used to register under `list_type` now register a dedicated `CType`
