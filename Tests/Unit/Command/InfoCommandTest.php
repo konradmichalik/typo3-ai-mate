@@ -106,7 +106,7 @@ final class InfoCommandTest extends TestCase
     }
 
     #[Test]
-    public function describeProfilerReportsInactiveWhenNoStateFileExists(): void
+    public function describeProfilerReportsAClosedActivationWindowWhenNoStateFileExists(): void
     {
         $commandRegistry = self::createStub(CommandRegistry::class);
         $commandRegistry->method('has')->willReturn(false);
@@ -114,11 +114,11 @@ final class InfoCommandTest extends TestCase
         $described = $this->command(commandRegistry: $commandRegistry)->describeProfiler();
 
         self::assertFalse($described['cliAvailable']);
-        self::assertFalse($described['active']);
+        self::assertFalse($described['activationWindowOpen']);
     }
 
     #[Test]
-    public function describeProfilerReportsActiveWhileTheActivationWindowHasNotExpired(): void
+    public function describeProfilerReportsAnOpenActivationWindowWhileItHasNotExpired(): void
     {
         $logDir = Environment::getProjectPath().'/var/log';
         mkdir($logDir, 0o777, true);
@@ -126,11 +126,11 @@ final class InfoCommandTest extends TestCase
 
         $described = $this->command()->describeProfiler();
 
-        self::assertTrue($described['active']);
+        self::assertTrue($described['activationWindowOpen']);
     }
 
     #[Test]
-    public function describeProfilerReportsInactiveOnceTheActivationWindowHasExpired(): void
+    public function describeProfilerReportsAClosedActivationWindowOnceItHasExpired(): void
     {
         $logDir = Environment::getProjectPath().'/var/log';
         mkdir($logDir, 0o777, true);
@@ -138,7 +138,20 @@ final class InfoCommandTest extends TestCase
 
         $described = $this->command()->describeProfiler();
 
-        self::assertFalse($described['active']);
+        self::assertFalse($described['activationWindowOpen']);
+    }
+
+    #[Test]
+    public function describeProfilerReportsDevelopmentContextIndependentlyOfTheActivationWindow(): void
+    {
+        self::assertFalse($this->command()->describeProfiler()['developmentContext']);
+    }
+
+    #[Test]
+    #[WithEnvironment(context: 'Development')]
+    public function describeProfilerReportsTheDevelopmentContextWhenActive(): void
+    {
+        self::assertTrue($this->command()->describeProfiler()['developmentContext']);
     }
 
     #[Test]

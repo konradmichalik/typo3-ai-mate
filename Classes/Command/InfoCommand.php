@@ -138,7 +138,7 @@ final class InfoCommand extends AbstractJsonCommand
     }
 
     /**
-     * @return array{cliAvailable: bool, version: string|null, active: bool}
+     * @return array{cliAvailable: bool, version: string|null, activationWindowOpen: bool, developmentContext: bool}
      */
     public function describeProfiler(): array
     {
@@ -149,7 +149,12 @@ final class InfoCommand extends AbstractJsonCommand
         return [
             'cliAvailable' => $this->commandRegistry->has(self::PROFILER_ACTIVATE_COMMAND),
             'version' => $version,
-            'active' => $this->isProfilerActivationWindowOpen(),
+            // Either of these independently enables profiling; a single "active"
+            // flag would hide whichever mode isn't the one currently reflected.
+            // A per-request header can enable it too and isn't observable here
+            // (same caveat as `typo3-profiler-status`).
+            'activationWindowOpen' => $this->isProfilerActivationWindowOpen(),
+            'developmentContext' => Environment::getContext()->isDevelopment(),
         ];
     }
 
@@ -227,9 +232,10 @@ final class InfoCommand extends AbstractJsonCommand
     }
 
     /**
-     * The time-boxed activation window only (same caveat as
-     * `typo3-profiler-status`): profiling can also be on via the Development
-     * context or a per-request header, neither of which this reflects.
+     * The time-boxed activation window only; describeProfiler() reports the
+     * Development context separately. A per-request header can enable
+     * profiling too and is not reflected here (same caveat as
+     * `typo3-profiler-status`).
      */
     private function isProfilerActivationWindowOpen(): bool
     {

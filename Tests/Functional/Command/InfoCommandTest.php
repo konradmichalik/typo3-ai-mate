@@ -67,7 +67,8 @@ final class InfoCommandTest extends FunctionalTestCase
         $profiler = $result['profiler'];
         self::assertIsArray($profiler);
         self::assertIsBool($profiler['cliAvailable']);
-        self::assertIsBool($profiler['active']);
+        self::assertIsBool($profiler['activationWindowOpen']);
+        self::assertIsBool($profiler['developmentContext']);
 
         $contentTypes = $result['contentTypes'];
         self::assertIsArray($contentTypes);
