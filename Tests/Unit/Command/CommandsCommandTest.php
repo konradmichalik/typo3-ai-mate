@@ -112,7 +112,7 @@ final class CommandsCommandTest extends TestCase
         $registry->method('filter')->willReturn(['broken:command' => [], 'help' => []]);
         $registry->method('get')->willReturnCallback(
             static fn (string $name): Command => 'broken:command' === $name
-                ? throw new RuntimeException('Constructor failed') : new HelpCommand(),
+                ? throw new RuntimeException('Constructor failed', 1786521601) : new HelpCommand(),
         );
 
         $tester = new CommandTester(new CommandsCommand($registry));
@@ -137,7 +137,7 @@ final class CommandsCommandTest extends TestCase
         $registry->method('filter')->willReturn(['broken:command' => [], 'typo3-ai-mate:commands:list' => []]);
         $registry->method('get')->willReturnCallback(
             static fn (string $name): Command => 'broken:command' === $name
-                ? throw new RuntimeException('Constructor failed') : new CommandsCommand($registry),
+                ? throw new RuntimeException('Constructor failed', 1786521602) : new CommandsCommand($registry),
         );
 
         $tester = new CommandTester(new CommandsCommand($registry));
