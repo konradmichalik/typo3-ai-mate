@@ -90,6 +90,21 @@ final class SiteCommandTest extends TestCase
     }
 
     #[Test]
+    public function executeFailsWithAStructuredErrorWhenSiteConfigurationCannotBeLoaded(): void
+    {
+        $siteFinder = self::createStub(SiteFinder::class);
+        $siteFinder->method('getAllSites')->willThrowException(new RuntimeException('sites unavailable'));
+
+        $tester = new CommandTester($this->command($siteFinder));
+        $exitCode = $tester->execute([]);
+
+        self::assertSame(1, $exitCode);
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        self::assertSame('Could not load site configuration.', $result['error']);
+    }
+
+    #[Test]
     public function executeReturnsOneSiteByIdentifier(): void
     {
         $site = new Site('main', 1, ['base' => 'https://example.test/']);

@@ -18,8 +18,10 @@ use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Site\SiteFinder;
 
 use function in_array;
+use function is_int;
 use function is_string;
 use function parse_url;
+use function sprintf;
 use function str_contains;
 use function strtolower;
 
@@ -88,37 +90,57 @@ final readonly class SiteUrlResolver
     }
 
     /**
-     * Whether the URL's host is one of the configured site hosts. Blocks a
-     * tool from being turned into a generic fetcher against internal/cloud-
-     * metadata endpoints (SSRF).
+     * Whether the URL's origin (scheme, host and effective port) matches one
+     * of the configured site bases. Host alone is not enough: a host match on
+     * a different scheme or port would still let this tool reach an
+     * unconfigured service on the same machine (SSRF), e.g. a container
+     * management API listening on another port of the same hostname.
      */
     public function isAllowedHost(string $url): bool
     {
-        $host = parse_url($url, \PHP_URL_HOST);
-        if (!is_string($host) || '' === $host) {
-            return false;
-        }
+        $origin = self::originOf($url);
 
-        return in_array(strtolower($host), $this->siteHosts(), true);
+        return null !== $origin && in_array($origin, $this->siteOrigins(), true);
     }
 
     /**
      * @return list<string>
      */
-    public function siteHosts(): array
+    public function siteOrigins(): array
     {
-        $hosts = [];
+        $origins = [];
         try {
             foreach ($this->siteFinder->getAllSites() as $site) {
-                $host = parse_url((string) $site->getBase(), \PHP_URL_HOST);
-                if (is_string($host) && '' !== $host) {
-                    $hosts[] = strtolower($host);
+                $origin = self::originOf((string) $site->getBase());
+                if (null !== $origin) {
+                    $origins[] = $origin;
                 }
             }
         } catch (Throwable) {
             return [];
         }
 
-        return $hosts;
+        return $origins;
+    }
+
+    /**
+     * Normalized "scheme://host:port" (the scheme's default port filled in
+     * when the URL omits one), or null if the URL has no scheme/host to
+     * build one from.
+     */
+    private static function originOf(string $url): ?string
+    {
+        $scheme = parse_url($url, \PHP_URL_SCHEME);
+        $host = parse_url($url, \PHP_URL_HOST);
+        if (!is_string($scheme) || '' === $scheme || !is_string($host) || '' === $host) {
+            return null;
+        }
+
+        $port = parse_url($url, \PHP_URL_PORT);
+        if (!is_int($port)) {
+            $port = 'https' === strtolower($scheme) ? 443 : 80;
+        }
+
+        return sprintf('%s://%s:%d', strtolower($scheme), strtolower($host), $port);
     }
 }

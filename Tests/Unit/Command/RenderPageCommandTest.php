@@ -61,7 +61,7 @@ final class RenderPageCommandTest extends TestCase
         ]);
 
         $tester = new CommandTester(new RenderPageCommand(
-            $this->siteFinderReturning('https://example.test/the-page'),
+            $this->siteUrlResolverReturning('https://example.test/the-page'),
             $this->requestFactoryReturning(200, 4321),
         ));
         $exitCode = $tester->execute(['pageId' => 5]);
@@ -91,7 +91,7 @@ final class RenderPageCommandTest extends TestCase
     public function executeResolvesARelativeUrlAgainstTheSiteBase(): void
     {
         $tester = new CommandTester(new RenderPageCommand(
-            $this->siteFinderWithBase('https://example.test/'),
+            $this->siteUrlResolverWithBase('https://example.test/'),
             $this->requestFactoryReturning(200, 10),
         ));
         $tester->execute(['--url' => '/some/path']);
@@ -123,7 +123,7 @@ final class RenderPageCommandTest extends TestCase
         $requestFactory = self::createStub(RequestFactory::class);
         $requestFactory->method('request')->willThrowException(new RuntimeException('Connection refused'));
 
-        $tester = new CommandTester(new RenderPageCommand($this->siteFinderWithBase('https://example.test/'), $requestFactory));
+        $tester = new CommandTester(new RenderPageCommand($this->siteUrlResolverWithBase('https://example.test/'), $requestFactory));
         $exitCode = $tester->execute(['--url' => 'https://example.test/']);
 
         self::assertSame(0, $exitCode);
@@ -137,7 +137,7 @@ final class RenderPageCommandTest extends TestCase
     public function executeRejectsAnAbsoluteUrlWhoseHostIsNotAConfiguredSite(): void
     {
         $tester = new CommandTester(new RenderPageCommand(
-            $this->siteFinderWithBase('https://example.test/'),
+            $this->siteUrlResolverWithBase('https://example.test/'),
             $this->requestFactoryReturning(200, 10),
         ));
         $exitCode = $tester->execute(['--url' => 'http://169.254.169.254/latest/meta-data/']);
@@ -170,7 +170,7 @@ final class RenderPageCommandTest extends TestCase
     public function executeFailsForARelativeUrlWhenNoSiteHasAnAbsoluteBase(): void
     {
         $tester = new CommandTester(new RenderPageCommand(
-            $this->siteFinderWithBase('/'),
+            $this->siteUrlResolverWithBase('/'),
             self::createStub(RequestFactory::class),
         ));
         $exitCode = $tester->execute(['--url' => '/some/path']);
@@ -218,7 +218,7 @@ final class RenderPageCommandTest extends TestCase
     public function executeRejectsAnAbsoluteUrlWithoutAHost(): void
     {
         $tester = new CommandTester(new RenderPageCommand(
-            $this->siteFinderWithBase('https://example.test/'),
+            $this->siteUrlResolverWithBase('https://example.test/'),
             self::createStub(RequestFactory::class),
         ));
         $exitCode = $tester->execute(['--url' => 'file:///etc/passwd']);
@@ -230,7 +230,7 @@ final class RenderPageCommandTest extends TestCase
         self::assertStringContainsString('not among the configured site bases', $result['error']);
     }
 
-    private function siteFinderReturning(string $url): SiteUrlResolver
+    private function siteUrlResolverReturning(string $url): SiteUrlResolver
     {
         $uri = self::createStub(UriInterface::class);
         $uri->method('__toString')->willReturn($url);
@@ -244,7 +244,7 @@ final class RenderPageCommandTest extends TestCase
         return new SiteUrlResolver($siteFinder);
     }
 
-    private function siteFinderWithBase(string $base): SiteUrlResolver
+    private function siteUrlResolverWithBase(string $base): SiteUrlResolver
     {
         $uri = self::createStub(UriInterface::class);
         $uri->method('__toString')->willReturn($base);

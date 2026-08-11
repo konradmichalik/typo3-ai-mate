@@ -125,12 +125,30 @@ final class SiteUrlResolverTest extends TestCase
     }
 
     #[Test]
-    public function siteHostsReturnsAnEmptyListWhenSitesCannotBeLoaded(): void
+    public function isAllowedHostRejectsAMatchingHostOnADifferentPort(): void
+    {
+        self::assertFalse($this->resolverWithBase('https://example.test/')->isAllowedHost('https://example.test:8443/'));
+    }
+
+    #[Test]
+    public function isAllowedHostRejectsAMatchingHostWithADifferentScheme(): void
+    {
+        self::assertFalse($this->resolverWithBase('https://example.test/')->isAllowedHost('http://example.test/'));
+    }
+
+    #[Test]
+    public function isAllowedHostAcceptsTheDefaultPortWhenTheConfiguredBaseOmitsIt(): void
+    {
+        self::assertTrue($this->resolverWithBase('https://example.test/')->isAllowedHost('https://example.test:443/'));
+    }
+
+    #[Test]
+    public function siteOriginsReturnsAnEmptyListWhenSitesCannotBeLoaded(): void
     {
         $siteFinder = self::createStub(SiteFinder::class);
         $siteFinder->method('getAllSites')->willThrowException(new RuntimeException('sites unavailable'));
 
-        self::assertSame([], (new SiteUrlResolver($siteFinder))->siteHosts());
+        self::assertSame([], (new SiteUrlResolver($siteFinder))->siteOrigins());
     }
 
     private function resolverWithBase(string $base): SiteUrlResolver

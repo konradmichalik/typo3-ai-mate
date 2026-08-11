@@ -97,7 +97,7 @@ final class SiteCommand extends AbstractJsonCommand
     {
         $this
             ->addOption('identifier', null, InputOption::VALUE_REQUIRED, 'Limit the default listing to a single site by identifier')
-            ->addOption('pageId', null, InputOption::VALUE_REQUIRED, 'Resolve the frontend/backend URL for this page instead of listing sites; omit to use the root page of the first configured site')
+            ->addOption('pageId', null, InputOption::VALUE_REQUIRED, 'Resolve the frontend/backend URL for this page instead of listing sites; pass 0 to use the root page of the first configured site instead of naming one; omit the option entirely to list sites')
             ->addOption('language', null, InputOption::VALUE_REQUIRED, 'Site language id used when resolving a URL', '0');
     }
 
@@ -115,7 +115,13 @@ final class SiteCommand extends AbstractJsonCommand
 
     private function dumpAllSites(OutputInterface $output): int
     {
-        return $this->emit($output, ['sites' => array_map($this->describeSite(...), array_values($this->siteFinder->getAllSites()))]);
+        try {
+            $sites = $this->siteFinder->getAllSites();
+        } catch (Throwable) {
+            return $this->emit($output, ['error' => 'Could not load site configuration.'], Command::FAILURE);
+        }
+
+        return $this->emit($output, ['sites' => array_map($this->describeSite(...), array_values($sites))]);
     }
 
     private function dumpOneSite(OutputInterface $output, string $identifier): int
