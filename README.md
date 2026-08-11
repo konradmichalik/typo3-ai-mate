@@ -113,7 +113,7 @@ flowchart LR
 
 **Read-only by default.** 19 of the 22 tools only read resolved runtime state and are annotated `readOnlyHint: true` in `tools/list`, so an MCP client can run them without a confirmation prompt. The exceptions are annotated explicitly, never left to prose:
 
-- `typo3-profiler-start` / `-stop` — the only tools that write anything, and only a time-boxed dev switch (max 60 minutes); they touch no records.
+- `typo3-profiler-start` / `-stop` — the only tools that change profiler control state, and only a time-boxed dev switch (max 60 minutes); they touch no records.
 - `typo3-render-page` — issues a real internal HTTP request, so it has side effects in caches and logs (`readOnlyHint: false`, `openWorldHint: true`). Its URL is restricted to the installation's configured site hosts (SSRF guard).
 
 No tool executes arbitrary code and none expose a raw SQL surface — `typo3-records` is a structured, parameterised query (equality filters only), never a `SELECT` string. Every command runs only in a Development context (`Environment::getContext()->isDevelopment()`).

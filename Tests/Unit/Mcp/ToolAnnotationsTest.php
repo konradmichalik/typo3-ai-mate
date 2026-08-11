@@ -92,6 +92,7 @@ final class ToolAnnotationsTest extends TestCase
         $annotations = $this->collectAnnotations();
 
         foreach (['typo3-profiler-start', 'typo3-profiler-stop'] as $name) {
+            self::assertArrayHasKey($name, $annotations, sprintf('Tool "%s" was not found among the collected tools.', $name));
             $annotation = $annotations[$name];
             self::assertNotNull($annotation, sprintf('Tool "%s" is missing #[McpTool] annotations.', $name));
             self::assertFalse($annotation->readOnlyHint, sprintf('Tool "%s" should be marked readOnlyHint: false.', $name));
@@ -102,7 +103,9 @@ final class ToolAnnotationsTest extends TestCase
     #[Test]
     public function renderPageIsMarkedAsAWriteWithOpenWorldSideEffects(): void
     {
-        $annotation = $this->collectAnnotations()['typo3-render-page'];
+        $annotations = $this->collectAnnotations();
+        self::assertArrayHasKey('typo3-render-page', $annotations);
+        $annotation = $annotations['typo3-render-page'];
 
         self::assertNotNull($annotation);
         self::assertFalse($annotation->readOnlyHint);
