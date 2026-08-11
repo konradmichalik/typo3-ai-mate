@@ -19,6 +19,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\{InputInterface, InputOption};
 use Symfony\Component\Console\Output\OutputInterface;
+use Throwable;
 use TYPO3\CMS\Core\Console\CommandRegistry;
 
 use function count;
@@ -86,14 +87,34 @@ final class CommandsCommand extends AbstractJsonCommand
                 continue;
             }
 
-            $command = $this->commandRegistry->get($name);
-            if ($ownOnly && !$this->isOwnCommand($command)) {
-                continue;
+            $described = $this->resolveCommand($name, $ownOnly);
+            if (null !== $described) {
+                $commands[] = $described;
             }
-
-            $commands[] = $this->describe($command, $name);
         }
 
         return $this->emit($output, ['commands' => $commands, 'commandCount' => count($commands)]);
+    }
+
+    /**
+     * @return array{name: string, description: string, synopsis: string}|array{name: string, available: false, error: string}|null
+     */
+    private function resolveCommand(string $name, bool $ownOnly): ?array
+    {
+        try {
+            $command = $this->commandRegistry->get($name);
+        } catch (Throwable $exception) {
+            // A third-party command's constructor can fail independently of this
+            // listing; report it as unavailable instead of aborting discovery for
+            // every other command. Ownership can't be determined without an
+            // instance, so own-only mode drops it rather than risk showing vendor noise.
+            return $ownOnly ? null : ['name' => $name, 'available' => false, 'error' => $exception->getMessage()];
+        }
+
+        if ($ownOnly && !$this->isOwnCommand($command)) {
+            return null;
+        }
+
+        return $this->describe($command, $name);
     }
 }

@@ -17,6 +17,7 @@ use KonradMichalik\Ttt\Attribute\WithEnvironment;
 use KonradMichalik\Typo3AiMate\Command\CommandsCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 use Symfony\Component\Console\Command\{Command, HelpCommand};
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\Console\CommandRegistry;
@@ -102,6 +103,49 @@ final class CommandsCommandTest extends TestCase
         $commands = $result['commands'];
         self::assertIsArray($commands);
         self::assertSame(['foo:bar'], array_column($commands, 'name'));
+    }
+
+    #[Test]
+    public function executeReportsUnavailableCommandInsteadOfAborting(): void
+    {
+        $registry = $this->createMock(CommandRegistry::class);
+        $registry->method('filter')->willReturn(['broken:command' => [], 'help' => []]);
+        $registry->method('get')->willReturnCallback(
+            static fn (string $name): Command => 'broken:command' === $name
+                ? throw new RuntimeException('Constructor failed') : new HelpCommand(),
+        );
+
+        $tester = new CommandTester(new CommandsCommand($registry));
+        $exitCode = $tester->execute([]);
+
+        self::assertSame(0, $exitCode);
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        $commands = $result['commands'];
+        self::assertIsArray($commands);
+        self::assertSame(['broken:command', 'help'], array_column($commands, 'name'));
+        self::assertFalse($commands[0]['available']);
+        self::assertSame('Constructor failed', $commands[0]['error']);
+    }
+
+    #[Test]
+    public function executeOmitsUnavailableCommandsWhenOwnOnlyRequested(): void
+    {
+        $registry = $this->createMock(CommandRegistry::class);
+        $registry->method('filter')->willReturn(['broken:command' => [], 'typo3-ai-mate:commands:list' => []]);
+        $registry->method('get')->willReturnCallback(
+            static fn (string $name): Command => 'broken:command' === $name
+                ? throw new RuntimeException('Constructor failed') : new CommandsCommand($registry),
+        );
+
+        $tester = new CommandTester(new CommandsCommand($registry));
+        $tester->execute(['--own-only' => true]);
+
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        $commands = $result['commands'];
+        self::assertIsArray($commands);
+        self::assertSame(['typo3-ai-mate:commands:list'], array_column($commands, 'name'));
     }
 
     #[Test]
