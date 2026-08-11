@@ -19,6 +19,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\{InputInterface, InputOption};
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Process\Exception\ProcessTimedOutException;
 use TYPO3\CMS\Core\Core\Environment;
 
 use function sprintf;
@@ -42,6 +43,15 @@ use function sprintf;
 )]
 final class InstallCommand extends Command
 {
+    /**
+     * @param MateCliRunner|null $mateRunnerOverride test-only seam; production
+     *                                               always builds one from the resolved project root
+     */
+    public function __construct(private readonly ?MateCliRunner $mateRunnerOverride = null)
+    {
+        parent::__construct();
+    }
+
     protected function configure(): void
     {
         $this->addOption('skip-mcp-json', null, InputOption::VALUE_NONE, 'Do not write or update the project .mcp.json entry.');
@@ -103,7 +113,7 @@ final class InstallCommand extends Command
             return true;
         }
 
-        $mateRunner = new MateCliRunner($projectRoot);
+        $mateRunner = $this->mateRunnerOverride ?? new MateCliRunner($projectRoot);
         if (!$mateRunner->binaryExists()) {
             $io->error('vendor/bin/mate is missing. Run "composer install" first.');
 
@@ -119,7 +129,13 @@ final class InstallCommand extends Command
      */
     private function runMateStep(SymfonyStyle $io, MateCliRunner $mateRunner, string $mateCommand, array $arguments): bool
     {
-        $process = $mateRunner->run($mateCommand, $arguments);
+        try {
+            $process = $mateRunner->run($mateCommand, $arguments);
+        } catch (ProcessTimedOutException) {
+            $io->error(sprintf('vendor/bin/mate %s timed out.', $mateCommand));
+
+            return false;
+        }
 
         if (!$process->isSuccessful()) {
             $io->error(sprintf(
@@ -152,8 +168,8 @@ final class InstallCommand extends Command
             '%s.mcp.json: %s "mcpServers.typo3-ai-mate".',
             $dryRun ? '[dry-run] ' : '',
             match ($result['action']) {
-                'created' => 'would create',
-                'updated' => 'would update',
+                'created' => $dryRun ? 'would create' : 'created',
+                'updated' => $dryRun ? 'would update' : 'updated',
                 'unchanged' => 'already up to date',
             },
         ));

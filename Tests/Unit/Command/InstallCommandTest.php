@@ -15,6 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 
 use KonradMichalik\Ttt\Attribute\WithEnvironment;
 use KonradMichalik\Typo3AiMate\Command\InstallCommand;
+use KonradMichalik\Typo3AiMate\Command\Support\MateCliRunner;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Command\Command;
@@ -41,6 +42,8 @@ final class InstallCommandTest extends TestCase
         self::assertSame(Command::SUCCESS, $exitCode);
         self::assertStringContainsString('Ran: vendor/bin/mate init', $tester->getDisplay());
         self::assertStringContainsString('Ran: vendor/bin/mate discover', $tester->getDisplay());
+        self::assertStringContainsString('created "mcpServers.typo3-ai-mate"', $tester->getDisplay());
+        self::assertStringNotContainsString('would create', $tester->getDisplay());
         self::assertSame(['command' => './vendor/bin/mate', 'args' => ['serve']], $this->registeredMcpServer());
     }
 
@@ -56,6 +59,35 @@ final class InstallCommandTest extends TestCase
 
         self::assertSame(Command::SUCCESS, $exitCode);
         self::assertSame(['command' => 'ddev', 'args' => ['exec', 'vendor/bin/mate', 'serve']], $this->registeredMcpServer());
+    }
+
+    #[Test]
+    public function installUpdatesAStaleMcpJsonEntryWithoutTheDryRunTense(): void
+    {
+        $this->fakeMateBinary();
+        file_put_contents($this->mcpJsonPath(), json_encode([
+            'mcpServers' => ['typo3-ai-mate' => ['command' => 'stale', 'args' => []]],
+        ]));
+
+        $tester = new CommandTester(new InstallCommand());
+        $exitCode = $tester->execute([]);
+
+        self::assertSame(Command::SUCCESS, $exitCode);
+        self::assertStringContainsString('updated "mcpServers.typo3-ai-mate"', $tester->getDisplay());
+        self::assertStringNotContainsString('would update', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function aTimedOutMateStepReportsAClearErrorInsteadOfCrashing(): void
+    {
+        $this->fakeMateBinary('<?php usleep(200_000);');
+        $tester = new CommandTester(new InstallCommand(new MateCliRunner(Environment::getProjectPath(), 0.05)));
+
+        $exitCode = $tester->execute([]);
+
+        self::assertSame(Command::FAILURE, $exitCode);
+        self::assertStringContainsString('vendor/bin/mate init timed out.', $tester->getDisplay());
+        self::assertFileDoesNotExist($this->mcpJsonPath());
     }
 
     #[Test]

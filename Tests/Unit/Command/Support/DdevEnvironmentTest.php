@@ -41,7 +41,10 @@ final class DdevEnvironmentTest extends TestCase
     #[Test]
     public function detectReportsNoDdevProjectWithoutConfigFile(): void
     {
-        $environment = DdevEnvironment::detect($this->projectRoot);
+        // Pin isInsideContainer explicitly - this test is about isDdevProject
+        // only, and must not depend on the real IS_DDEV_PROJECT env value of
+        // whatever machine runs the suite (e.g. inside a DDEV web container).
+        $environment = DdevEnvironment::detect($this->projectRoot, 'false');
 
         self::assertFalse($environment->isDdevProject);
         self::assertFalse($environment->isInsideContainer);

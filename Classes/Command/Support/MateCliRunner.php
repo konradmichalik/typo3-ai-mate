@@ -24,12 +24,19 @@ use Symfony\Component\Process\Process;
  * discover` without depending on the Mate process's own DI container.
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
+ * @license GPL-2.0-or-later
  */
 final readonly class MateCliRunner
 {
     private const TIMEOUT_SECONDS = 120;
 
-    public function __construct(private string $projectRoot) {}
+    /**
+     * @param float $timeoutSeconds overrides the process timeout; test-only seam
+     */
+    public function __construct(
+        private string $projectRoot,
+        private float $timeoutSeconds = self::TIMEOUT_SECONDS,
+    ) {}
 
     public function binaryExists(): bool
     {
@@ -45,7 +52,7 @@ final readonly class MateCliRunner
             [\PHP_BINARY, $this->projectRoot.'/vendor/bin/mate', $command, ...$arguments],
             $this->projectRoot,
         );
-        $process->setTimeout(self::TIMEOUT_SECONDS);
+        $process->setTimeout($this->timeoutSeconds);
         $process->run();
 
         return $process;
