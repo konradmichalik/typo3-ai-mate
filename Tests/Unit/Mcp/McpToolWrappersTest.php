@@ -216,6 +216,15 @@ final class McpToolWrappersTest extends TestCase
     }
 
     #[Test]
+    public function dbSchemaToolSuppressesThePatternFilterWhenTableIsGiven(): void
+    {
+        $result = $this->decode((new DbSchemaTool($this->runner))->dump('tt_content', 'tt_'));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:db-schema:dump');
+        self::assertJsonPath($result, 'args', ['--', 'tt_content']);
+    }
+
+    #[Test]
     public function dbSchemaToolListsAllTablesWithoutOptionsByDefault(): void
     {
         $result = $this->decode((new DbSchemaTool($this->runner))->dump());

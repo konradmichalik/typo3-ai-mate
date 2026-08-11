@@ -34,8 +34,9 @@ final readonly class DbSchemaTool
     #[McpTool(name: 'typo3-db-schema', title: 'TYPO3 Database Schema', description: 'The physical database schema — the counterpart to typo3-tca. Without a table: every table name with a row-count estimate. With a table: its real columns (name, type, length, nullable, default), indexes (name, columns, unique) and foreign keys. Use this to answer "why is my field not persisted" (TCA field vs. real column) or to find missing indexes; typo3-tca is the semantic model, typo3-records is the data, this is the schema underneath both.')]
     public function dump(?string $table = null, ?string $pattern = null): string
     {
-        $arguments = null !== $table && '' !== $table ? [$table] : [];
-        $options = null !== $pattern && '' !== $pattern ? ['pattern' => $pattern] : [];
+        $hasTable = null !== $table && '' !== $table;
+        $arguments = $hasTable ? [$table] : [];
+        $options = !$hasTable && null !== $pattern && '' !== $pattern ? ['pattern' => $pattern] : [];
 
         return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:db-schema:dump', $arguments, $options));
     }
