@@ -186,7 +186,11 @@ final class ChangelogSearchCommand extends AbstractJsonCommand
             return $this->emit($output, ['error' => 'query must not be empty.'], Command::FAILURE);
         }
 
-        $type = ChangelogType::tryFrom(Cast::string($input->getOption('type')));
+        $typeOption = Cast::string($input->getOption('type'));
+        if (ChangelogType::isUnsupported($typeOption)) {
+            return $this->emit($output, ['error' => 'type must be one of Breaking, Deprecation, Feature, or Important.'], Command::FAILURE);
+        }
+        $type = ChangelogType::tryFrom($typeOption);
         $versionOption = Cast::string($input->getOption('version'));
         $versionPrefix = '' !== $versionOption ? $versionOption : (string) $this->typo3Version->getMajorVersion();
         $limit = min(self::MAX_LIMIT, max(1, Cast::int($input->getOption('limit'))));

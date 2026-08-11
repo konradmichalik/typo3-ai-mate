@@ -28,4 +28,14 @@ enum ChangelogType: string
     case Deprecation = 'Deprecation';
     case Feature = 'Feature';
     case Important = 'Important';
+
+    /**
+     * Whether a --type option value is neither omitted nor one of the cases
+     * above, e.g. a typo like "Breakng". An omitted (empty) value means "no
+     * filter" and is not unsupported.
+     */
+    public static function isUnsupported(string $option): bool
+    {
+        return '' !== $option && null === self::tryFrom($option);
+    }
 }

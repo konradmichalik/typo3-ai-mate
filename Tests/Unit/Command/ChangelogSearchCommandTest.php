@@ -171,6 +171,20 @@ final class ChangelogSearchCommandTest extends TestCase
     }
 
     #[Test]
+    public function executeFailsForAnUnsupportedType(): void
+    {
+        $this->writeFixture('14.0', 'Breaking-100001-RemoveFooBar.rst', 'Breaking: #100001 - Remove FooBar'."\n");
+
+        $tester = new CommandTester($this->command());
+        $exitCode = $tester->execute(['query' => 'foobar', '--type' => 'Breakng']);
+
+        self::assertSame(1, $exitCode);
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        self::assertSame('type must be one of Breaking, Deprecation, Feature, or Important.', $result['error']);
+    }
+
+    #[Test]
     public function executeDefaultsTheVersionToTheInstalledMajor(): void
     {
         $this->writeFixture('13.4', 'Breaking-100001-RemoveFooBar.rst', 'Breaking: #100001 - Remove FooBar'."\n");
