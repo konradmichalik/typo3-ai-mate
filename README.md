@@ -71,6 +71,9 @@ vendor/bin/mate init       # scaffold mate/ + mcp.json (skip if already present)
 vendor/bin/mate discover   # register the typo3-* tools
 ```
 
+> [!NOTE]
+> `mate discover` writes the aggregated instructions (this extension's `INSTRUCTIONS.md` plus every other installed Mate extension's) to `mate/AGENT_INSTRUCTIONS.md`, and adds a managed `<!-- BEGIN AI_MATE_INSTRUCTIONS --> … <!-- END AI_MATE_INSTRUCTIONS -->` block to `AGENTS.md` pointing at it. It does **not** write to `CLAUDE.md`, `.cursor/rules`, or any other client-specific file — only `AGENTS.md`. If your assistant reads `AGENTS.md` directly, you are covered automatically. **Claude Code reads `CLAUDE.md`, not `AGENTS.md`** — add a single line to your project's `CLAUDE.md` — `@AGENTS.md` — so it gets pulled in; do not hand-write a second managed block, Mate's own markers above are the only ones this project uses. Any other assistant that only reads its own client-specific file (e.g. `.cursor/rules`) needs the same kind of import.
+
 `mate serve` is a single MCP server exposing all `typo3-*` tools — your assistant (Claude Code, Cursor, Copilot, …) starts it for you once it is registered:
 
 ```bash
