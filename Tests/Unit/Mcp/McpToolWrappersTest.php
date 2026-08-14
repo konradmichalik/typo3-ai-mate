@@ -15,7 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FluidResolveTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
+use KonradMichalik\Typo3AiMate\Mcp\{CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FluidResolveTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\{ConfigSection, LogLevel, MiddlewareStack, OutputMode, TsConfigType, TypoScriptType};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -303,6 +303,42 @@ final class McpToolWrappersTest extends TestCase
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:fe:render');
         self::assertJsonPath($result, 'args', ['--url', 'https://example.com/page', '--language', '0']);
+    }
+
+    #[Test]
+    public function siteToolListsAllSitesByDefault(): void
+    {
+        $result = $this->decode((new SiteTool($this->runner))->dump());
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:site:dump');
+        self::assertJsonPath($result, 'args', []);
+    }
+
+    #[Test]
+    public function siteToolForwardsTheIdentifierFilter(): void
+    {
+        $result = $this->decode((new SiteTool($this->runner))->dump('main'));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:site:dump');
+        self::assertJsonPath($result, 'args', ['--identifier', 'main']);
+    }
+
+    #[Test]
+    public function siteToolForwardsThePageIdAndLanguageForUrlMode(): void
+    {
+        $result = $this->decode((new SiteTool($this->runner))->dump(null, 5, 1));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:site:dump');
+        self::assertJsonPath($result, 'args', ['--pageId', '5', '--language', '1']);
+    }
+
+    #[Test]
+    public function siteToolPageIdTakesPrecedenceOverIdentifier(): void
+    {
+        $result = $this->decode((new SiteTool($this->runner))->dump('main', 5));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:site:dump');
+        self::assertJsonPath($result, 'args', ['--pageId', '5', '--language', '0']);
     }
 
     #[Test]

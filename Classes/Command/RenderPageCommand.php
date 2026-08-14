@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Command;
 
+use KonradMichalik\Typo3AiMate\Service\SiteUrlResolver;
 use KonradMichalik\Typo3AiMate\Support\Cast;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -20,13 +21,10 @@ use Symfony\Component\Console\Input\{InputArgument, InputInterface, InputOption}
 use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
 use TYPO3\CMS\Core\Http\RequestFactory;
-use TYPO3\CMS\Core\Site\SiteFinder;
 
 use function count;
-use function in_array;
 use function is_numeric;
 use function is_string;
-use function parse_url;
 use function sprintf;
 use function strlen;
 
@@ -51,7 +49,7 @@ final class RenderPageCommand extends AbstractJsonCommand
     private readonly LogsCommand $logSearch;
 
     public function __construct(
-        private readonly SiteFinder $siteFinder,
+        private readonly SiteUrlResolver $siteUrlResolver,
         private readonly RequestFactory $requestFactory,
     ) {
         parent::__construct();
@@ -134,7 +132,7 @@ final class RenderPageCommand extends AbstractJsonCommand
             return $this->resolveExplicitUrl($urlOption);
         }
         if (null !== $pageId) {
-            $url = $this->urlForPage($pageId, $language);
+            $url = $this->siteUrlResolver->urlForPage($pageId, $language);
 
             return [$url, null === $url ? sprintf('Could not resolve a URL for page %d (no site configuration?).', $pageId) : null];
         }
@@ -147,23 +145,12 @@ final class RenderPageCommand extends AbstractJsonCommand
      */
     private function resolveExplicitUrl(string $urlOption): array
     {
-        if (str_contains($urlOption, '://') && !$this->isAllowedHost($urlOption)) {
+        if (str_contains($urlOption, '://') && !$this->siteUrlResolver->isAllowedHost($urlOption)) {
             return [null, sprintf('URL host is not among the configured site bases: %s', $urlOption)];
         }
         $url = $this->absoluteUrl($urlOption);
 
         return [$url, null === $url ? sprintf('Relative URL "%s" needs a site base — pass an absolute URL or a pageId.', $urlOption) : null];
-    }
-
-    private function urlForPage(int $pageId, int $language): ?string
-    {
-        try {
-            $site = $this->siteFinder->getSiteByPageId($pageId);
-
-            return (string) $site->getRouter()->generateUri($pageId, ['_language' => $language]);
-        } catch (Throwable) {
-            return null;
-        }
     }
 
     /**
@@ -175,60 +162,9 @@ final class RenderPageCommand extends AbstractJsonCommand
         if (str_contains($url, '://')) {
             return $url;
         }
-        $base = $this->firstSiteBase();
+        $base = $this->siteUrlResolver->firstSiteBase();
 
         return null === $base ? null : rtrim($base, '/').'/'.ltrim($url, '/');
-    }
-
-    private function firstSiteBase(): ?string
-    {
-        try {
-            foreach ($this->siteFinder->getAllSites() as $site) {
-                $base = (string) $site->getBase();
-                if (str_contains($base, '://')) {
-                    return $base;
-                }
-            }
-        } catch (Throwable) {
-            return null;
-        }
-
-        return null;
-    }
-
-    /**
-     * Whether the URL's host is one of the configured site hosts. Blocks the tool
-     * from being turned into a generic fetcher against internal/cloud-metadata
-     * endpoints (SSRF).
-     */
-    private function isAllowedHost(string $url): bool
-    {
-        $host = parse_url($url, \PHP_URL_HOST);
-        if (!is_string($host) || '' === $host) {
-            return false;
-        }
-
-        return in_array(strtolower($host), $this->siteHosts(), true);
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function siteHosts(): array
-    {
-        $hosts = [];
-        try {
-            foreach ($this->siteFinder->getAllSites() as $site) {
-                $host = parse_url((string) $site->getBase(), \PHP_URL_HOST);
-                if (is_string($host) && '' !== $host) {
-                    $hosts[] = strtolower($host);
-                }
-            }
-        } catch (Throwable) {
-            return [];
-        }
-
-        return $hosts;
     }
 
     /**

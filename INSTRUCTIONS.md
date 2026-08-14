@@ -17,6 +17,7 @@ actually computed, not what the code might do.
 | raw `SELECT` / `ddev mysql`          | `typo3-records`       |
 | `ext_tables.sql` / a DB client       | `typo3-db-schema`     |
 | `settings.php` / `additional.php`    | `typo3-config`        |
+| `config/sites/*/config.yaml`         | `typo3-site`          |
 
 ## Diagnose instead of guessing
 
@@ -83,6 +84,11 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
   not persisted" (TCA field vs. real column) or to spot a missing index.
 - `typo3-typoscript` — resolved frontend TypoScript of a page. Returns a top-level
   overview by default; scope with `path` or pass `full=true` for the whole tree.
+- `typo3-site` — configured sites (identifier, base, root page id, languages,
+  error handling), or `pageId=<id>` to resolve the frontend URL (via the site
+  router, same resolution `typo3-render-page` uses — a lookup, no rendering)
+  plus the matching backend URL. `pageId=0` falls back to the root page of the
+  first configured site.
 - `typo3-middlewares` — resolved PSR-15 middleware order of a stack.
 - `typo3-events` — resolved PSR-14 event listener registry (event => listeners).
 - `typo3-commands` — every registered console command (name, description, synopsis),
