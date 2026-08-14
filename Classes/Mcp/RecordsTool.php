@@ -16,6 +16,7 @@ namespace KonradMichalik\Typo3AiMate\Mcp;
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
 use KonradMichalik\Typo3AiMate\Mcp\Enum\OutputMode;
 use Mcp\Capability\Attribute\McpTool;
+use Mcp\Schema\ToolAnnotations;
 use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
 /**
@@ -38,7 +39,7 @@ final readonly class RecordsTool
      * @param OutputMode  $mode                summary (default, compact core fields with long text truncated) | full (all columns, untruncated)
      * @param bool        $respectEnableFields apply Deleted/Hidden/StartEnd restrictions (frontend view); default false shows every row with _flags
      */
-    #[McpTool(name: 'typo3-records', title: 'TYPO3 Records', description: 'Read-only record query for a TYPO3 table. Returns rows as compact JSON (uid, pid, label/type, enable columns, timestamps; long text truncated), each with a _flags list (hidden/deleted/timed/fe_group) explaining visibility. By default no restrictions are applied so hidden/deleted rows are visible — use this instead of raw SQL to answer "why is this record not showing?". Pass fields for specific columns, mode=full for all columns, respectEnableFields=true for the frontend view. Equality filters only; narrow via uid/pid.')]
+    #[McpTool(name: 'typo3-records', title: 'TYPO3 Records', description: 'Read-only record query for a TYPO3 table. Returns rows as compact JSON (uid, pid, label/type, enable columns, timestamps; long text truncated), each with a _flags list (hidden/deleted/timed/fe_group) explaining visibility. By default no restrictions are applied so hidden/deleted rows are visible — use this instead of raw SQL to answer "why is this record not showing?". Pass fields for specific columns, mode=full for all columns, respectEnableFields=true for the frontend view. Equality filters only; narrow via uid/pid.', annotations: new ToolAnnotations(readOnlyHint: true))]
     public function query(
         string $table,
         ?int $uid = null,
