@@ -15,7 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FluidResolveTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
+use KonradMichalik\Typo3AiMate\Mcp\{CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FluidResolveTool, InfoTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\{ConfigSection, LogLevel, MiddlewareStack, OutputMode, TsConfigType, TypoScriptType};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -51,6 +51,15 @@ final class McpToolWrappersTest extends TestCase
         @rmdir($this->rootDir.'/vendor/bin');
         @rmdir($this->rootDir.'/vendor');
         @rmdir($this->rootDir);
+    }
+
+    #[Test]
+    public function infoToolCallsTheInfoCommandWithoutArguments(): void
+    {
+        $result = $this->decode((new InfoTool($this->runner))->dump());
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:info:dump');
+        self::assertJsonPath($result, 'args', []);
     }
 
     #[Test]

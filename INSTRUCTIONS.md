@@ -4,6 +4,16 @@ These tools expose the **resolved runtime state** of a TYPO3 installation (dev
 context only). Prefer them over reading source files: they report what TYPO3
 actually computed, not what the code might do.
 
+## Start here
+
+Call `typo3-info` first, before any other tool in this package. It reports the
+exact TYPO3 version and major (v13 vs v14 governs almost every subsequent
+recommendation), PHP version, application context, database platform/version,
+active extensions (own vs. third-party), relevant package versions, profiler
+CLI availability, and a compact `tt_content` type inventory. Do not derive any
+of this from `composer.json` — its constraint ranges (e.g. `^13.4 || ^14.3`,
+this package's own) do not resolve to a single version.
+
 ## Use a tool instead of reading files
 
 | Instead of reading…                  | …use                  |
@@ -54,6 +64,8 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
 
 ## Tools
 
+- `typo3-info` — **call this first.** Version/context/database facts, extensions,
+  package versions, profiler state, content-type inventory. See "Start here" above.
 - `typo3-profiler-latest` / `-list` / `-search` / `-get` — request profiles as compact
   summaries, each with a `resource_uri`; read the full profile or a single section via the
   `typo3-profiler://profile/{token}[/{section}]` resources. (Requires the
