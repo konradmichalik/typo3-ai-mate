@@ -68,8 +68,9 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
   package versions, profiler state, content-type inventory. See "Start here" above.
 - `typo3-profiler-latest` / `-list` / `-search` / `-get` — request profiles as compact
   summaries, each with a `resource_uri`; read the full profile or a single section via the
-  `typo3-profiler://profile/{token}[/{section}]` resources. (Requires the
-  `typo3-request-profiler` extension and a triggered FE request in the Development context.)
+  `typo3-profiler://profile/{token}[/{section}]` resources. See each tool's own description
+  for which one to use. (Requires the `typo3-request-profiler` extension and a triggered FE
+  request in the Development context.)
 - `typo3-profiler-start` / `-stop` / `-status` — switch profiling on for a bounded window
   (`duration=15m`, max `60m`), off again, and check the remaining time. `-status` covers only
   this window; profiling can also be on via the Development context or a per-request header,
