@@ -15,8 +15,8 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{CommandsTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FluidResolveTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
-use KonradMichalik\Typo3AiMate\Mcp\Enum\{LogLevel, MiddlewareStack, OutputMode, TsConfigType, TypoScriptType};
+use KonradMichalik\Typo3AiMate\Mcp\{CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FluidResolveTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
+use KonradMichalik\Typo3AiMate\Mcp\Enum\{ConfigSection, LogLevel, MiddlewareStack, OutputMode, TsConfigType, TypoScriptType};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -231,6 +231,24 @@ final class McpToolWrappersTest extends TestCase
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:db-schema:dump');
         self::assertJsonPath($result, 'args', []);
+    }
+
+    #[Test]
+    public function configToolDefaultsToTheConfvarsSectionWithoutPath(): void
+    {
+        $result = $this->decode((new ConfigTool($this->runner))->dump());
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:config:dump');
+        self::assertJsonPath($result, 'args', ['--section', 'confvars']);
+    }
+
+    #[Test]
+    public function configToolForwardsThePathAndSection(): void
+    {
+        $result = $this->decode((new ConfigTool($this->runner))->dump('my_ext', ConfigSection::Extension));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:config:dump');
+        self::assertJsonPath($result, 'args', ['--section', 'extension', '--path', 'my_ext']);
     }
 
     #[Test]
