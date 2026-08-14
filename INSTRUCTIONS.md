@@ -15,6 +15,7 @@ actually computed, not what the code might do.
 | guessing available CLI commands      | `typo3-commands`      |
 | `tail -f var/log/*.log`              | `typo3-logs-tail`     |
 | raw `SELECT` / `ddev mysql`          | `typo3-records`       |
+| `ext_tables.sql` / a DB client       | `typo3-db-schema`     |
 
 ## Diagnose instead of guessing
 
@@ -69,6 +70,11 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
   `respectEnableFields=true` for the frontend view.
 - `typo3-logs-search` / `-tail` / `-by-level` — TYPO3 logs.
 - `typo3-tca` — resolved (trimmed) TCA of a table, or all table names.
+- `typo3-db-schema` — the physical schema, counterpart to `typo3-tca`: without a
+  `table`, every table name with a row-count estimate (optional `pattern` substring
+  filter); with a `table`, its real columns (name, type, length, nullable, default),
+  indexes (name, columns, unique) and foreign keys. Use it to answer "why is my field
+  not persisted" (TCA field vs. real column) or to spot a missing index.
 - `typo3-typoscript` — resolved frontend TypoScript of a page. Returns a top-level
   overview by default; scope with `path` or pass `full=true` for the whole tree.
 - `typo3-middlewares` — resolved PSR-15 middleware order of a stack.
@@ -96,6 +102,8 @@ picture, and re-query with a narrower filter:
   is the real total). If truncated, scan a single `extension=<key>` to focus.
 - `typo3-events` — at most 100 events (`eventCount` is the real total). Narrow with the
   `event` class-substring filter.
+- `typo3-db-schema` (table list) — at most 300 tables (`tableCount` is the real total).
+  Narrow with the `pattern` substring filter.
 
 ## Planning a major upgrade (v13 → v14)
 
