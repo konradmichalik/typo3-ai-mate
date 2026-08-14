@@ -37,7 +37,7 @@ final readonly class LogsTool
      * @param OutputMode    $mode      summary (default, distinct messages grouped with counts) | full (individual entries with truncated traces)
      * @param string|null   $since     Relative time window, e.g. 1h, 2d; omit for all entries regardless of age.
      */
-    #[McpTool(name: 'typo3-logs-search', title: 'TYPO3 Log Search', description: 'Full-text search the TYPO3 logs with optional level/component/request-id filters. Returns a compact summary (distinct messages with occurrence counts and lastSeen, no stack traces) by default. Use this when you have a search term.', annotations: new ToolAnnotations(readOnlyHint: true))]
+    #[McpTool(name: 'typo3-logs-search', title: 'TYPO3 Log Search', description: 'Full-text search the TYPO3 logs with optional level/component/request-id filters. Returns a compact summary (distinct messages with occurrence counts and lastSeen, no stack traces) by default. Use this for a text search, or to filter by component/request-id without one; for severity-only filtering use typo3-logs-by-level.', annotations: new ToolAnnotations(readOnlyHint: true))]
     public function search(
         ?string $query = null,
         ?LogLevel $level = null,
