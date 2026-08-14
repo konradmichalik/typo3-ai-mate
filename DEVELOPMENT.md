@@ -25,6 +25,19 @@ final class MyCustomTool
 
 Recipe: (1) a TYPO3 console command that prints **raw JSON** (no `SymfonyStyle` — it decorates the output and breaks parsing), (2) a `#[McpTool]` class injecting `Typo3CliRunner`, (3) register via A or B.
 
+## Runtime-computed tool descriptions
+
+A `#[McpTool(description: …)]` argument must be a PHP compile-time constant, so it cannot read the filesystem itself. `typo3-profiler-latest/-list/-search/-get`, `typo3-profiler-start/-stop/-status` and `typo3-render-page` still need a state-dependent sentence (e.g. "no profiles exist yet, run typo3-profiler-start first") — the field an assistant reads *before* deciding to call a tool, so stating a precondition there prevents a wasted call instead of only explaining it in the result.
+
+`Configuration/Mate.php` registers `Mate\DescriptionAwareDiscoverer` as a Symfony DI decorator of `Mcp\Capability\Discovery\DiscovererInterface`. It runs the SDK's real attribute discovery, then rewrites the description of those tools using `Mate\ToolDescriptionComputer`, which only reads `var/log/profiles`, `var/log/profiler-activation-state.json` and `config/sites/*/config.yaml` directly (the same boot-free approach as `ProfileProvider`/`ProfilerStateProvider`) — never a TYPO3 boot, since discovery runs before any tool call, on every `mate` CLI invocation.
+
+`DiscovererInterface`/`DiscoveryState`/`ToolReference` are marked `@internal` by `mcp/sdk`; composer.json pins `mcp/sdk: ^0.7`, so re-verify `DescriptionAwareDiscoverer` against the SDK's discovery internals on every minor bump.
+
+**Startup overhead**: `ai-mate` already rebuilds and compiles its DI container on every CLI invocation (no persisted container cache exists). Measured with `time vendor/bin/mate mcp:tools:list` (3 runs each, `TYPO3_CONTEXT=Development`): ~120–135ms with the decorator active vs. ~125–255ms without it on the same machine — the added filesystem reads are within run-to-run noise, not a measurable addition on top of the existing container-compile cost.
+
+> [!NOTE]
+> MCP clients capture tool descriptions at connection time. A state change mid-session (a profile just got recorded, profiling was just started) is not reflected until the client reconnects — the same caveat as the README's "reconnect after `composer update`" note.
+
 ## Security
 
 > [!WARNING]
