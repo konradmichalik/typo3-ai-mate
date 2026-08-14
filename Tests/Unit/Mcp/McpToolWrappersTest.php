@@ -15,7 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{DeprecationsTool, EventsTool, ExtensionScannerTool, FluidResolveTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
+use KonradMichalik\Typo3AiMate\Mcp\{CommandsTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FluidResolveTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\{LogLevel, MiddlewareStack, OutputMode, TsConfigType, TypoScriptType};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -168,6 +168,33 @@ final class McpToolWrappersTest extends TestCase
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:events:list');
         self::assertJsonPath($result, 'args', ['--event', 'SomeEvent']);
+    }
+
+    #[Test]
+    public function commandsToolForwardsThePatternFilter(): void
+    {
+        $result = $this->decode((new CommandsTool($this->runner))->list('cache'));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:commands:list');
+        self::assertJsonPath($result, 'args', ['--pattern', 'cache']);
+    }
+
+    #[Test]
+    public function commandsToolForwardsTheOwnOnlyFlag(): void
+    {
+        $result = $this->decode((new CommandsTool($this->runner))->list(null, true));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:commands:list');
+        self::assertJsonPath($result, 'args', ['--own-only']);
+    }
+
+    #[Test]
+    public function commandsToolCallsTheCommandsCommandWithoutOptionsByDefault(): void
+    {
+        $result = $this->decode((new CommandsTool($this->runner))->list());
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:commands:list');
+        self::assertJsonPath($result, 'args', []);
     }
 
     #[Test]
