@@ -64,25 +64,19 @@ Download the zip file from [TYPO3 extension repository (TER)](https://extensions
 
 ## 🔌 Connect your assistant
 
-Scaffold the Mate workspace and register the tools once:
+One command scaffolds the Mate workspace, registers the `typo3-*` tools and adds the MCP server to your project's `.mcp.json`:
 
 ```bash
-vendor/bin/mate init       # scaffold mate/ + mcp.json (skip if already present)
-vendor/bin/mate discover   # register the typo3-* tools
+vendor/bin/typo3 typo3-ai-mate:install
 ```
+
+It detects whether the project runs under DDEV and registers the matching launch command (`ddev exec vendor/bin/mate serve` vs. `./vendor/bin/mate serve`), never touches other `mcpServers` entries already in `.mcp.json`, and is safe to run again after every `composer update`. `--dry-run` reports every planned change without writing anything; `--skip-mcp-json` runs the Mate workspace steps only, in case your assistant registers MCP servers another way.
 
 > [!NOTE]
 > `mate discover` writes the aggregated instructions (this extension's `INSTRUCTIONS.md` plus every other installed Mate extension's) to `mate/AGENT_INSTRUCTIONS.md`, and adds a managed `<!-- BEGIN AI_MATE_INSTRUCTIONS --> … <!-- END AI_MATE_INSTRUCTIONS -->` block to `AGENTS.md` pointing at it. It does **not** write to `CLAUDE.md`, `.cursor/rules`, or any other client-specific file — only `AGENTS.md`. If your assistant reads `AGENTS.md` directly, you are covered automatically. **Claude Code reads `CLAUDE.md`, not `AGENTS.md`** — add a single line to your project's `CLAUDE.md` — `@AGENTS.md` — so it gets pulled in; do not hand-write a second managed block, Mate's own markers above are the only ones this project uses. Any other assistant that only reads its own client-specific file (e.g. `.cursor/rules`) needs the same kind of import.
 
-`mate serve` is a single MCP server exposing all `typo3-*` tools — your assistant (Claude Code, Cursor, Copilot, …) starts it for you once it is registered:
-
-```bash
-claude mcp add typo3-ai-mate --scope project -- ddev exec vendor/bin/mate serve   # DDEV project
-claude mcp add typo3-ai-mate --scope project -- ./vendor/bin/mate serve           # host PHP project
-```
-
 > [!NOTE]
-> After updating the package (`composer update`), **reconnect the MCP server** so the assistant picks up new or changed tool schemas — in Claude Code run `/mcp` and reconnect `typo3-ai-mate`. Freshly installed vendor code alone is not enough; without a reconnect the assistant keeps using the previously registered tool definitions.
+> After updating the package (`composer update`), **re-run the install command and reconnect the MCP server** so the assistant picks up new or changed tool schemas — in Claude Code run `/mcp` and reconnect `typo3-ai-mate`. Freshly installed vendor code alone is not enough; without a reconnect the assistant keeps using the previously registered tool definitions.
 
 ## ⚙️ How it works
 

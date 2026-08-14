@@ -6,6 +6,7 @@ services:
 
   KonradMichalik\Typo3AiMate\Command\:
     resource: '../Classes/Command/*'
+    exclude: '../Classes/Command/Support/*'
 
   KonradMichalik\Typo3AiMate\Service\:
     resource: '../Classes/Service/*'
@@ -14,3 +15,8 @@ services:
   # autoconfigure (TYPO3 v12+). The MCP tool classes in Classes/Mcp/* are NOT
   # registered here: they run in the separate Symfony DI container of the Mate
   # process (see Configuration/Mate.php).
+  #
+  # Classes/Command/Support/* are plain helpers constructed manually with
+  # runtime-only arguments (a project root path, a test-only timeout) that
+  # autowiring cannot supply; excluded so the container never tries to build
+  # one on their behalf just because a command type-hints it.
