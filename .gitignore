@@ -25,3 +25,4 @@
 
 # php-cs-fixer cache (created when running CGL config from repo root)
 .php-cs-fixer.cache
+.Build/
