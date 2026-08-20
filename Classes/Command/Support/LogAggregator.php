@@ -42,7 +42,7 @@ final readonly class LogAggregator
         $total = 0;
         foreach ($entries as $entry) {
             ++$total;
-            $this->accumulate($grouped, $entry);
+            $grouped = $this->accumulate($grouped, $entry);
         }
         $summaries = $this->sortSummaries($grouped);
 
@@ -90,7 +90,7 @@ final readonly class LogAggregator
     {
         $grouped = [];
         foreach ($entries as $entry) {
-            $this->accumulate($grouped, $entry);
+            $grouped = $this->accumulate($grouped, $entry);
         }
 
         return $this->sortSummaries($grouped);
@@ -103,12 +103,14 @@ final readonly class LogAggregator
      *
      * @param array<string, array{message: string, level: string, component: string, count: int, lastSeen: string, exampleRequestId: string}> $grouped
      * @param array<string, mixed>                                                                                                            $entry
+     *
+     * @return array<string, array{message: string, level: string, component: string, count: int, lastSeen: string, exampleRequestId: string}>
      */
-    private function accumulate(array &$grouped, array $entry): void
+    private function accumulate(array $grouped, array $entry): array
     {
         $message = LogTrimmer::message(Cast::string($entry['message'] ?? ''), $this->messageLimit);
         if ('' === $message) {
-            return;
+            return $grouped;
         }
         if (!isset($grouped[$message])) {
             $grouped[$message] = [
@@ -122,6 +124,8 @@ final readonly class LogAggregator
         }
         ++$grouped[$message]['count'];
         $grouped[$message]['lastSeen'] = Cast::string($entry['time'] ?? '');
+
+        return $grouped;
     }
 
     /**
