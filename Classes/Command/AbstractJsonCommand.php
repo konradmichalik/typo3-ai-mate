@@ -34,7 +34,7 @@ abstract class AbstractJsonCommand extends Command
      * (the CI/functional-test context) stays permitted so the suite exercises the
      * real command path.
      */
-    public function run(InputInterface $input, OutputInterface $output): int
+    final public function run(InputInterface $input, OutputInterface $output): int
     {
         if (Environment::getContext()->isProduction()) {
             return $this->emit(
@@ -47,7 +47,7 @@ abstract class AbstractJsonCommand extends Command
         return parent::run($input, $output);
     }
 
-    protected function emit(OutputInterface $output, mixed $data, int $exitCode = Command::SUCCESS): int
+    final protected function emit(OutputInterface $output, mixed $data, int $exitCode = Command::SUCCESS): int
     {
         $json = json_encode($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_UNESCAPED_UNICODE);
         $output->writeln(false === $json ? '{"error":"Failed to encode JSON."}' : $json);
