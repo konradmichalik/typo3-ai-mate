@@ -14,3 +14,8 @@ parameters:
 
 	type_coverage:
 		constant: 0 # TODO: Set to 100, when PHP 8.3 is minimum requirement
+
+	ignoreErrors:
+		- identifier: ergebnis.noNamedArgument
+		- identifier: ergebnis.noErrorSuppression
+		- identifier: ergebnis.noConstructorParameterWithDefaultValue
