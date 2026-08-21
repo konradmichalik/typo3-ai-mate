@@ -86,6 +86,34 @@ final class FluidResolveCommandTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function answersAnUnresolvableViewPathWithTheViewPathsThatDoResolve(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['pageId' => '1', '--plugin' => 'plugin.tx_nothing']);
+
+        // A miss is a successful answer, not a failed call.
+        self::assertSame(0, $exitCode);
+        self::assertFalse($result['viewPathFound']);
+        self::assertSame(['plugin.tx_fixture'], $result['candidates']);
+        self::assertSame(1, $result['candidateCount']);
+        self::assertArrayHasKey('_hint', $result);
+    }
+
+    #[Test]
+    public function statesTheNegativeWhenNoRootPathCarriesTheTemplate(): void
+    {
+        [$exitCode, $result] = $this->runCommand([
+            'pageId' => '1',
+            '--plugin' => 'plugin.tx_fixture',
+            '--template' => 'NoSuchTemplate',
+        ]);
+
+        self::assertSame(0, $exitCode);
+        self::assertTrue($result['viewPathFound']);
+        self::assertFalse($result['resolved']['templateRootPaths']['found']);
+        self::assertNull($result['resolved']['templateRootPaths']['file']);
+    }
+
+    #[Test]
     public function failsWithAReadableErrorWhenThePluginOptionIsMissing(): void
     {
         [$exitCode, $result] = $this->runCommand(['pageId' => '1']);
