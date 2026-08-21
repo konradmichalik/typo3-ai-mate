@@ -83,17 +83,17 @@ final class DdevEnvironmentTest extends TestCase
         mkdir($this->projectRoot.'/.ddev', 0o700, true);
         file_put_contents($this->projectRoot.'/.ddev/config.yaml', "name: example\n");
 
-        $command = DdevEnvironment::detect($this->projectRoot)->mcpServerLaunchCommand();
+        $argv = DdevEnvironment::detect($this->projectRoot)->mcpServerLaunchArgv();
 
-        self::assertSame(['command' => 'ddev', 'args' => ['exec', 'vendor/bin/mate', 'serve']], $command);
+        self::assertSame(['ddev', 'exec', 'vendor/bin/mate', 'serve'], $argv);
     }
 
     #[Test]
     public function launchCommandUsesHostFormForNonDdevProject(): void
     {
-        $command = DdevEnvironment::detect($this->projectRoot)->mcpServerLaunchCommand();
+        $argv = DdevEnvironment::detect($this->projectRoot)->mcpServerLaunchArgv();
 
-        self::assertSame(['command' => './vendor/bin/mate', 'args' => ['serve']], $command);
+        self::assertSame(['./vendor/bin/mate', 'serve'], $argv);
     }
 
     private function removeDirectory(string $path): void

@@ -59,6 +59,15 @@ final class RecordSchema
     private const BLOCKED_TABLE_SUFFIX = '_sessions';
 
     /**
+     * Bookkeeping columns that carry no answer to any question a caller asks a
+     * record for: `l18n_diffsource` ships the whole translated row again as an
+     * escaped JSON blob, and the workspace columns describe versioning state.
+     * Left out of a full selection unless asked for by name.
+     */
+    private const BOOKKEEPING_COLUMNS = ['l18n_diffsource'];
+    private const BOOKKEEPING_PREFIX = 't3ver_';
+
+    /**
      * Whether a table must not be queried at all (session storage).
      */
     public static function isBlockedTable(string $table): bool
@@ -112,6 +121,40 @@ final class RecordSchema
         }
 
         return $sensitive;
+    }
+
+    /**
+     * Every column a row must not carry in clear text. Beyond the sensitive and
+     * personal ones themselves, this covers the bookkeeping blob: it holds a
+     * copy of the whole source row, so naming it in `fields` would hand back
+     * exactly what redacting the column prevents. A table with nothing to
+     * protect keeps the blob readable, because there it is a debugging aid.
+     *
+     * @param array<mixed> $tcaColumns the TCA `columns` section of the table
+     * @param list<string> $columns
+     *
+     * @return list<string>
+     */
+    public static function redactColumns(array $tcaColumns, string $table, array $columns): array
+    {
+        $redact = array_values(array_unique([
+            ...self::sensitiveColumns($tcaColumns, $columns),
+            ...self::piiColumns($table, $columns),
+        ]));
+        $blobs = array_filter($columns, static fn (string $column): bool => in_array(strtolower($column), self::BOOKKEEPING_COLUMNS, true));
+
+        return [] === $redact ? [] : array_values(array_unique([...$redact, ...$blobs]));
+    }
+
+    /**
+     * @param list<string> $columns
+     *
+     * @return list<string>
+     */
+    public static function withoutBookkeeping(array $columns): array
+    {
+        return array_values(array_filter($columns, static fn (string $column): bool => !in_array(strtolower($column), self::BOOKKEEPING_COLUMNS, true)
+            && !str_starts_with(strtolower($column), self::BOOKKEEPING_PREFIX)));
     }
 
     /**

@@ -84,32 +84,54 @@ final class RecordsCommandTest extends FunctionalTestCase
         [$exitCode, $result] = $this->runCommand(['table' => 'tt_content', '--uid' => '1', '--fields' => 'uid,bodytext']);
 
         self::assertSame(0, $exitCode);
-        self::assertSame(['uid', 'bodytext'], $result['fields']);
+        self::assertSame(['uid', 'bodytext', '_flags'], array_keys((array) $result['rows'][0]));
         $bodytext = $result['rows'][0]['bodytext'];
         self::assertStringStartsWith(str_repeat('a', 200), $bodytext);
         self::assertStringContainsString('…(+', $bodytext);
     }
 
     #[Test]
-    public function defaultCompactFieldSetIncludesLabelTypeAndEnableColumns(): void
+    public function defaultCompactRowCarriesLabelTypeAndTheEnableColumnsThatAreSet(): void
     {
-        [$exitCode, $result] = $this->runCommand(['table' => 'tt_content', '--uid' => '1']);
+        [$exitCode, $result] = $this->runCommand(['table' => 'tt_content', '--pid' => '1']);
 
         self::assertSame(0, $exitCode);
-        foreach (['uid', 'pid', 'header', 'CType', 'hidden', 'deleted'] as $field) {
-            self::assertContains($field, $result['fields']);
+        $byUid = array_column((array) $result['rows'], null, 'uid');
+
+        foreach (['uid', 'pid', 'header', 'CType'] as $field) {
+            self::assertArrayHasKey($field, (array) $byUid[1]);
         }
-        self::assertNotContains('bodytext', $result['fields']);
+        // Not part of the compact selection at all.
+        self::assertArrayNotHasKey('bodytext', (array) $byUid[1]);
+        // hidden=0 / deleted=0 carry no information and _flags states visibility,
+        // so they are omitted — but a hidden row reports hidden=1.
+        self::assertArrayNotHasKey('hidden', (array) $byUid[1]);
+        self::assertSame(1, $byUid[2]['hidden']);
     }
 
     #[Test]
-    public function fullModeReturnsAllColumnsUntruncated(): void
+    public function fullModeReturnsEveryColumnWithAValueUntruncated(): void
     {
         [$exitCode, $result] = $this->runCommand(['table' => 'tt_content', '--uid' => '1', '--format' => 'full']);
 
         self::assertSame(0, $exitCode);
-        self::assertContains('bodytext', $result['fields']);
-        self::assertSame(246, mb_strlen((string) $result['rows'][0]['bodytext']));
+        $row = (array) $result['rows'][0];
+        self::assertSame(246, mb_strlen((string) $row['bodytext']));
+        // Bookkeeping columns stay out of a full selection unless named.
+        self::assertArrayNotHasKey('l18n_diffsource', $row);
+        self::assertArrayNotHasKey('t3ver_wsid', $row);
+    }
+
+    #[Test]
+    public function anExplicitlyNamedColumnIsReportedEvenWhenEmpty(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['table' => 'tt_content', '--uid' => '1', '--fields' => 'uid,hidden,l18n_diffsource']);
+
+        self::assertSame(0, $exitCode);
+        $row = (array) $result['rows'][0];
+        self::assertSame(0, $row['hidden']);
+        self::assertArrayHasKey('l18n_diffsource', $row);
+        self::assertArrayNotHasKey('_hint', $result);
     }
 
     #[Test]

@@ -6,10 +6,13 @@ actually computed, not what the code might do.
 
 ## Start here
 
-Call `typo3-info` first. It reports the exact TYPO3 version and major (v13 vs
-v14 governs almost every subsequent recommendation), PHP version, application
-context, database platform, extensions and package versions. Do not derive any
-of that from `composer.json` — its constraint ranges (e.g. `^13.4 || ^14.3`,
+Call `typo3-info` first, before any other tool in this package. It reports the
+exact TYPO3 version and major (v13 vs v14 governs almost every subsequent
+recommendation), PHP version, application context, database platform/version,
+active extensions (own vs. third-party), relevant package versions, profiler
+CLI availability, and how many `tt_content` types are registered (pass
+`contentTypes=true` for the catalogue itself). Do not derive any
+of this from `composer.json` — its constraint ranges (e.g. `^13.4 || ^14.3`,
 this package's own) do not resolve to a single version.
 
 ## Which tool for which question
@@ -25,6 +28,10 @@ Exact tool names, so you can select one directly instead of searching for it.
 | What is the resolved frontend TypoScript here? | `typo3-typoscript` |
 | What is the resolved Page or User TSconfig here? | `typo3-tsconfig` |
 | Which physical Fluid file wins for this template name? | `typo3-fluid-resolve` |
+| Does this record's stored FlexForm still match its data structure? | `typo3-flexform` |
+| Which Fluid namespaces may a template use without declaring them? | `typo3-fluid-namespaces` |
+| Is this icon identifier registered, and which extension provides it? | `typo3-icons` |
+| Which backend modules exist, and what do they inherit? | `typo3-backend-modules` |
 | What is this page composed of, and what is uncached? | `typo3-page` |
 | What errored? What is in the log? | `typo3-logs-search`, `typo3-logs-tail`, `typo3-logs-by-level` |
 | Why is this page slow? | `typo3-profiler-start` → exercise the page → `typo3-profiler-latest` → `typo3-page` |

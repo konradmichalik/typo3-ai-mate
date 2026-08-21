@@ -69,7 +69,7 @@ final class TsConfigCommand extends AbstractJsonCommand
 
         $path = $input->getOption('path');
         if (is_string($path) && '' !== $path) {
-            return $this->emit($output, TypoScriptTree::scope($tree, $path));
+            return $this->emit($output, TypoScriptTree::scope($tree, $path, 'resolved TSconfig'));
         }
         if (true === $input->getOption('full')) {
             return $this->emit($output, $tree);
