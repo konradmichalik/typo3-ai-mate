@@ -64,7 +64,7 @@ final class RecordSchema
      * escaped JSON blob, and the workspace columns describe versioning state.
      * Left out of a full selection unless asked for by name.
      */
-    private const BOOKKEEPING_COLUMNS = ['l18n_diffsource', 'l10n_diffsource', 'l10n_state'];
+    private const BOOKKEEPING_COLUMNS = ['l18n_diffsource'];
     private const BOOKKEEPING_PREFIX = 't3ver_';
 
     /**
