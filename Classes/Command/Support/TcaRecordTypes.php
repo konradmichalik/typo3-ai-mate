@@ -59,7 +59,10 @@ final class TcaRecordTypes
     /**
      * Reduce every type's field list to the requested fields. "Which record
      * types show these fields" is the question a field filter asks; the other
-     * types' complete field lists are not part of it.
+     * types' complete field lists are not part of it, and a type that shows
+     * none of them is dropped rather than reported as an empty list — on
+     * tt_content that is 25 of 27 types for a single requested field, and an
+     * empty list would also collapse `shared` to nothing.
      *
      * @param array<string, list<string>> $recordTypes
      * @param list<string>                $fields
@@ -68,9 +71,12 @@ final class TcaRecordTypes
      */
     public static function limitToFields(array $recordTypes, array $fields): array
     {
-        return array_map(
-            static fn (array $typeFields): array => array_values(array_intersect($typeFields, $fields)),
-            $recordTypes,
+        return array_filter(
+            array_map(
+                static fn (array $typeFields): array => array_values(array_intersect($typeFields, $fields)),
+                $recordTypes,
+            ),
+            static fn (array $typeFields): bool => [] !== $typeFields,
         );
     }
 }

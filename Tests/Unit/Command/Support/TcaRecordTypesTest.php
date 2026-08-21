@@ -75,13 +75,24 @@ final class TcaRecordTypesTest extends TestCase
     }
 
     #[Test]
-    public function limitToFieldsReducesEveryTypeToTheRequestedFields(): void
+    public function limitToFieldsKeepsOnlyTypesThatShowARequestedField(): void
     {
+        // "Which types show this field" is the question. A type that shows none
+        // of them is not a shorter answer, it is noise: on tt_content a single
+        // requested field would otherwise list 25 empty types.
         $limited = TcaRecordTypes::limitToFields([
             'text' => ['CType', 'header', 'bodytext'],
             'div' => ['CType', 'header'],
         ], ['bodytext']);
 
-        self::assertSame(['text' => ['bodytext'], 'div' => []], $limited);
+        self::assertSame(['text' => ['bodytext']], $limited);
+    }
+
+    #[Test]
+    public function limitToFieldsIsEmptyWhenNoTypeShowsTheRequestedField(): void
+    {
+        $limited = TcaRecordTypes::limitToFields(['text' => ['CType', 'header']], ['bodytext']);
+
+        self::assertSame([], $limited);
     }
 }
