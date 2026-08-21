@@ -169,6 +169,84 @@ final class InstallCommandTest extends TestCase
         self::assertStringContainsString('Production application context', $tester->getDisplay());
     }
 
+    #[Test]
+    public function withoutAnyMarkerBothHarnessesAreRegistered(): void
+    {
+        $this->fakeMateBinary();
+        $tester = new CommandTester(new InstallCommand());
+
+        $exitCode = $tester->execute([]);
+
+        self::assertSame(Command::SUCCESS, $exitCode);
+        self::assertStringContainsString('Registering the MCP server for: claude, opencode.', $tester->getDisplay());
+        self::assertStringNotContainsString('Not registered for:', $tester->getDisplay());
+        self::assertFileExists($this->mcpJsonPath());
+        self::assertFileExists($this->opencodeJsonPath());
+    }
+
+    #[Test]
+    public function aDetectedHarnessIsTheOnlyOneRegistered(): void
+    {
+        $this->fakeMateBinary();
+        touch(Environment::getProjectPath().'/CLAUDE.md');
+        $tester = new CommandTester(new InstallCommand());
+
+        $exitCode = $tester->execute([]);
+
+        self::assertSame(Command::SUCCESS, $exitCode);
+        self::assertStringContainsString('Registering the MCP server for: claude.', $tester->getDisplay());
+        self::assertStringContainsString('Not registered for: opencode.', $tester->getDisplay());
+        self::assertFileExists($this->mcpJsonPath());
+        self::assertFileDoesNotExist($this->opencodeJsonPath());
+    }
+
+    #[Test]
+    public function anExplicitAgentRegistersInThatHarnessOwnShape(): void
+    {
+        $this->fakeMateBinary();
+        $tester = new CommandTester(new InstallCommand());
+
+        $exitCode = $tester->execute(['--agent' => 'opencode']);
+
+        self::assertSame(Command::SUCCESS, $exitCode);
+        self::assertFileDoesNotExist($this->mcpJsonPath());
+        self::assertStringContainsString('created "mcp.typo3-ai-mate"', $tester->getDisplay());
+
+        $decoded = json_decode((string) file_get_contents($this->opencodeJsonPath()), true);
+        self::assertIsArray($decoded);
+        self::assertSame(
+            ['type' => 'local', 'command' => ['./vendor/bin/mate', 'serve'], 'enabled' => true],
+            ((array) $decoded['mcp'])['typo3-ai-mate'],
+        );
+    }
+
+    #[Test]
+    public function anUnknownAgentFailsAndNamesTheAcceptedValues(): void
+    {
+        $tester = new CommandTester(new InstallCommand());
+
+        $exitCode = $tester->execute(['--agent' => 'emacs']);
+
+        self::assertSame(Command::FAILURE, $exitCode);
+        self::assertStringContainsString('Unknown --agent "emacs"', $tester->getDisplay());
+        self::assertStringContainsString('claude, opencode, all', $tester->getDisplay());
+    }
+
+    #[Test]
+    public function anEmptyObjectElsewhereInTheFileSurvivesTheMerge(): void
+    {
+        $this->fakeMateBinary();
+        // opencode refuses to start when a map it expects serialises as [], which
+        // is what a decode-as-array round trip does to an empty JSON object.
+        file_put_contents($this->opencodeJsonPath(), '{"agent": {}, "mcp": {}}');
+
+        $tester = new CommandTester(new InstallCommand());
+        $exitCode = $tester->execute(['--agent' => 'opencode']);
+
+        self::assertSame(Command::SUCCESS, $exitCode);
+        self::assertStringContainsString('"agent": {}', (string) file_get_contents($this->opencodeJsonPath()));
+    }
+
     private function fakeMateBinary(string $body = '<?php exit(0);'): void
     {
         $binDir = Environment::getProjectPath().'/vendor/bin';
@@ -181,6 +259,11 @@ final class InstallCommandTest extends TestCase
     private function mcpJsonPath(): string
     {
         return Environment::getProjectPath().'/.mcp.json';
+    }
+
+    private function opencodeJsonPath(): string
+    {
+        return Environment::getProjectPath().'/opencode.json';
     }
 
     /**

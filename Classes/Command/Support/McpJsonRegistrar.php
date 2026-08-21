@@ -13,24 +13,26 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Command\Support;
 
+use stdClass;
+
 use function fclose;
 use function flock;
 use function fopen;
 use function fseek;
 use function ftruncate;
 use function fwrite;
-use function is_array;
 use function sprintf;
 use function stream_get_contents;
 
 /**
  * McpJsonRegistrar.
  *
- * Merges a single `mcpServers.typo3-ai-mate` entry into the project's
- * `.mcp.json`, preserving every other entry (including one `mate init` itself
- * may have written) untouched. Never reached for the instruction artifacts
- * (`mate/AGENT_INSTRUCTIONS.md`, the `AGENTS.md` managed block) — those stay
- * `mate discover`'s job.
+ * Merges a single `typo3-ai-mate` server entry into a harness configuration
+ * file, preserving every other entry (including one `mate init` itself may have
+ * written) untouched. The section key differs per harness (`mcpServers` for
+ * Claude Code, `mcp` for opencode), the merge does not. Never reached for the
+ * instruction artifacts (`mate/AGENT_INSTRUCTIONS.md`, the `AGENTS.md` managed
+ * block) — those stay `mate discover`'s job.
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
  * @license GPL-2.0-or-later
@@ -39,10 +41,13 @@ final readonly class McpJsonRegistrar
 {
     private const SERVER_NAME = 'typo3-ai-mate';
 
-    public function __construct(private string $path) {}
+    public function __construct(
+        private string $path,
+        private string $sectionKey = 'mcpServers',
+    ) {}
 
     /**
-     * @param array{command: string, args: list<string>} $serverEntry
+     * @param array<string, mixed> $serverEntry
      *
      * @return array{action: 'created'|'updated'|'unchanged', error?: string}
      */
@@ -86,7 +91,7 @@ final readonly class McpJsonRegistrar
     }
 
     /**
-     * @param array{command: string, args: list<string>} $serverEntry
+     * @param array<string, mixed> $serverEntry
      *
      * @return array{action: 'created'|'updated'|'unchanged', error?: string}
      */
@@ -105,42 +110,46 @@ final readonly class McpJsonRegistrar
     }
 
     /**
-     * @param array<int|string, mixed>                   $data
-     * @param array{command: string, args: list<string>} $serverEntry
+     * @param array<string, mixed> $serverEntry
      *
-     * @return array{0: 'created'|'updated'|'unchanged', 1: array<int|string, mixed>}
+     * @return array{0: 'created'|'updated'|'unchanged', 1: stdClass}
      */
-    private function merge(array $data, array $serverEntry, bool $fileExisted): array
+    private function merge(stdClass $document, array $serverEntry, bool $fileExisted): array
     {
-        $servers = is_array($data['mcpServers'] ?? null) ? $data['mcpServers'] : [];
-        if (($servers[self::SERVER_NAME] ?? null) === $serverEntry) {
-            return ['unchanged', $data];
+        $existingSection = $document->{$this->sectionKey} ?? null;
+        $section = $existingSection instanceof stdClass ? $existingSection : new stdClass();
+        $entry = (object) $serverEntry;
+
+        if (json_encode($section->{self::SERVER_NAME} ?? null) === json_encode($entry)) {
+            return ['unchanged', $document];
         }
 
-        $servers[self::SERVER_NAME] = $serverEntry;
-        $data['mcpServers'] = $servers;
+        $section->{self::SERVER_NAME} = $entry;
+        $document->{$this->sectionKey} = $section;
 
-        return [$fileExisted ? 'updated' : 'created', $data];
+        return [$fileExisted ? 'updated' : 'created', $document];
     }
 
     /**
-     * @return array{data: array<int|string, mixed>, error?: string}
+     * @return array{data: stdClass, error?: string}
      */
     private function decodeContents(string $contents): array
     {
-        $decoded = '' === trim($contents) ? [] : json_decode($contents, true);
-        if (!is_array($decoded)) {
-            return ['data' => [], 'error' => sprintf('%s contains invalid JSON; leaving it untouched.', $this->path)];
+        // Decoded into objects rather than arrays: an empty JSON object anywhere
+        // else in the file would otherwise come back as [] and be written back as
+        // [], which opencode refuses to start on.
+        $decoded = '' === trim($contents) ? new stdClass() : json_decode($contents);
+        if (!$decoded instanceof stdClass) {
+            return ['data' => new stdClass(), 'error' => sprintf('%s contains invalid JSON; leaving it untouched.', $this->path)];
         }
 
         return ['data' => $decoded];
     }
 
     /**
-     * @param resource                 $handle a handle already positioned anywhere in the file, held under an exclusive lock
-     * @param array<int|string, mixed> $data
+     * @param resource $handle a handle already positioned anywhere in the file, held under an exclusive lock
      */
-    private function writeLocked($handle, array $data): bool
+    private function writeLocked($handle, stdClass $data): bool
     {
         $encoded = json_encode($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES);
         if (false === $encoded) {
