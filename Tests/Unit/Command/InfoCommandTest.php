@@ -155,26 +155,26 @@ final class InfoCommandTest extends TestCase
     }
 
     #[Test]
-    public function describeToolClustersReportsBothClustersAsUnregisteredForAnUntouchedInstallation(): void
+    public function describeToolClustersReportsBothClustersAsUnavailableForAnUntouchedInstallation(): void
     {
         $clusters = $this->command()->describeToolClusters();
 
         // Nothing recorded, nothing logged: both clusters collapse to their
         // entry-point tool, and the reason says which one that is.
-        self::assertFalse($clusters['profiler']['registered']);
+        self::assertFalse($clusters['profiler']['available']);
         self::assertStringContainsString('typo3-profiler-start', $clusters['profiler']['reason']);
-        self::assertFalse($clusters['logs']['registered']);
+        self::assertFalse($clusters['logs']['available']);
         self::assertStringContainsString('typo3-logs-tail', $clusters['logs']['reason']);
     }
 
     #[Test]
-    public function describeToolClustersRegistersTheProfilerClusterOnceAProfileExists(): void
+    public function describeToolClustersMarksTheProfilerClusterAvailableOnceAProfileExists(): void
     {
         $profilesDir = Environment::getProjectPath().'/var/log/profiles';
         mkdir($profilesDir, 0o777, true);
         file_put_contents($profilesDir.'/abc.json', '{"token":"abc","schemaVersion":1}');
 
-        self::assertTrue($this->command()->describeToolClusters()['profiler']['registered']);
+        self::assertTrue($this->command()->describeToolClusters()['profiler']['available']);
     }
 
     #[Test]

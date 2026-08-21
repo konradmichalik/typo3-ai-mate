@@ -35,6 +35,12 @@ final class RuntimeArtifactsTest extends TestCase
 
     protected function tearDown(): void
     {
+        foreach (glob($this->rootDir.'/var/log/profiles/*') ?: [] as $entry) {
+            is_dir($entry) ? rmdir($entry) : unlink($entry);
+        }
+        if (is_dir($this->rootDir.'/var/log/profiles')) {
+            rmdir($this->rootDir.'/var/log/profiles');
+        }
         foreach (glob($this->rootDir.'/var/log/*') ?: [] as $file) {
             unlink($file);
         }
@@ -72,5 +78,48 @@ final class RuntimeArtifactsTest extends TestCase
         file_put_contents($this->rootDir.'/var/log/profiler-activation-state.json', '{"expiresAt":1}');
 
         self::assertFalse((new RuntimeArtifacts($this->rootDir))->hasLogEntries());
+    }
+
+    #[Test]
+    public function reportsNoProfilesForAnInstallationThatHasNotRecordedAny(): void
+    {
+        self::assertFalse((new RuntimeArtifacts($this->rootDir))->hasProfiles());
+    }
+
+    #[Test]
+    public function aDirectoryNamedLikeAProfileIsNotAProfile(): void
+    {
+        mkdir($this->profileDir().'/20260821.json', 0o700, true);
+
+        self::assertFalse((new RuntimeArtifacts($this->rootDir))->hasProfiles());
+    }
+
+    #[Test]
+    public function anEmptyProfileFileIsNotAProfile(): void
+    {
+        // The profiler tools read the file; a zero-byte one gates them open with
+        // nothing to read, which is the inconsistent state to avoid.
+        touch($this->profileDir().'/empty.json');
+
+        self::assertFalse((new RuntimeArtifacts($this->rootDir))->hasProfiles());
+    }
+
+    #[Test]
+    public function reportsProfilesAsSoonAsOneReadableProfileHasContent(): void
+    {
+        touch($this->profileDir().'/empty.json');
+        file_put_contents($this->profileDir().'/abc123.json', '{"token":"abc123"}');
+
+        self::assertTrue((new RuntimeArtifacts($this->rootDir))->hasProfiles());
+    }
+
+    private function profileDir(): string
+    {
+        $dir = $this->rootDir.'/var/log/profiles';
+        if (!is_dir($dir)) {
+            mkdir($dir, 0o700, true);
+        }
+
+        return $dir;
     }
 }

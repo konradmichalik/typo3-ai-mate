@@ -41,8 +41,19 @@ final readonly class RuntimeArtifacts
         return false;
     }
 
+    /**
+     * A profile the reading tools can actually open. The glob alone also matches
+     * a directory named `*.json` and a zero-byte file, which would open the
+     * profiler cluster with nothing in it to read.
+     */
     public function hasProfiles(): bool
     {
-        return [] !== (glob($this->rootDir.'/var/log/profiles/*.json') ?: []);
+        foreach (glob($this->rootDir.'/var/log/profiles/*.json') ?: [] as $file) {
+            if (is_file($file) && is_readable($file) && filesize($file) > 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
