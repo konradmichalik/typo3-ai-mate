@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Command;
 
+use KonradMichalik\Typo3AiMate\Command\Support\TcaRecordTypes;
 use KonradMichalik\Typo3AiMate\Support\Cast;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -23,6 +24,8 @@ use TYPO3\CMS\Core\Schema\Capability\{SystemInternalFieldCapability, TcaSchemaCa
 use TYPO3\CMS\Core\Schema\Field\{FieldTypeInterface, RelationalFieldTypeInterface};
 use TYPO3\CMS\Core\Schema\{TcaSchema, TcaSchemaFactory};
 
+use function array_key_exists;
+use function count;
 use function is_array;
 use function is_string;
 use function sprintf;
@@ -178,7 +181,9 @@ final class TcaCommand extends AbstractJsonCommand
     {
         $this
             ->addArgument('table', InputArgument::OPTIONAL, 'TCA table name, e.g. tt_content')
-            ->addOption('list', null, InputOption::VALUE_NONE, 'List all TCA table names instead of dumping a table');
+            ->addOption('list', null, InputOption::VALUE_NONE, 'List all TCA table names instead of dumping a table')
+            ->addOption('record-type', null, InputOption::VALUE_REQUIRED, 'Limit record types, columns and relations to one type value, e.g. textmedia')
+            ->addOption('fields', null, InputOption::VALUE_REQUIRED, 'Comma-separated field names to limit columns and relations to');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -197,6 +202,30 @@ final class TcaCommand extends AbstractJsonCommand
         }
 
         $schema = $this->tcaSchemaFactory->get($table);
+        $recordTypes = $this->describeRecordTypes($schema);
+        $recordType = $this->stringOption($input, 'record-type');
+
+        if (null !== $recordType && !array_key_exists($recordType, $recordTypes)) {
+            return $this->emit($output, $this->unknownRecordType($table, $recordType, array_keys($recordTypes)));
+        }
+
+        return $this->emit($output, $this->describeTable(
+            $table,
+            $schema,
+            $recordTypes,
+            $recordType,
+            $this->fieldsOption($input),
+        ));
+    }
+
+    /**
+     * @param array<string, list<string>> $recordTypes
+     * @param list<string>|null           $fields
+     *
+     * @return array<string, mixed>
+     */
+    private function describeTable(string $table, TcaSchema $schema, array $recordTypes, ?string $recordType, ?array $fields): array
+    {
         /** @var array<string, mixed> $tca */
         $tca = is_array($GLOBALS['TCA'] ?? null) ? $GLOBALS['TCA'] : [];
         /** @var array<string, mixed> $tableDefinition */
@@ -210,14 +239,89 @@ final class TcaCommand extends AbstractJsonCommand
         // A field the Schema API does not build (rare, non-standard config)
         // falls back to the raw-TCA extraction instead of being dropped.
         $columns += $fallback['columns'];
+        $relations = $this->describeRelations($schema);
 
-        return $this->emit($output, [
+        $scope = $fields ?? (null !== $recordType ? $recordTypes[$recordType] : null);
+        if (null !== $recordType) {
+            $recordTypes = [$recordType => $recordTypes[$recordType]];
+        }
+
+        $result = ['table' => $table];
+        if (null !== $scope) {
+            $unknown = null === $fields ? [] : array_values(array_diff($fields, array_keys($columns)));
+            $keep = array_flip($scope);
+            $columns = array_intersect_key($columns, $keep);
+            $relations = array_intersect_key($relations, $keep);
+            $recordTypes = TcaRecordTypes::limitToFields($recordTypes, $scope);
+
+            $result['_hint'] = $this->scopeHint($table, $recordType, $fields, $unknown);
+            if ([] !== $unknown) {
+                $result['unknownFields'] = $unknown;
+            }
+        }
+
+        return $result + [
             'ctrl' => $fallback['ctrl'],
             'capabilities' => $this->describeCapabilities($schema),
-            'recordTypes' => $this->describeRecordTypes($schema),
-            'relations' => $this->describeRelations($schema),
+            'recordTypes' => [] === $recordTypes ? [] : TcaRecordTypes::collapse($recordTypes),
+            'relations' => $relations,
             'columns' => $columns,
-        ]);
+        ];
+    }
+
+    /**
+     * @param list<string> $available
+     *
+     * @return array<string, mixed>
+     */
+    private function unknownRecordType(string $table, string $recordType, array $available): array
+    {
+        return [
+            'table' => $table,
+            'recordType' => $recordType,
+            'recordTypeFound' => false,
+            'availableRecordTypes' => $available,
+            '_hint' => [] === $available
+                ? sprintf('%s has no record types (no type field in ctrl), so it cannot be filtered by one. Call again without recordType.', $table)
+                : sprintf('"%s" is not a record type of %s. availableRecordTypes lists the values it accepts.', $recordType, $table),
+        ];
+    }
+
+    /**
+     * @param list<string>|null $fields
+     * @param list<string>      $unknown
+     */
+    private function scopeHint(string $table, ?string $recordType, ?array $fields, array $unknown): string
+    {
+        $hint = null !== $fields
+            ? sprintf('columns and relations are limited to the %d requested field(s). Call without fields for the whole table.', count($fields))
+            : sprintf('columns and relations are limited to the fields visible on recordType "%s". Call without recordType for the whole table.', (string) $recordType);
+
+        return [] === $unknown
+            ? $hint
+            : $hint.sprintf(' unknownFields are not columns of %s.', $table);
+    }
+
+    /**
+     * @return list<string>|null
+     */
+    private function fieldsOption(InputInterface $input): ?array
+    {
+        $value = $this->stringOption($input, 'fields');
+        if (null === $value) {
+            return null;
+        }
+
+        $fields = array_values(array_filter(array_map('trim', explode(',', $value)), static fn (string $field): bool => '' !== $field));
+
+        return [] === $fields ? null : $fields;
+    }
+
+    private function stringOption(InputInterface $input, string $name): ?string
+    {
+        $value = trim(Cast::string($input->getOption($name)));
+
+        return '' !== $value ? $value : null;
     }
 
     private function capabilityFieldName(TcaSchema $schema, TcaSchemaCapability $capability): ?string
