@@ -18,7 +18,7 @@ use JsonException;
 use KonradMichalik\Typo3AiMate\Support\OwnPackages;
 use ReflectionClass;
 use Symfony\Component\Console\Attribute\AsCommand;
-use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\{InputInterface, InputOption};
 use Symfony\Component\Console\Output\OutputInterface;
 use TYPO3\CMS\Core\Console\CommandRegistry;
 use TYPO3\CMS\Core\Core\Environment;
@@ -30,9 +30,11 @@ use TYPO3\CMS\Core\Schema\Field\StaticSelectFieldType;
 use TYPO3\CMS\Core\Schema\Struct\SelectItem;
 use TYPO3\CMS\Core\Schema\{TcaSchema, TcaSchemaFactory};
 
+use function count;
 use function is_array;
 use function is_int;
 use function sort;
+use function sprintf;
 use function time;
 
 /**
@@ -195,6 +197,10 @@ final class InfoCommand extends AbstractJsonCommand
     }
 
     /**
+     * The full catalogue, only produced when asked for: it is two thirds of this
+     * command's output, it overlaps with `recordTypes` from typo3-tca, and the
+     * session entry point is called for the version and context facts.
+     *
      * @return array{cTypes: list<array<string, mixed>>, listTypes?: list<array<string, mixed>>}
      */
     public function describeContentTypes(LanguageService $languageService): array
@@ -214,8 +220,31 @@ final class InfoCommand extends AbstractJsonCommand
         return $contentTypes;
     }
 
+    /**
+     * How many content types there are, and where to read them. A count is the
+     * part of the catalogue that the entry point actually needs to state.
+     *
+     * @return array{cTypeCount: int, _hint: string}
+     */
+    public function countContentTypes(LanguageService $languageService): array
+    {
+        $count = count($this->describeContentTypes($languageService)['cTypes']);
+
+        return [
+            'cTypeCount' => $count,
+            '_hint' => sprintf('%d content types are registered. Pass contentTypes=true for the catalogue with labels, or read recordTypes from typo3-tca tt_content.', $count),
+        ];
+    }
+
+    protected function configure(): void
+    {
+        $this->addOption('content-types', null, InputOption::VALUE_NONE, 'Include the full CType/list_type catalogue instead of only its size');
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $languageService = $this->languageServiceFactory->create('en');
+
         return $this->emit($output, [
             'typo3' => [
                 'version' => $this->typo3Version->getVersion(),
@@ -227,7 +256,9 @@ final class InfoCommand extends AbstractJsonCommand
             'extensions' => $this->describeExtensions(),
             'packages' => $this->describePackages(),
             'profiler' => $this->describeProfiler(),
-            'contentTypes' => $this->describeContentTypes($this->languageServiceFactory->create('en')),
+            'contentTypes' => true === $input->getOption('content-types')
+                ? $this->describeContentTypes($languageService)
+                : $this->countContentTypes($languageService),
         ]);
     }
 

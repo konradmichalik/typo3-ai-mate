@@ -29,17 +29,27 @@ final readonly class TcaTool
     public function __construct(private Typo3CliRunner $typo3) {}
 
     /**
-     * @param string|null $table table name whose resolved TCA (capabilities, record types, relations, trimmed columns) to return; omit (or set list=true) to get only the table names
-     * @param bool        $list  true returns just the list of all TCA table names instead of a table's TCA
+     * @param string|null $table      table name whose resolved TCA (capabilities, record types, relations, trimmed columns) to return; omit (or set list=true) to get only the table names
+     * @param bool        $list       true returns just the list of all TCA table names instead of a table's TCA
+     * @param string|null $recordType Limit columns, relations and recordTypes to one type value, e.g. textmedia. Answers with availableRecordTypes when the value is unknown.
+     * @param string|null $fields     comma-separated field names to limit columns and relations to, e.g. header,bodytext
      */
-    #[McpTool(name: 'typo3-tca', title: 'TYPO3 TCA', description: 'Resolved TCA of a table, or the list of all TCA table names when no table is given. Output changed: a table now additionally returns capabilities (softDelete/workspace/language/sorting), recordTypes (type value => visible field names) and relations (field => resolved target table + relationship type, e.g. a file field resolves to sys_file_reference instead of leaving type=file for you to interpret) alongside the trimmed columns.', annotations: new ToolAnnotations(readOnlyHint: true))]
-    public function dump(?string $table = null, bool $list = false): string
+    #[McpTool(name: 'typo3-tca', title: 'TYPO3 TCA', description: 'Resolved TCA of a table, or the list of all TCA table names when no table is given. A table returns capabilities (softDelete/workspace/language/sorting), recordTypes, relations (field => resolved target table + relationship type, e.g. a file field resolves to sys_file_reference instead of leaving type=file for you to interpret) and the trimmed columns. Ask narrowly: recordType or fields limits columns and relations to what you asked about, which for tt_content is the difference between a few hundred bytes and 15 kB that every later turn re-reads. recordTypes lists the fields shared by all types once under shared and only the additions per type.', annotations: new ToolAnnotations(readOnlyHint: true))]
+    public function dump(?string $table = null, bool $list = false, ?string $recordType = null, ?string $fields = null): string
     {
         if ($list || null === $table || '' === $table) {
             // Label the list so the AI gets a named field instead of a bare top-level array.
             return ResponseEncoder::encode(['tables' => $this->typo3->jsonOrError('typo3-ai-mate:tca:dump', [], ['list' => true])]);
         }
 
-        return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:tca:dump', [$table]));
+        $options = [];
+        if (null !== $recordType && '' !== $recordType) {
+            $options['record-type'] = $recordType;
+        }
+        if (null !== $fields && '' !== $fields) {
+            $options['fields'] = $fields;
+        }
+
+        return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:tca:dump', [$table], $options));
     }
 }

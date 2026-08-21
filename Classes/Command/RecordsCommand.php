@@ -26,8 +26,6 @@ use TYPO3\CMS\Core\Database\{Connection, ConnectionPool};
 
 use function array_map;
 use function array_slice;
-use function array_unique;
-use function array_values;
 use function count;
 use function sprintf;
 
@@ -46,6 +44,12 @@ final class RecordsCommand extends AbstractJsonCommand
     private const MAX_LIMIT = 100;
     private const VALUE_LIMIT = 200;
 
+    /**
+     * Columns kept even when their value is empty: `pid: 0` means a root-level
+     * record, which is an answer rather than a default.
+     */
+    private const IDENTITY_COLUMNS = ['uid', 'pid'];
+
     public function __construct(private readonly ConnectionPool $connectionPool)
     {
         parent::__construct();
@@ -61,7 +65,7 @@ final class RecordsCommand extends AbstractJsonCommand
             ->addOption('fields', null, InputOption::VALUE_REQUIRED, 'Comma-separated explicit column selection')
             ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Maximum rows to return (capped at 100)', (string) self::DEFAULT_LIMIT)
             ->addOption('order-by', null, InputOption::VALUE_REQUIRED, 'field or field:desc')
-            ->addOption('format', null, InputOption::VALUE_REQUIRED, 'summary (compact, default) or full (all columns, untruncated)', 'summary')
+            ->addOption('format', null, InputOption::VALUE_REQUIRED, 'summary (compact, default) or full (every column but the bookkeeping ones, untruncated)', 'summary')
             ->addOption('respect-enable-fields', null, InputOption::VALUE_NONE, 'Apply Deleted/Hidden/StartEnd restrictions (frontend view)');
     }
 
@@ -92,14 +96,14 @@ final class RecordsCommand extends AbstractJsonCommand
 
         $enableColumns = RecordSchema::enableColumns($ctrl, $columns);
         $deleteField = RecordSchema::deleteField($ctrl, $columns);
-        $redactColumns = array_values(array_unique([
-            ...RecordSchema::sensitiveColumns(Cast::array($tcaTable['columns'] ?? null), $columns),
-            ...RecordSchema::piiColumns($table, $columns),
-        ]));
+        $redactColumns = RecordSchema::redactColumns(Cast::array($tcaTable['columns'] ?? null), $table, $columns);
 
         $isFull = 'full' === strtolower(trim(Cast::string($input->getOption('format'))));
+        // An explicitly requested column is always reported, even when empty:
+        // there the difference between "empty" and "absent" is the answer.
+        $explicit = null !== $requestedFields;
         $selectFields = $requestedFields
-            ?? ($isFull ? $columns : RecordSchema::compactFields($ctrl, $columns, $enableColumns, $deleteField));
+            ?? ($isFull ? RecordSchema::withoutBookkeeping($columns) : RecordSchema::compactFields($ctrl, $columns, $enableColumns, $deleteField));
         $limit = min(self::MAX_LIMIT, max(1, Cast::int($input->getOption('limit'))));
         $respectEnableFields = true === $input->getOption('respect-enable-fields');
 
@@ -109,14 +113,18 @@ final class RecordsCommand extends AbstractJsonCommand
             $rows = array_slice($rows, 0, $limit);
         }
 
-        return $this->emit($output, [
+        $result = [
             'table' => $table,
             'count' => count($rows),
             'limited' => $limited,
             'restrictionsApplied' => $respectEnableFields,
-            'fields' => $selectFields,
-            'rows' => $this->shape($rows, $enableColumns, $deleteField, $redactColumns, $isFull),
-        ]);
+        ];
+        if (!$explicit) {
+            $result['_hint'] = 'Columns with an empty, zero or null value are omitted per row; pass fields=<names> to read one regardless of its value.';
+        }
+        $result['rows'] = $this->shape($rows, $enableColumns, $deleteField, $redactColumns, $isFull, $explicit);
+
+        return $this->emit($output, $result);
     }
 
     /**
@@ -194,14 +202,19 @@ final class RecordsCommand extends AbstractJsonCommand
      *
      * @return list<array<string, mixed>>
      */
-    private function shape(array $rows, array $enableColumns, ?string $deleteField, array $redactColumns, bool $isFull): array
+    private function shape(array $rows, array $enableColumns, ?string $deleteField, array $redactColumns, bool $isFull, bool $explicit): array
     {
         $now = Cast::int(\TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(\TYPO3\CMS\Core\Context\Context::class)->getPropertyFromAspect('date', 'timestamp') ?? time());
         $valueLimit = $isFull ? 0 : self::VALUE_LIMIT;
 
-        return array_map(static function (array $row) use ($enableColumns, $deleteField, $redactColumns, $now, $valueLimit): array {
+        return array_map(static function (array $row) use ($enableColumns, $deleteField, $redactColumns, $now, $valueLimit, $explicit): array {
+            // Flags are derived before the empty columns go, since they read the
+            // very zeros that get dropped.
             $flags = RecordTrimmer::flags($row, $enableColumns, $deleteField, $now);
             $row = RecordTrimmer::redact($row, $redactColumns);
+            if (!$explicit) {
+                $row = RecordTrimmer::dropEmpty($row, self::IDENTITY_COLUMNS);
+            }
 
             return RecordTrimmer::truncateRow($row, $valueLimit) + ['_flags' => $flags];
         }, $rows);

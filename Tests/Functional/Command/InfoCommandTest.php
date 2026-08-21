@@ -37,7 +37,7 @@ final class InfoCommandTest extends FunctionalTestCase
     ];
 
     #[Test]
-    public function reportsVersionPhpContextDatabaseExtensionsPackagesProfilerAndContentTypes(): void
+    public function reportsVersionPhpContextDatabaseExtensionsPackagesProfilerAndContentTypeCount(): void
     {
         $result = $this->runCommand();
 
@@ -70,6 +70,20 @@ final class InfoCommandTest extends FunctionalTestCase
         self::assertIsBool($profiler['activationWindowOpen']);
         self::assertIsBool($profiler['developmentContext']);
 
+        // The catalogue itself stays behind the flag; the entry point only says
+        // how many there are.
+        $contentTypes = $result['contentTypes'];
+        self::assertIsArray($contentTypes);
+        self::assertGreaterThan(0, $contentTypes['cTypeCount']);
+        self::assertArrayNotHasKey('cTypes', $contentTypes);
+        self::assertArrayHasKey('_hint', $contentTypes);
+    }
+
+    #[Test]
+    public function reportsTheContentTypeCatalogueOnRequest(): void
+    {
+        $result = $this->runCommand(['--content-types' => true]);
+
         $contentTypes = $result['contentTypes'];
         self::assertIsArray($contentTypes);
         $cTypes = $contentTypes['cTypes'];
@@ -86,13 +100,15 @@ final class InfoCommandTest extends FunctionalTestCase
     }
 
     /**
+     * @param array<string, bool> $input
+     *
      * @return array<string, mixed>
      */
-    private function runCommand(): array
+    private function runCommand(array $input = []): array
     {
         $command = $this->get(CommandRegistry::class)->get('typo3-ai-mate:info:dump');
         $tester = new CommandTester($command);
-        $exitCode = $tester->execute([]);
+        $exitCode = $tester->execute($input);
 
         self::assertSame(0, $exitCode);
         $decoded = json_decode($tester->getDisplay(), true);

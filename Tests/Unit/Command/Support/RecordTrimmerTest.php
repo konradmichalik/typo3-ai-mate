@@ -45,6 +45,35 @@ final class RecordTrimmerTest extends TestCase
     }
 
     #[Test]
+    public function dropEmptyRemovesNullEmptyAndZeroValues(): void
+    {
+        $row = [
+            'uid' => 1,
+            'pid' => 0,
+            'header' => 'Intro',
+            'subheader' => '',
+            'hidden' => 0,
+            'starttime' => '0',
+            'sorting' => 256,
+            'image' => null,
+        ];
+
+        self::assertSame(
+            ['uid' => 1, 'pid' => 0, 'header' => 'Intro', 'sorting' => 256],
+            RecordTrimmer::dropEmpty($row, ['uid', 'pid']),
+        );
+    }
+
+    #[Test]
+    public function dropEmptyKeepsTheColumnsItIsToldToKeep(): void
+    {
+        self::assertSame(
+            ['pid' => 0],
+            RecordTrimmer::dropEmpty(['pid' => 0, 'other' => 0], ['pid']),
+        );
+    }
+
+    #[Test]
     public function flagsHiddenAndDeletedRows(): void
     {
         $enable = ['disabled' => 'hidden'];

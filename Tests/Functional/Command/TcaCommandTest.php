@@ -18,6 +18,8 @@ use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\Console\CommandRegistry;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
+use function count;
+
 /**
  * TcaCommandTest.
  *
@@ -72,9 +74,13 @@ final class TcaCommandTest extends FunctionalTestCase
 
         $recordTypes = $result['recordTypes'];
         self::assertIsArray($recordTypes);
-        self::assertNotSame([], $recordTypes);
-        self::assertArrayHasKey('text', $recordTypes);
-        self::assertContains('bodytext', $recordTypes['text']);
+        $shared = (array) $recordTypes['shared'];
+        $types = (array) $recordTypes['types'];
+        self::assertArrayHasKey('text', $types);
+        // Every record type carries CType, so it is stated once instead of per type.
+        self::assertContains('CType', $shared);
+        self::assertNotContains('CType', (array) $types['text']);
+        self::assertContains('bodytext', [...$shared, ...(array) $types['text']]);
 
         $relations = $result['relations'];
         self::assertIsArray($relations);
@@ -90,6 +96,52 @@ final class TcaCommandTest extends FunctionalTestCase
         $header = $columns['header'];
         self::assertIsArray($header);
         self::assertSame('input', $header['type']);
+    }
+
+    #[Test]
+    public function aRecordTypeFilterShrinksTheResponseToThatType(): void
+    {
+        [$exitCode, $full] = $this->runCommand(['table' => 'tt_content']);
+        self::assertSame(0, $exitCode);
+
+        [$exitCode, $scoped] = $this->runCommand(['table' => 'tt_content', '--record-type' => 'text']);
+
+        self::assertSame(0, $exitCode);
+        self::assertSame(['text'], array_keys((array) ((array) $scoped['recordTypes'])['types']));
+        self::assertLessThan(
+            count((array) $full['columns']),
+            count((array) $scoped['columns']),
+            'A record type carries fewer fields than the whole table.',
+        );
+        self::assertArrayHasKey('bodytext', (array) $scoped['columns']);
+        self::assertStringContainsString('recordType "text"', (string) $scoped['_hint']);
+    }
+
+    #[Test]
+    public function aFieldFilterReturnsOnlyTheRequestedColumns(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['table' => 'tt_content', '--fields' => 'header,bodytext']);
+
+        self::assertSame(0, $exitCode);
+        self::assertSame(['header', 'bodytext'], array_keys((array) $result['columns']));
+
+        // The record types are reported as "which of these types show the
+        // requested fields", not as every type's complete field list.
+        $types = (array) ((array) $result['recordTypes'])['types'];
+        self::assertContains('bodytext', (array) $types['text']);
+        foreach ($types as $fields) {
+            self::assertEmpty(array_diff((array) $fields, ['header', 'bodytext']));
+        }
+    }
+
+    #[Test]
+    public function answersAnUnknownRecordTypeWithTheAvailableOnes(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['table' => 'tt_content', '--record-type' => 'does_not_exist']);
+
+        self::assertSame(0, $exitCode);
+        self::assertFalse($result['recordTypeFound']);
+        self::assertContains('text', (array) $result['availableRecordTypes']);
     }
 
     #[Test]

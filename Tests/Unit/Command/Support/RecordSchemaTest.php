@@ -55,6 +55,15 @@ final class RecordSchemaTest extends TestCase
     }
 
     #[Test]
+    public function withoutBookkeepingDropsDiffsourceAndVersioningColumns(): void
+    {
+        self::assertSame(
+            ['uid', 'header'],
+            RecordSchema::withoutBookkeeping(['uid', 'l18n_diffsource', 'header', 't3ver_wsid', 't3ver_state']),
+        );
+    }
+
+    #[Test]
     public function compactFieldsFallsBackToFirstColumnsForNonTcaTable(): void
     {
         $columns = ['id', 'value', 'created'];
@@ -126,6 +135,29 @@ final class RecordSchemaTest extends TestCase
         $columns = ['uid', 'pid', 'header', 'bodytext', 'sorting', 'CType', 'tstamp'];
 
         self::assertSame([], RecordSchema::sensitiveColumns([], $columns));
+    }
+
+    #[Test]
+    public function redactColumnsAlsoCoversTheDiffsourceBlobWhenTheTableHasSomethingToProtect(): void
+    {
+        // l18n_diffsource carries a copy of the source row, so it hands back in
+        // clear text what redacting the column itself prevents.
+        $tcaColumns = ['secret_token' => ['config' => ['type' => 'password']]];
+        $columns = ['uid', 'header', 'secret_token', 'l18n_diffsource'];
+
+        self::assertSame(
+            ['secret_token', 'l18n_diffsource'],
+            RecordSchema::redactColumns($tcaColumns, 'tx_myext_thing', $columns),
+        );
+    }
+
+    #[Test]
+    public function redactColumnsLeavesTheDiffsourceBlobReadableWithoutSensitiveColumns(): void
+    {
+        self::assertSame(
+            [],
+            RecordSchema::redactColumns([], 'tt_content', ['uid', 'header', 'l18n_diffsource']),
+        );
     }
 
     #[Test]
