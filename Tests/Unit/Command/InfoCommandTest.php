@@ -213,6 +213,27 @@ final class InfoCommandTest extends TestCase
         self::assertArrayNotHasKey('listTypes', $described);
     }
 
+    #[Test]
+    public function countContentTypesReportsTheSizeAndWhereToReadTheCatalogue(): void
+    {
+        $field = new StaticSelectFieldType('CType', ['items' => [
+            ['label' => 'Header', 'value' => 'header'],
+            ['label' => 'Text', 'value' => 'text'],
+        ]]);
+        $schema = new TcaSchema('tt_content', new FieldCollection(['CType' => $field]), []);
+        $tcaSchemaFactory = self::createStub(TcaSchemaFactory::class);
+        $tcaSchemaFactory->method('has')->willReturn(true);
+        $tcaSchemaFactory->method('get')->willReturn($schema);
+
+        $languageService = self::createStub(LanguageService::class);
+        $languageService->method('sL')->willReturnArgument(0);
+
+        $counted = $this->command(tcaSchemaFactory: $tcaSchemaFactory)->countContentTypes($languageService);
+
+        self::assertSame(2, $counted['cTypeCount']);
+        self::assertStringContainsString('contentTypes=true', $counted['_hint']);
+    }
+
     private function packageStub(string $key, string $type, string $path): Package
     {
         $package = self::createStub(Package::class);
