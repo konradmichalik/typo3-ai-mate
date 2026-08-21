@@ -44,6 +44,7 @@ use function sprintf;
 final class FlexFormCommand extends AbstractJsonCommand
 {
     private const VALUE_LIMIT = 200;
+    private const NESTED_VALUE = '[section or container content, not descended into]';
 
     public function __construct(
         private readonly ConnectionPool $connectionPool,
@@ -193,7 +194,9 @@ final class FlexFormCommand extends AbstractJsonCommand
 
     /**
      * Stored values are user content: cap them and strip credentials, emails and
-     * IPs the same way log output is treated.
+     * IPs the same way log output is treated. A section or container stores its
+     * items as a nested array, which neither the cap nor the redaction reaches,
+     * so its contents are named rather than emitted.
      *
      * @param array<string, mixed> $values
      *
@@ -203,6 +206,12 @@ final class FlexFormCommand extends AbstractJsonCommand
     {
         $presented = [];
         foreach ($values as $key => $value) {
+            if (is_array($value)) {
+                $presented[$key] = self::NESTED_VALUE;
+
+                continue;
+            }
+
             $presented[$key] = is_string($value)
                 ? Redactor::redact(RecordTrimmer::truncate($value, self::VALUE_LIMIT))
                 : $value;

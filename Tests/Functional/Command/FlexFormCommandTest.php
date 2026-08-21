@@ -20,6 +20,7 @@ use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
 use function is_array;
+use function json_encode;
 
 /**
  * FlexFormCommandTest.
@@ -78,6 +79,33 @@ final class FlexFormCommandTest extends FunctionalTestCase
             </data>
         </T3FlexForms>
         XML;
+
+    /**
+     * A section stores its items as nested arrays rather than as a scalar value,
+     * and the item content is arbitrary editor input.
+     */
+    private const STORED_SECTION = <<<'XML'
+        <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+        <T3FlexForms>
+            <data>
+                <sheet index="sDEF">
+                    <language index="lDEF">
+                        <field index="settings.items">
+                            <el index="1">
+                                <container>
+                                    <el>
+                                        <text>
+                                            <value index="vDEF">contact editor@example.com</value>
+                                        </text>
+                                    </el>
+                                </container>
+                            </el>
+                        </field>
+                    </language>
+                </sheet>
+            </data>
+        </T3FlexForms>
+        XML;
     protected array $coreExtensionsToLoad = [
         'install',
         'frontend',
@@ -104,6 +132,7 @@ final class FlexFormCommandTest extends FunctionalTestCase
         $connection = $this->getConnectionPool()->getConnectionForTable('tt_content');
         $connection->insert('tt_content', ['uid' => 1, 'pid' => 1, 'CType' => 'list', 'header' => 'With FlexForm', 'pi_flexform' => self::STORED_FLEXFORM]);
         $connection->insert('tt_content', ['uid' => 2, 'pid' => 1, 'CType' => 'text', 'header' => 'Without FlexForm', 'pi_flexform' => '']);
+        $connection->insert('tt_content', ['uid' => 3, 'pid' => 1, 'CType' => 'list', 'header' => 'With a section', 'pi_flexform' => self::STORED_SECTION]);
     }
 
     #[Test]
@@ -137,6 +166,23 @@ final class FlexFormCommandTest extends FunctionalTestCase
         self::assertFalse($result['hasFlexForm']);
         self::assertArrayNotHasKey('orphaned', $result);
         self::assertStringContainsString('no FlexForm', (string) $result['_hint']);
+    }
+
+    #[Test]
+    public function reportsASectionAsOmittedInsteadOfDumpingItsContents(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['table' => 'tt_content', 'uid' => '3']);
+
+        self::assertSame(0, $exitCode);
+        self::assertTrue($result['dataStructureResolved']);
+
+        // The section is stored but not declared, so it is orphaned like any other
+        // key. Its contents are not descended into, which means neither the value
+        // cap nor the redaction applies to them, so they must not be passed through.
+        $orphaned = (array) $result['orphaned'];
+        self::assertArrayHasKey('sDEF/settings.items', $orphaned);
+        self::assertIsString($orphaned['sDEF/settings.items']);
+        self::assertStringNotContainsString('editor@example.com', (string) json_encode($result));
     }
 
     #[Test]
