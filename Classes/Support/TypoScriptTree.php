@@ -178,7 +178,7 @@ final class TypoScriptTree
             $unique[rtrim((string) $key, '.')] = true;
         }
 
-        $keys = array_map('strval', array_keys($unique));
+        $keys = array_map(strval(...), array_keys($unique));
         sort($keys, \SORT_NATURAL | \SORT_FLAG_CASE);
 
         return $keys;
