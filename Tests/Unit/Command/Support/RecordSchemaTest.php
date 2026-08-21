@@ -138,6 +138,29 @@ final class RecordSchemaTest extends TestCase
     }
 
     #[Test]
+    public function redactColumnsAlsoCoversTheDiffsourceBlobWhenTheTableHasSomethingToProtect(): void
+    {
+        // l18n_diffsource carries a copy of the source row, so it hands back in
+        // clear text what redacting the column itself prevents.
+        $tcaColumns = ['secret_token' => ['config' => ['type' => 'password']]];
+        $columns = ['uid', 'header', 'secret_token', 'l18n_diffsource'];
+
+        self::assertSame(
+            ['secret_token', 'l18n_diffsource'],
+            RecordSchema::redactColumns($tcaColumns, 'tx_myext_thing', $columns),
+        );
+    }
+
+    #[Test]
+    public function redactColumnsLeavesTheDiffsourceBlobReadableWithoutSensitiveColumns(): void
+    {
+        self::assertSame(
+            [],
+            RecordSchema::redactColumns([], 'tt_content', ['uid', 'header', 'l18n_diffsource']),
+        );
+    }
+
+    #[Test]
     public function isBlockedTableRejectsSessionStorage(): void
     {
         self::assertTrue(RecordSchema::isBlockedTable('be_sessions'));

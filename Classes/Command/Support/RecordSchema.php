@@ -124,6 +124,29 @@ final class RecordSchema
     }
 
     /**
+     * Every column a row must not carry in clear text. Beyond the sensitive and
+     * personal ones themselves, this covers the bookkeeping blob: it holds a
+     * copy of the whole source row, so naming it in `fields` would hand back
+     * exactly what redacting the column prevents. A table with nothing to
+     * protect keeps the blob readable, because there it is a debugging aid.
+     *
+     * @param array<mixed> $tcaColumns the TCA `columns` section of the table
+     * @param list<string> $columns
+     *
+     * @return list<string>
+     */
+    public static function redactColumns(array $tcaColumns, string $table, array $columns): array
+    {
+        $redact = array_values(array_unique([
+            ...self::sensitiveColumns($tcaColumns, $columns),
+            ...self::piiColumns($table, $columns),
+        ]));
+        $blobs = array_filter($columns, static fn (string $column): bool => in_array(strtolower($column), self::BOOKKEEPING_COLUMNS, true));
+
+        return [] === $redact ? [] : array_values(array_unique([...$redact, ...$blobs]));
+    }
+
+    /**
      * @param list<string> $columns
      *
      * @return list<string>

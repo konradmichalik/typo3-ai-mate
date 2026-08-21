@@ -26,8 +26,6 @@ use TYPO3\CMS\Core\Database\{Connection, ConnectionPool};
 
 use function array_map;
 use function array_slice;
-use function array_unique;
-use function array_values;
 use function count;
 use function sprintf;
 
@@ -98,10 +96,7 @@ final class RecordsCommand extends AbstractJsonCommand
 
         $enableColumns = RecordSchema::enableColumns($ctrl, $columns);
         $deleteField = RecordSchema::deleteField($ctrl, $columns);
-        $redactColumns = array_values(array_unique([
-            ...RecordSchema::sensitiveColumns(Cast::array($tcaTable['columns'] ?? null), $columns),
-            ...RecordSchema::piiColumns($table, $columns),
-        ]));
+        $redactColumns = RecordSchema::redactColumns(Cast::array($tcaTable['columns'] ?? null), $table, $columns);
 
         $isFull = 'full' === strtolower(trim(Cast::string($input->getOption('format'))));
         // An explicitly requested column is always reported, even when empty:
