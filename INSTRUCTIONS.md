@@ -52,7 +52,9 @@ profile-reading tools once a profile exists or profiling is active, the log
 search tools once the log has entries. Until then only `typo3-profiler-start`
 and `typo3-logs-tail` are offered, and their descriptions say so. `typo3-info`
 reports the current state under `toolClusters`, so a tool that seems missing can
-be explained rather than guessed at.
+be explained rather than guessed at. That state is probed per call, while the
+session registered its tools at start: a cluster reported as available but not
+callable arrives after a reconnect of the MCP server.
 
 ## Three things the tool surface does consistently
 
