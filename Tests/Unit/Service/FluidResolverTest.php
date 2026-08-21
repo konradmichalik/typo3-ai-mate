@@ -106,6 +106,60 @@ final class FluidResolverTest extends TestCase
         ], 'News/List', 'html');
 
         self::assertNull($result['file']);
+        self::assertFalse($result['found']);
         self::assertSame(['/does/not/exist/News/List.html'], $result['checked']);
+    }
+
+    #[Test]
+    public function viewPathCandidatesNamesEveryPathThatDeclaresARootPath(): void
+    {
+        $setup = [
+            'plugin.' => [
+                'tx_news_pi1.' => ['view.' => ['templateRootPaths.' => ['10' => 'EXT:news/Templates/']]],
+                'tx_other.' => ['settings.' => ['limit' => '5']],
+            ],
+            'lib.' => ['contentElement.' => ['view.' => ['layoutRootPaths.' => ['10' => 'EXT:fluid/Layouts/']]]],
+            'page' => 'PAGE',
+        ];
+
+        self::assertSame(
+            ['lib.contentElement', 'plugin.tx_news_pi1'],
+            FluidResolver::viewPathCandidates($setup),
+        );
+    }
+
+    #[Test]
+    public function viewPathCandidatesIgnoresAViewNodeWithoutRootPaths(): void
+    {
+        $setup = ['plugin.' => ['tx_foo.' => ['view.' => ['pluginNamespace' => 'tx_foo']]]];
+
+        self::assertSame([], FluidResolver::viewPathCandidates($setup));
+    }
+
+    #[Test]
+    public function viewPathCandidatesIgnoresARootPathBlockWithoutAUsablePath(): void
+    {
+        // A candidate the caller cannot resolve is another guess, not an answer:
+        // both of these declare the key but carry no path a chain can be built
+        // from, which is exactly what makes viewPathFound false.
+        $setup = [
+            'plugin.' => [
+                'tx_empty.' => ['view.' => ['templateRootPaths.' => []]],
+                'tx_nested.' => ['view.' => ['partialRootPaths.' => ['10.' => ['override' => 'x']]]],
+            ],
+        ];
+
+        self::assertSame([], FluidResolver::viewPathCandidates($setup));
+    }
+
+    #[Test]
+    public function viewPathCandidatesStopsAtTheDepthCap(): void
+    {
+        $deep = ['view.' => ['templateRootPaths.' => ['10' => 'EXT:deep/Templates/']]];
+        for ($i = 0; $i < 12; ++$i) {
+            $deep = ['level'.$i.'.' => $deep];
+        }
+
+        self::assertSame([], FluidResolver::viewPathCandidates($deep));
     }
 }
