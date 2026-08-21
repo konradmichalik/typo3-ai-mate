@@ -15,7 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
+use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\{ChangelogType, ConfigSection, LogLevel, MiddlewareStack, OutputMode, TsConfigType, TypoScriptType};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -429,6 +429,24 @@ final class McpToolWrappersTest extends TestCase
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:logs:search');
         self::assertJsonPath($result, 'args', ['--limit', '10', '--format', 'summary']);
+    }
+
+    #[Test]
+    public function flexFormToolForwardsTheTableAndUid(): void
+    {
+        $result = $this->decode((new FlexFormTool($this->runner))->diff('tt_content', 7));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:flexform:diff');
+        self::assertJsonPath($result, 'args', ['--', 'tt_content', '7']);
+    }
+
+    #[Test]
+    public function flexFormToolForwardsAnExplicitField(): void
+    {
+        $result = $this->decode((new FlexFormTool($this->runner))->diff('tt_content', 7, 'pi_flexform'));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:flexform:diff');
+        self::assertJsonPath($result, 'args', ['--field', 'pi_flexform', '--', 'tt_content', '7']);
     }
 
     #[Test]

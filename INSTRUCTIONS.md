@@ -28,6 +28,7 @@ this package's own) do not resolve to a single version.
 | `ext_tables.sql` / a DB client       | `typo3-db-schema`     |
 | `settings.php` / `additional.php`    | `typo3-config`        |
 | `config/sites/*/config.yaml`         | `typo3-site`          |
+| a raw `pi_flexform` XML blob         | `typo3-flexform`      |
 | grepping for ViewHelper namespaces   | `typo3-fluid-namespaces` |
 | grepping `Configuration/Icons.php`   | `typo3-icons`         |
 | `Configuration/Backend/Modules.php`  | `typo3-backend-modules` |
@@ -93,6 +94,12 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
   resolved target table + relationship type — a file field resolves to
   `sys_file_reference` instead of leaving `type: file` for you to interpret),
   plus the trimmed `columns` as before.
+- `typo3-flexform` — reconcile a record's stored FlexForm against the data
+  structure currently valid *for that record*. `orphaned` values are stored but no
+  longer declared, so they silently stop applying — that is what a renamed field
+  looks like; `missing` fields are declared but not stored, so their default
+  applies. Use it for "the configured value has no effect". A record without a
+  FlexForm answers `hasFlexForm: false`.
 - `typo3-fluid-namespaces` — which ViewHelper prefixes resolve in every template
   without an `xmlns` declaration, mapped to their PHP namespaces in order. No
   arguments. Answers "may this template use `<foo:bar>`" in one call instead of

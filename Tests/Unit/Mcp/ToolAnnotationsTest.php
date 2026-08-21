@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
-use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FluidNamespacesTool, FluidResolveTool, IconsTool, LogsTool, MiddlewaresTool, PageTool, PerformanceTool, ProfilerControlTool, RecordsTool, RenderPageTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
+use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, LogsTool, MiddlewaresTool, PageTool, PerformanceTool, ProfilerControlTool, RecordsTool, RenderPageTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Schema\ToolAnnotations;
 use PHPUnit\Framework\Attributes\Test;
@@ -43,6 +43,7 @@ final class ToolAnnotationsTest extends TestCase
         DeprecationsTool::class,
         EventsTool::class,
         ExtensionScannerTool::class,
+        FlexFormTool::class,
         FluidNamespacesTool::class,
         FluidResolveTool::class,
         IconsTool::class,
@@ -69,7 +70,7 @@ final class ToolAnnotationsTest extends TestCase
     {
         $annotations = $this->collectAnnotations();
 
-        self::assertCount(25, $annotations, 'Expected exactly 25 registered #[McpTool] methods.');
+        self::assertCount(26, $annotations, 'Expected exactly 26 registered #[McpTool] methods.');
 
         foreach ($annotations as $name => $annotation) {
             self::assertNotNull($annotation, sprintf('Tool "%s" is missing #[McpTool] annotations.', $name));
