@@ -312,7 +312,7 @@ final class TcaCommand extends AbstractJsonCommand
             return null;
         }
 
-        $fields = array_values(array_filter(array_map('trim', explode(',', $value)), static fn (string $field): bool => '' !== $field));
+        $fields = array_values(array_filter(array_map(trim(...), explode(',', $value)), static fn (string $field): bool => '' !== $field));
 
         return [] === $fields ? null : $fields;
     }
