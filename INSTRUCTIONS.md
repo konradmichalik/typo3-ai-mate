@@ -10,7 +10,8 @@ Call `typo3-info` first, before any other tool in this package. It reports the
 exact TYPO3 version and major (v13 vs v14 governs almost every subsequent
 recommendation), PHP version, application context, database platform/version,
 active extensions (own vs. third-party), relevant package versions, profiler
-CLI availability, and a compact `tt_content` type inventory. Do not derive any
+CLI availability, and how many `tt_content` types are registered (pass
+`contentTypes=true` for the catalogue itself). Do not derive any
 of this from `composer.json` — its constraint ranges (e.g. `^13.4 || ^14.3`,
 this package's own) do not resolve to a single version.
 
@@ -65,7 +66,7 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
 ## Tools
 
 - `typo3-info` — **call this first.** Version/context/database facts, extensions,
-  package versions, profiler state, content-type inventory. See "Start here" above.
+  package versions, profiler state, content-type count. See "Start here" above.
 - `typo3-profiler-latest` / `-list` / `-search` / `-get` — request profiles as compact
   summaries, each with a `resource_uri`; read the full profile or a single section via the
   `typo3-profiler://profile/{token}[/{section}]` resources. See each tool's own description
@@ -81,15 +82,20 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
 - `typo3-records` — read-only record query for any table (`table=<name>`, equality
   filters via `uid`/`pid`/`where=field=value,…`). Compact rows with a `_flags` list
   (hidden/deleted/timed/fe_group); no restrictions by default. Use instead of raw
-  SQL to answer "why is this record not showing?". `mode=full` for all columns,
-  `respectEnableFields=true` for the frontend view.
+  SQL to answer "why is this record not showing?". `mode=full` for every column but
+  the bookkeeping ones, `respectEnableFields=true` for the frontend view. Columns
+  whose value is empty, zero or null are left out of a row (`uid`/`pid` always
+  stay); name a column in `fields` to read it regardless of its value.
 - `typo3-logs-search` / `-tail` / `-by-level` — TYPO3 logs.
 - `typo3-tca` — resolved TCA of a table, or all table names. Built on the core
   Schema API: `capabilities` (softDelete/workspace/language/sorting field),
-  `recordTypes` (type value => visible field names) and `relations` (field =>
-  resolved target table + relationship type — a file field resolves to
-  `sys_file_reference` instead of leaving `type: file` for you to interpret),
-  plus the trimmed `columns` as before.
+  `recordTypes` (`shared` for the fields every type carries, `types` for what each
+  one adds on top) and `relations` (field => resolved target table + relationship
+  type — a file field resolves to `sys_file_reference` instead of leaving
+  `type: file` for you to interpret), plus the trimmed `columns`. Ask narrowly:
+  `recordType=<value>` or `fields=<names>` limits `columns` and `relations` to what
+  you asked about, which for `tt_content` is the difference between a few hundred
+  bytes and 15 kB that every later turn re-reads.
 - `typo3-db-schema` — the physical schema, counterpart to `typo3-tca`: without a
   `table`, every table name with a row-count estimate (optional `pattern` substring
   filter); with a `table`, its real columns (name, type, length, nullable, default),
