@@ -46,7 +46,7 @@ final class IconLookup
         }
 
         return array_values(array_unique(array_filter(
-            array_map('trim', explode(',', $value)),
+            array_map(trim(...), explode(',', $value)),
             static fn (string $identifier): bool => '' !== $identifier,
         )));
     }

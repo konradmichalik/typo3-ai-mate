@@ -56,7 +56,7 @@ final class FluidNamespacesCommand extends AbstractJsonCommand
             // A prefix explicitly mapped to null is Fluid's way of ignoring it
             // (e.g. xmlns:xsi), which is an answer worth reporting as such.
             $namespaces[Cast::string($prefix)] = is_array($phpNamespaces)
-                ? array_values(array_map(static fn (mixed $value): string => Cast::string($value), $phpNamespaces))
+                ? array_values(array_map(Cast::string(...), $phpNamespaces))
                 : [];
         }
         ksort($namespaces);

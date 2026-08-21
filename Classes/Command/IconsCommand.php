@@ -49,7 +49,7 @@ final class IconsCommand extends AbstractJsonCommand
     {
         /** @var list<string> $registered */
         $registered = array_values(array_map(
-            static fn (mixed $identifier): string => Cast::string($identifier),
+            Cast::string(...),
             $this->iconRegistry->getAllRegisteredIconIdentifiers(),
         ));
 
