@@ -109,6 +109,12 @@ flowchart LR
 | Deprecations | `typo3-deprecations` | Report runtime deprecation notices, deduplicated and counted. Each one carries `origins` — the likely caller in own code. With deprecation logging enabled, a dev-only log processor records the caller's backtrace at log time for a high-confidence file:line; otherwise it falls back to a class-aware static reverse search across own PHP/Fluid files. |
 | Rendering | `typo3-render-page` | Render a frontend page via an internal HTTP request (no external curl/Playwright) so runtime notices fire, and report the HTTP status plus the log entries written during that request. Requires a running webserver (e.g. DDEV). An explicit `--url` is only allowed for the installation's configured site hosts (SSRF guard) and the request is capped at 60s. |
 
+### Tool clusters gated on runtime state
+
+Two clusters are only registered when they have something to report: the profile-reading tools (`typo3-profiler-latest` / `-list` / `-search` / `-get`, plus `-stop` / `-status`) once a profile exists or profiling is active, and the log search tools (`typo3-logs-search`, `typo3-logs-by-level`) once the log has entries. Until then only `typo3-profiler-start` and `typo3-logs-tail` are offered, with a description saying what is missing and how to get the rest.
+
+This is not deletion: a cluster whose subject does not exist yet costs the model a longer name list on every tool search and returns nothing when called. `typo3-info` reports the current state under `toolClusters` with the reason for each, so a tool that seems missing can be explained rather than guessed at. Reconnect the MCP server after recording a profile or triggering a log entry to pick the cluster up.
+
 ## 🔒 Security model
 
 **Read-only by default.** 19 of the 22 tools only read resolved runtime state and are annotated `readOnlyHint: true` in `tools/list`, so an MCP client can run them without a confirmation prompt. The exceptions are annotated explicitly, never left to prose:

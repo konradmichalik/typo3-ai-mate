@@ -70,6 +70,14 @@ final class InfoCommandTest extends FunctionalTestCase
         self::assertIsBool($profiler['activationWindowOpen']);
         self::assertIsBool($profiler['developmentContext']);
 
+        $toolClusters = $result['toolClusters'];
+        self::assertIsArray($toolClusters);
+        foreach (['profiler', 'logs'] as $cluster) {
+            $state = (array) $toolClusters[$cluster];
+            self::assertIsBool($state['registered']);
+            self::assertNotSame('', $state['reason']);
+        }
+
         $contentTypes = $result['contentTypes'];
         self::assertIsArray($contentTypes);
         $cTypes = $contentTypes['cTypes'];

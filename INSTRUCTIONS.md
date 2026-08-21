@@ -40,6 +40,13 @@ Exact tool names, so you can select one directly instead of searching for it.
 Each tool's own description carries its arguments, its scope and what a negative
 result means. Read that rather than guessing arguments.
 
+Two clusters are only registered when they have something to report: the
+profile-reading tools once a profile exists or profiling is active, the log
+search tools once the log has entries. Until then only `typo3-profiler-start`
+and `typo3-logs-tail` are offered, and their descriptions say so. `typo3-info`
+reports the current state under `toolClusters`, so a tool that seems missing can
+be explained rather than guessed at.
+
 ## Three things the tool surface does consistently
 
 - **`request_id`** (= profile `token` = TYPO3 `Core\RequestId`, logged as

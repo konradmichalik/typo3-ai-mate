@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 use KonradMichalik\Typo3AiMate\Mate\{DescriptionAwareDiscoverer, ProfileProvider, ProfilerStateProvider, SiteHostsProvider, ToolDescriptionComputer, Typo3CliRunner};
 use KonradMichalik\Typo3AiMate\Mcp\{ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FluidResolveTool, InfoTool, LogsTool, MiddlewaresTool, PageTool, PerformanceTool, ProfileResource, ProfilerControlTool, RenderPageTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
+use KonradMichalik\Typo3AiMate\Support\RuntimeArtifacts;
 use Mcp\Capability\Discovery\DiscovererInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -74,6 +75,11 @@ return static function (ContainerConfigurator $container): void {
     // tool's description; the actual SSRF guard stays in
     // RenderPageCommand::isAllowedHost(), sourced from the booted SiteFinder.
     $services->set(SiteHostsProvider::class)
+        ->arg('$rootDir', '%mate.root_dir%');
+
+    // Whether anything has been logged decides, together with the profiler
+    // state, which tool clusters are registered at all.
+    $services->set(RuntimeArtifacts::class)
         ->arg('$rootDir', '%mate.root_dir%');
     $services->set(ToolDescriptionComputer::class);
 
