@@ -215,13 +215,19 @@ final readonly class FluidResolver
     }
 
     /**
+     * The same rule that decides `viewPathFound`: a declared key with nothing
+     * {@see orderedPaths()} can build a chain from resolves to nothing, so
+     * offering it as a candidate would hand the caller another guess.
+     *
      * @param array<mixed> $view
      */
     private static function declaresRootPaths(array $view): bool
     {
         foreach (['templateRootPaths', 'partialRootPaths', 'layoutRootPaths'] as $kind) {
-            if (array_key_exists($kind.'.', $view) || array_key_exists($kind, $view)) {
-                return true;
+            foreach ([$kind.'.', $kind] as $key) {
+                if (array_key_exists($key, $view) && [] !== self::orderedPaths(Cast::array($view[$key]))) {
+                    return true;
+                }
             }
         }
 

@@ -137,6 +137,22 @@ final class FluidResolverTest extends TestCase
     }
 
     #[Test]
+    public function viewPathCandidatesIgnoresARootPathBlockWithoutAUsablePath(): void
+    {
+        // A candidate the caller cannot resolve is another guess, not an answer:
+        // both of these declare the key but carry no path a chain can be built
+        // from, which is exactly what makes viewPathFound false.
+        $setup = [
+            'plugin.' => [
+                'tx_empty.' => ['view.' => ['templateRootPaths.' => []]],
+                'tx_nested.' => ['view.' => ['partialRootPaths.' => ['10.' => ['override' => 'x']]]],
+            ],
+        ];
+
+        self::assertSame([], FluidResolver::viewPathCandidates($setup));
+    }
+
+    #[Test]
     public function viewPathCandidatesStopsAtTheDepthCap(): void
     {
         $deep = ['view.' => ['templateRootPaths.' => ['10' => 'EXT:deep/Templates/']]];
