@@ -99,6 +99,7 @@ flowchart LR
 | Records | `typo3-records` | Read-only record query for any table (structured, parameterised — equality filters via `uid`/`pid`/`where`, never raw SQL). Returns compact rows (uid, pid, label/type, enable columns, timestamps; long text truncated) each with a `_flags` list (hidden/deleted/timed/fe_group). No restrictions by default so hidden/deleted rows are visible — the answer to "why is this record not showing?". Pass `fields` for specific columns, `mode=full` for all columns, `respectEnableFields=true` for the frontend view. Sensitive columns (passwords and `password`-type TCA fields) are always redacted, and any embedded emails, IPv4 addresses or secrets in text values are redacted too. |
 | Logs | `typo3-logs-search` / `-tail` / `-by-level` | Search, tail or filter the TYPO3 logs. Returns a compact summary (distinct messages with occurrence counts and `lastSeen`, no stack traces) by default; pass `mode=full` for individual entries with truncated traces, and `since` (e.g. `1h`, `2d`) to scope to recent entries. Emails, IPv4 addresses and secrets embedded in messages/traces are redacted before output. |
 | TCA | `typo3-tca` | Dump the resolved (merged, trimmed) TCA of a table. |
+| FlexForm | `typo3-flexform` | Reconcile a record's stored FlexForm against the data structure currently valid for it, resolved through `FlexFormTools` from the record's own pointer field. Reports `orphaned` values (stored but no longer declared, so silently ignored at runtime — what a renamed field looks like) and `missing` fields (declared but not stored, so the default applies). A record without a FlexForm answers `hasFlexForm: false` rather than an empty structure. |
 | TypoScript | `typo3-typoscript` | Dump the resolved frontend TypoScript of a page. |
 | TSconfig | `typo3-tsconfig` | Dump the resolved Page TSconfig (rootline-merged: `mod.*`, `TCEFORM`, `TCEMAIN`, RTE) or User TSconfig — the backend configuration layer that no single file reveals. Scope large output with a dotted path, e.g. `mod.web_layout`. |
 | Fluid | `typo3-fluid-resolve` | Resolve the `templateRootPaths`/`partialRootPaths`/`layoutRootPaths` override chain for a plugin/view (e.g. `plugin.tx_news_pi1`) and report which physical template/partial/layout file wins — ordered candidate directories with `exists` flags plus the resolved file. |
@@ -111,7 +112,7 @@ flowchart LR
 
 ## 🔒 Security model
 
-**Read-only by default.** 19 of the 22 tools only read resolved runtime state and are annotated `readOnlyHint: true` in `tools/list`, so an MCP client can run them without a confirmation prompt. The exceptions are annotated explicitly, never left to prose:
+**Read-only by default.** 20 of the 23 tools only read resolved runtime state and are annotated `readOnlyHint: true` in `tools/list`, so an MCP client can run them without a confirmation prompt. The exceptions are annotated explicitly, never left to prose:
 
 - `typo3-profiler-start` / `-stop` — the only tools that change profiler control state, and only a time-boxed dev switch (max 60 minutes); they touch no records.
 - `typo3-render-page` — issues a real internal HTTP request, so it has side effects in caches and logs (`readOnlyHint: false`, `openWorldHint: true`). Its URL is restricted to the installation's configured site hosts (SSRF guard).
