@@ -34,7 +34,7 @@ final readonly class TypoScriptTool
      * @param string|null    $path   Dotted scope to limit large output to one branch, e.g. lib.foo. Omitted returns a top-level overview.
      * @param bool           $full   return the entire resolved tree instead of the top-level overview (can be very large)
      */
-    #[McpTool(name: 'typo3-typoscript', title: 'TYPO3 TypoScript', description: 'Resolved frontend TypoScript (setup|constants) of a page. Without a path you get a top-level overview; drill in with a dotted path (e.g. lib.foo) or pass full=true for the whole tree.', annotations: new ToolAnnotations(readOnlyHint: true))]
+    #[McpTool(name: 'typo3-typoscript', title: 'TYPO3 TypoScript', description: 'Resolved frontend TypoScript (setup|constants) of a page. Without a path you get a top-level overview; drill in with a dotted path (e.g. lib.foo) or pass full=true for the whole tree. A path that does not exist answers with found=false plus the keys that do exist at the deepest segment that resolved — read those instead of guessing another path.', annotations: new ToolAnnotations(readOnlyHint: true))]
     public function dump(int $pageId, TypoScriptType $type = TypoScriptType::Setup, ?string $path = null, bool $full = false): string
     {
         $options = ['type' => $type->value];
