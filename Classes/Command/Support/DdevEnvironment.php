@@ -43,12 +43,16 @@ final readonly class DdevEnvironment
     }
 
     /**
-     * @return array{command: string, args: list<string>}
+     * The launch command as one argv list, program first. Harnesses disagree on
+     * whether they want it split (Claude Code) or whole (opencode), so the split
+     * happens where the entry is built.
+     *
+     * @return list<string>
      */
-    public function mcpServerLaunchCommand(): array
+    public function mcpServerLaunchArgv(): array
     {
         return $this->isDdevProject
-            ? ['command' => 'ddev', 'args' => ['exec', 'vendor/bin/mate', 'serve']]
-            : ['command' => './vendor/bin/mate', 'args' => ['serve']];
+            ? ['ddev', 'exec', 'vendor/bin/mate', 'serve']
+            : ['./vendor/bin/mate', 'serve'];
     }
 }

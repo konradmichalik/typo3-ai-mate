@@ -64,13 +64,25 @@ Download the zip file from [TYPO3 extension repository (TER)](https://extensions
 
 ## 🔌 Connect your assistant
 
-One command scaffolds the Mate workspace, registers the `typo3-*` tools and adds the MCP server to your project's `.mcp.json`:
+One command scaffolds the Mate workspace, registers the `typo3-*` tools and adds the MCP server to the configuration file your assistant reads:
 
 ```bash
 vendor/bin/typo3 typo3-ai-mate:install
 ```
 
-It detects whether the project runs under DDEV and registers the matching launch command (`ddev exec vendor/bin/mate serve` vs. `./vendor/bin/mate serve`), never touches other `mcpServers` entries already in `.mcp.json`, and is safe to run again after every `composer update`. `--dry-run` reports every planned change without writing anything; `--skip-mcp-json` runs the Mate workspace steps only, in case your assistant registers MCP servers another way.
+It detects whether the project runs under DDEV and registers the matching launch command (`ddev exec vendor/bin/mate serve` vs. `./vendor/bin/mate serve`), never touches entries already in the file, and is safe to run again after every `composer update`.
+
+| Assistant | File | Entry |
+|---|---|---|
+| Claude Code | `.mcp.json` | `mcpServers.typo3-ai-mate` with `command` and `args` |
+| opencode | `opencode.json` | `mcp.typo3-ai-mate` with `type: local`, one `command` array and `enabled: true` |
+
+Which one gets written is decided by `--agent=<claude\|opencode\|all>`. Without it the project is inspected (`.mcp.json`, `.claude/`, `CLAUDE.md` → Claude Code; `opencode.json`, `.opencode/` → opencode) and every recognised harness is registered; when nothing is recognisable, all of them are. Registering for only one leaves the others with instructions for tools they cannot call, which is worse than either extreme.
+
+`--dry-run` reports every planned change without writing anything; `--skip-mcp-json` runs the Mate workspace steps only, in case your assistant registers MCP servers another way.
+
+> [!NOTE]
+> `mate init` also leaves `bin/codex` and `bin/codex.bat` in the project — launcher shims for the Codex CLI, written by `symfony/ai-mate` rather than by this extension. A Windows batch file appearing in a Composer-managed project is unexpected; it is harmless and can be deleted or gitignored if you do not use Codex. Codex itself registers MCP servers in a global `~/.codex/config.toml`, outside the project, and is therefore not a target of `--agent`.
 
 > [!NOTE]
 > `mate discover` writes the aggregated instructions (this extension's `INSTRUCTIONS.md` plus every other installed Mate extension's) to `mate/AGENT_INSTRUCTIONS.md`, and adds a managed `<!-- BEGIN AI_MATE_INSTRUCTIONS --> … <!-- END AI_MATE_INSTRUCTIONS -->` block to `AGENTS.md` pointing at it. It does **not** write to `CLAUDE.md`, `.cursor/rules`, or any other client-specific file — only `AGENTS.md`. If your assistant reads `AGENTS.md` directly, you are covered automatically. **Claude Code reads `CLAUDE.md`, not `AGENTS.md`** — add a single line to your project's `CLAUDE.md` — `@AGENTS.md` — so it gets pulled in; do not hand-write a second managed block, Mate's own markers above are the only ones this project uses. Any other assistant that only reads its own client-specific file (e.g. `.cursor/rules`) needs the same kind of import.
