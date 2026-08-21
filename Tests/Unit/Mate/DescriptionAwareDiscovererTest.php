@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mate;
 
 use KonradMichalik\Typo3AiMate\Mate\{DescriptionAwareDiscoverer, ProfileProvider, ProfilerStateProvider, SiteHostsProvider, ToolDescriptionComputer, Typo3CliRunner};
+use KonradMichalik\Typo3AiMate\Support\RuntimeArtifacts;
 use Mcp\Capability\Discovery\{DiscovererInterface, DiscoveryState};
 use Mcp\Capability\Registry\{PromptReference, ResourceReference, ResourceTemplateReference, ToolReference};
 use Mcp\Schema\{Prompt, ResourceDefinition, ResourceTemplate, Tool};
@@ -75,13 +76,13 @@ final class DescriptionAwareDiscovererTest extends TestCase
     #[Test]
     public function rebuildsAToolWhoseDescriptionChangedWhilePreservingItsOtherFields(): void
     {
-        $reference = $this->toolReference('typo3-profiler-latest', 'Latest profile.');
-        $decorator = new DescriptionAwareDiscoverer($this->innerReturning(['typo3-profiler-latest' => $reference]), $this->computer());
+        $reference = $this->toolReference('typo3-render-page', 'Render a page.');
+        $decorator = new DescriptionAwareDiscoverer($this->innerReturning(['typo3-render-page' => $reference]), $this->computer());
 
-        $tool = $decorator->discover('/root', [])->getTools()['typo3-profiler-latest']->tool;
+        $tool = $decorator->discover('/root', [])->getTools()['typo3-render-page']->tool;
 
-        self::assertStringContainsString('Latest profile.', (string) $tool->description);
-        self::assertStringContainsString('typo3-profiler-start', (string) $tool->description);
+        self::assertStringContainsString('Render a page.', (string) $tool->description);
+        self::assertStringContainsString('no host is currently allowed', (string) $tool->description);
         self::assertSame($reference->tool->name, $tool->name);
         self::assertSame($reference->tool->title, $tool->title);
         self::assertSame($reference->tool->inputSchema, $tool->inputSchema);
@@ -92,12 +93,79 @@ final class DescriptionAwareDiscovererTest extends TestCase
     public function preservesTheToolsHandler(): void
     {
         $handler = static fn (): null => null;
-        $reference = new ToolReference($this->tool('typo3-profiler-latest', 'Latest profile.'), $handler);
-        $decorator = new DescriptionAwareDiscoverer($this->innerReturning(['typo3-profiler-latest' => $reference]), $this->computer());
+        $reference = new ToolReference($this->tool('typo3-render-page', 'Render a page.'), $handler);
+        $decorator = new DescriptionAwareDiscoverer($this->innerReturning(['typo3-render-page' => $reference]), $this->computer());
 
         $result = $decorator->discover('/root', []);
 
-        self::assertSame($handler, $result->getTools()['typo3-profiler-latest']->handler);
+        self::assertSame($handler, $result->getTools()['typo3-render-page']->handler);
+    }
+
+    #[Test]
+    public function leavesTheProfilerClusterUnregisteredWhileThereIsNothingToRead(): void
+    {
+        $tools = [
+            'typo3-profiler-start' => $this->toolReference('typo3-profiler-start', 'Start profiling.'),
+            'typo3-profiler-latest' => $this->toolReference('typo3-profiler-latest', 'Latest profile.'),
+            'typo3-profiler-get' => $this->toolReference('typo3-profiler-get', 'Get a profile.'),
+            'typo3-tca' => $this->toolReference('typo3-tca', 'Resolved TCA.'),
+        ];
+
+        $registered = (new DescriptionAwareDiscoverer($this->innerReturning($tools), $this->computer()))
+            ->discover('/root', [])
+            ->getTools();
+
+        // Only the tool that brings profiles into existence survives.
+        self::assertArrayHasKey('typo3-profiler-start', $registered);
+        self::assertArrayNotHasKey('typo3-profiler-latest', $registered);
+        self::assertArrayNotHasKey('typo3-profiler-get', $registered);
+        // An unrelated tool is untouched.
+        self::assertArrayHasKey('typo3-tca', $registered);
+
+        self::assertStringContainsString(
+            'not registered in this session',
+            (string) $registered['typo3-profiler-start']->tool->description,
+        );
+    }
+
+    #[Test]
+    public function leavesTheLogsClusterUnregisteredWhileTheLogIsEmpty(): void
+    {
+        $tools = [
+            'typo3-logs-tail' => $this->toolReference('typo3-logs-tail', 'Tail the log.'),
+            'typo3-logs-search' => $this->toolReference('typo3-logs-search', 'Search the log.'),
+            'typo3-logs-by-level' => $this->toolReference('typo3-logs-by-level', 'Filter by level.'),
+        ];
+
+        $registered = (new DescriptionAwareDiscoverer($this->innerReturning($tools), $this->computer()))
+            ->discover('/root', [])
+            ->getTools();
+
+        self::assertSame(['typo3-logs-tail'], array_keys($registered));
+        self::assertStringContainsString('The log is empty', (string) $registered['typo3-logs-tail']->tool->description);
+    }
+
+    #[Test]
+    public function registersTheWholeClusterOnceThereIsSomethingToRead(): void
+    {
+        mkdir($this->rootDir.'/var/log/profiles', 0o700, true);
+        file_put_contents(
+            $this->rootDir.'/var/log/profiles/abc.json',
+            (string) json_encode(['token' => 'abc', 'time' => '2026-06-15T10:00:00+00:00', 'schemaVersion' => 1]),
+        );
+        file_put_contents($this->rootDir.'/var/log/typo3_example.log', "something happened\n");
+
+        $tools = [
+            'typo3-profiler-latest' => $this->toolReference('typo3-profiler-latest', 'Latest profile.'),
+            'typo3-logs-search' => $this->toolReference('typo3-logs-search', 'Search the log.'),
+        ];
+
+        $registered = (new DescriptionAwareDiscoverer($this->innerReturning($tools), $this->computer()))
+            ->discover('/root', [])
+            ->getTools();
+
+        self::assertArrayHasKey('typo3-profiler-latest', $registered);
+        self::assertArrayHasKey('typo3-logs-search', $registered);
     }
 
     #[Test]
@@ -166,6 +234,7 @@ final class DescriptionAwareDiscovererTest extends TestCase
             new ProfileProvider($this->rootDir),
             new ProfilerStateProvider(new Typo3CliRunner($this->rootDir), $this->rootDir),
             new SiteHostsProvider($this->rootDir),
+            new RuntimeArtifacts($this->rootDir),
         );
     }
 

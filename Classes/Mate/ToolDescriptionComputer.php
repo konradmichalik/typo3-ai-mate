@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Mate;
 
-use KonradMichalik\Typo3AiMate\Support\Cast;
+use KonradMichalik\Typo3AiMate\Support\{Cast, RuntimeArtifacts, ToolClusterGate};
 
 use function in_array;
 use function sprintf;
@@ -60,14 +60,45 @@ final readonly class ToolDescriptionComputer
     private string $profilerActiveSentence;
     private string $allowedHostsSentence;
 
+    private bool $profilerSuppressed;
+    private bool $logsSuppressed;
+
+    /**
+     * @var list<string>
+     */
+    private array $suppressedTools;
+
     public function __construct(
         private ProfileProvider $profiles,
         private ProfilerStateProvider $profilerState,
         private SiteHostsProvider $siteHosts,
+        private RuntimeArtifacts $artifacts,
     ) {
         $this->profileAvailabilitySentence = $this->buildProfileAvailabilitySentence();
         $this->profilerActiveSentence = $this->buildProfilerActiveSentence();
         $this->allowedHostsSentence = $this->buildAllowedHostsSentence();
+        $this->profilerSuppressed = !ToolClusterGate::profiler(
+            null !== $this->profiles->rawLatest(),
+            true === $this->profilerState->status()['active'],
+        )['registered'];
+        $this->logsSuppressed = !ToolClusterGate::logs($this->artifacts->hasLogEntries())['registered'];
+        $this->suppressedTools = [
+            ...$this->profilerSuppressed ? ToolClusterGate::PROFILER_TOOLS : [],
+            ...$this->logsSuppressed ? ToolClusterGate::LOGS_TOOLS : [],
+        ];
+    }
+
+    /**
+     * Tools whose cluster has nothing to report yet and is therefore not put in
+     * front of the model at all. Decided from the same state as the description
+     * suffixes, and read here so the filesystem probes happen once per server
+     * start rather than once per consumer.
+     *
+     * @return list<string>
+     */
+    public function suppressedTools(): array
+    {
+        return $this->suppressedTools;
     }
 
     public function compute(string $toolName, string $staticDescription): string
@@ -78,8 +109,26 @@ final readonly class ToolDescriptionComputer
             self::RENDER_PAGE_TOOL === $toolName => $this->allowedHostsSentence,
             default => null,
         };
+        $parts = [$staticDescription, $suffix ?? '', $this->gateNotice($toolName)];
 
-        return null === $suffix ? $staticDescription : $staticDescription.' '.$suffix;
+        return implode(' ', array_filter($parts, static fn (string $part): bool => '' !== $part));
+    }
+
+    /**
+     * The entry-point tool of a suppressed cluster says what is missing and how
+     * to get the rest back, so a shrunken tool surface is stated rather than
+     * looking like a broken install.
+     */
+    private function gateNotice(string $toolName): string
+    {
+        if ($this->profilerSuppressed && ToolClusterGate::PROFILER_ENTRY_TOOL === $toolName) {
+            return 'The profile-reading tools are not registered in this session because nothing has been recorded yet: start profiling, exercise the site, then reconnect to get them.';
+        }
+        if ($this->logsSuppressed && ToolClusterGate::LOGS_ENTRY_TOOL === $toolName) {
+            return 'The log is empty, so typo3-logs-search and typo3-logs-by-level are not registered in this session — there is nothing for them to search.';
+        }
+
+        return '';
     }
 
     private function buildProfileAvailabilitySentence(): string

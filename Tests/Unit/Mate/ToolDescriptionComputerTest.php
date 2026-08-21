@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mate;
 
 use KonradMichalik\Typo3AiMate\Mate\{ProfileProvider, ProfilerStateProvider, SiteHostsProvider, ToolDescriptionComputer, Typo3CliRunner};
+use KonradMichalik\Typo3AiMate\Support\RuntimeArtifacts;
 use KonradMichalik\Typo3AiMate\Tests\Unit\ProfileFixtures;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -106,6 +107,7 @@ final class ToolDescriptionComputerTest extends TestCase
             new ProfileProvider($this->rootDir),
             new ProfilerStateProvider(new Typo3CliRunner($this->rootDir), $this->rootDir),
             new SiteHostsProvider($this->rootDir),
+            new RuntimeArtifacts($this->rootDir),
         );
     }
 }

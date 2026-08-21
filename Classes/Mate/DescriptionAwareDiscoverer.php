@@ -17,14 +17,19 @@ use Mcp\Capability\Discovery\{DiscovererInterface, DiscoveryState};
 use Mcp\Capability\Registry\ToolReference;
 use Mcp\Schema\Tool;
 
+use function in_array;
+
 /**
  * DescriptionAwareDiscoverer.
  *
  * Decorates ai-mate's #[McpTool] attribute discovery (`Configuration/Mate.php`
- * registers this as a decorator of {@see DiscovererInterface}) to rewrite a
- * handful of tool descriptions with runtime state computed by
- * {@see ToolDescriptionComputer}, since a PHP attribute argument must be a
- * compile-time constant and cannot call out to the filesystem itself.
+ * registers this as a decorator of {@see DiscovererInterface}) to apply runtime
+ * state to the discovered tool set, which a PHP attribute cannot do itself
+ * because its arguments must be compile-time constants:
+ *
+ * - descriptions get a state sentence spliced in by {@see ToolDescriptionComputer},
+ * - a cluster whose subject does not exist yet is not registered at all
+ *   ({@see ToolClusterGate}), leaving only its entry-point tool.
  *
  * `DiscovererInterface`/`DiscoveryState`/`ToolReference` are marked
  * `@internal` by mcp/sdk; composer.json pins `mcp/sdk: ^0.7`, so re-verify
@@ -43,9 +48,15 @@ final readonly class DescriptionAwareDiscoverer implements DiscovererInterface
     public function discover(string $basePath, array $directories, array $excludeDirs = [], array $namePatterns = self::DEFAULT_NAME_PATERNS): DiscoveryState
     {
         $state = $this->inner->discover($basePath, $directories, $excludeDirs, $namePatterns);
+        // The same runtime state that produces the description suffixes decides
+        // this, so it is read once, there.
+        $suppressed = $this->descriptions->suppressedTools();
 
         $tools = [];
         foreach ($state->getTools() as $name => $reference) {
+            if (in_array($name, $suppressed, true)) {
+                continue;
+            }
             $tools[$name] = $this->withComputedDescription($name, $reference);
         }
 

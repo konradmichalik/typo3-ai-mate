@@ -15,7 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Command;
 
 use Composer\InstalledVersions;
 use JsonException;
-use KonradMichalik\Typo3AiMate\Support\OwnPackages;
+use KonradMichalik\Typo3AiMate\Support\{OwnPackages, RuntimeArtifacts, ToolClusterGate};
 use ReflectionClass;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\{InputInterface, InputOption};
@@ -161,6 +161,23 @@ final class InfoCommand extends AbstractJsonCommand
     }
 
     /**
+     * Which tool clusters the Mate server registers right now, and why. Gating
+     * means two installs of the same version can expose a different tool
+     * surface; without this, a bug report about a "missing" tool is unreadable.
+     *
+     * @return array{profiler: array{registered: bool, reason: string}, logs: array{registered: bool, reason: string}}
+     */
+    public function describeToolClusters(): array
+    {
+        $artifacts = new RuntimeArtifacts(Environment::getProjectPath());
+
+        return [
+            'profiler' => ToolClusterGate::profiler($artifacts->hasProfiles(), $this->isProfilerActivationWindowOpen()),
+            'logs' => ToolClusterGate::logs($artifacts->hasLogEntries()),
+        ];
+    }
+
+    /**
      * @return array{value: int|string|null, label: string, group: string|null}
      */
     public function describeSelectItem(SelectItem $item, LanguageService $languageService): array
@@ -256,6 +273,7 @@ final class InfoCommand extends AbstractJsonCommand
             'extensions' => $this->describeExtensions(),
             'packages' => $this->describePackages(),
             'profiler' => $this->describeProfiler(),
+            'toolClusters' => $this->describeToolClusters(),
             'contentTypes' => true === $input->getOption('content-types')
                 ? $this->describeContentTypes($languageService)
                 : $this->countContentTypes($languageService),
