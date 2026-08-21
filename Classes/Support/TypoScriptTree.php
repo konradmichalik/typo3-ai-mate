@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Support;
 
 use function array_key_exists;
+use function array_slice;
 use function count;
 use function is_array;
 use function is_scalar;
@@ -30,6 +31,13 @@ use function str_contains;
 final class TypoScriptTree
 {
     private const PREVIEW_LIMIT = 80;
+
+    /**
+     * Cap for the sibling list a miss reports. A branch like tt_content carries
+     * one key per record type, and the point is to orient the caller, not to
+     * dump the branch it did not ask for.
+     */
+    private const SIBLING_LIMIT = 40;
 
     /**
      * Substrings (matched against the delimiter-stripped, lowercased key) that
@@ -93,31 +101,102 @@ final class TypoScriptTree
      */
     public static function get(array $tree, string $path): mixed
     {
+        $walk = self::walk($tree, $path);
+
+        return $walk['complete'] ? $walk['node'] : null;
+    }
+
+    /**
+     * Like {@see get()} but a miss is an answer rather than an empty result: it
+     * names how far the path resolved and which keys live there, so the caller
+     * can correct the path instead of spending another turn guessing.
+     *
+     * @param array<mixed> $tree
+     * @param string       $label what was searched, for the hint prose
+     */
+    public static function scope(array $tree, string $path, string $label = 'resolved TypoScript'): mixed
+    {
+        $walk = self::walk($tree, $path);
+        if ($walk['complete']) {
+            return $walk['node'];
+        }
+
+        $resolvedUpTo = '' === $walk['resolved'] ? null : $walk['resolved'];
+        $siblings = self::childKeys($walk['node']);
+
+        return [
+            'path' => $path,
+            'found' => false,
+            'resolvedUpTo' => $resolvedUpTo,
+            'siblingCount' => count($siblings),
+            'siblings' => array_slice($siblings, 0, self::SIBLING_LIMIT),
+            '_hint' => self::missHint($path, $label, $resolvedUpTo, $walk['node'], count($siblings)),
+        ];
+    }
+
+    /**
+     * Walk a dotted path as far as it resolves, reporting the deepest node
+     * reached and whether every segment matched.
+     *
+     * @param array<mixed> $tree
+     *
+     * @return array{node: mixed, resolved: string, complete: bool}
+     */
+    private static function walk(array $tree, string $path): array
+    {
         $node = $tree;
+        $resolved = [];
         foreach (explode('.', trim($path, '.')) as $segment) {
             if (is_array($node) && array_key_exists($segment.'.', $node)) {
                 $node = $node[$segment.'.'];
             } elseif (is_array($node) && array_key_exists($segment, $node)) {
                 $node = $node[$segment];
             } else {
-                return null;
+                return ['node' => $node, 'resolved' => implode('.', $resolved), 'complete' => false];
             }
+            $resolved[] = $segment;
         }
 
-        return $node;
+        return ['node' => $node, 'resolved' => implode('.', $resolved), 'complete' => true];
     }
 
     /**
-     * Like {@see get()} but returns a structured error envelope instead of null,
-     * for tools that surface the miss directly to the assistant.
+     * Child keys of a node with TypoScript's trailing object dot stripped, so
+     * they can be appended to a dotted path verbatim. An object and a scalar of
+     * the same name (foo. and foo) collapse into one entry.
      *
-     * @param array<mixed> $tree
+     * @return list<string>
      */
-    public static function scope(array $tree, string $path): mixed
+    private static function childKeys(mixed $node): array
     {
-        $node = self::get($tree, $path);
+        if (!is_array($node)) {
+            return [];
+        }
 
-        return $node ?? ['error' => sprintf('Path "%s" not found in resolved TypoScript.', $path)];
+        $unique = [];
+        foreach (array_keys($node) as $key) {
+            $unique[rtrim((string) $key, '.')] = true;
+        }
+
+        $keys = array_map('strval', array_keys($unique));
+        sort($keys, \SORT_NATURAL | \SORT_FLAG_CASE);
+
+        return $keys;
+    }
+
+    private static function missHint(string $path, string $label, ?string $resolvedUpTo, mixed $node, int $siblingCount): string
+    {
+        if (null !== $resolvedUpTo && !is_array($node)) {
+            return sprintf('"%s" does not exist in the %s: "%s" is a value, not a branch.', $path, $label, $resolvedUpTo);
+        }
+
+        $hint = null === $resolvedUpTo
+            ? sprintf('"%s" does not exist in the %s. siblings are the top-level keys — pick one and drill in with a dotted path.', $path, $label)
+            : sprintf('"%s" does not exist in the %s, but "%s" does. siblings are the keys directly below it.', $path, $label, $resolvedUpTo);
+
+        return $siblingCount > self::SIBLING_LIMIT
+            ? $hint.sprintf(' Showing the first %d of %d.', self::SIBLING_LIMIT, $siblingCount)
+            : $hint;
     }
 
     private static function previewScalar(mixed $value): string
