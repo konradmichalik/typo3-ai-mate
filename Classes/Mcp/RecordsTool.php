@@ -33,13 +33,13 @@ final readonly class RecordsTool
      * @param int|null    $uid                 return a single record by uid
      * @param int|null    $pid                 filter by parent page id
      * @param string|null $where               simple field=value pairs, comma-separated and AND-combined (equality only), e.g. CType=text,colPos=0
-     * @param string|null $fields              comma-separated explicit column selection; omit for a compact default set
+     * @param string|null $fields              Comma-separated explicit column selection; omit for a compact default set. A column named here is always reported, even when its value is empty.
      * @param int         $limit               maximum rows to return (capped at 100)
      * @param string|null $orderBy             order by a column, optionally with direction: field or field:desc
-     * @param OutputMode  $mode                summary (default, compact core fields with long text truncated) | full (all columns, untruncated)
+     * @param OutputMode  $mode                summary (default, compact core fields with long text truncated) | full (every column but the bookkeeping ones, untruncated)
      * @param bool        $respectEnableFields apply Deleted/Hidden/StartEnd restrictions (frontend view); default false shows every row with _flags
      */
-    #[McpTool(name: 'typo3-records', title: 'TYPO3 Records', description: 'Read-only record query for a TYPO3 table. Returns rows as compact JSON (uid, pid, label/type, enable columns, timestamps; long text truncated), each with a _flags list (hidden/deleted/timed/fe_group) explaining visibility. No restrictions are applied by default, so hidden/deleted rows are visible — use this instead of raw SQL to answer "why is this record not showing?".', annotations: new ToolAnnotations(readOnlyHint: true))]
+    #[McpTool(name: 'typo3-records', title: 'TYPO3 Records', description: 'Read-only record query for a TYPO3 table. Returns rows as compact JSON (uid, pid, label/type, enable columns, timestamps; long text truncated), each with a _flags list (hidden/deleted/timed/fe_group) explaining visibility. No restrictions are applied by default, so hidden/deleted rows are visible — use this instead of raw SQL to answer "why is this record not showing?". Columns whose value is empty, zero or null are left out of a row (uid and pid always stay), and mode=full omits the versioning and l18n_diffsource bookkeeping columns; name a column in fields to read it regardless.', annotations: new ToolAnnotations(readOnlyHint: true))]
     public function query(
         string $table,
         ?int $uid = null,

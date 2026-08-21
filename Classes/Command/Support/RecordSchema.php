@@ -59,6 +59,15 @@ final class RecordSchema
     private const BLOCKED_TABLE_SUFFIX = '_sessions';
 
     /**
+     * Bookkeeping columns that carry no answer to any question a caller asks a
+     * record for: `l18n_diffsource` ships the whole translated row again as an
+     * escaped JSON blob, and the workspace columns describe versioning state.
+     * Left out of a full selection unless asked for by name.
+     */
+    private const BOOKKEEPING_COLUMNS = ['l18n_diffsource', 'l10n_diffsource', 'l10n_state'];
+    private const BOOKKEEPING_PREFIX = 't3ver_';
+
+    /**
      * Whether a table must not be queried at all (session storage).
      */
     public static function isBlockedTable(string $table): bool
@@ -112,6 +121,17 @@ final class RecordSchema
         }
 
         return $sensitive;
+    }
+
+    /**
+     * @param list<string> $columns
+     *
+     * @return list<string>
+     */
+    public static function withoutBookkeeping(array $columns): array
+    {
+        return array_values(array_filter($columns, static fn (string $column): bool => !in_array(strtolower($column), self::BOOKKEEPING_COLUMNS, true)
+            && !str_starts_with(strtolower($column), self::BOOKKEEPING_PREFIX)));
     }
 
     /**

@@ -55,6 +55,15 @@ final class RecordSchemaTest extends TestCase
     }
 
     #[Test]
+    public function withoutBookkeepingDropsDiffsourceAndVersioningColumns(): void
+    {
+        self::assertSame(
+            ['uid', 'header'],
+            RecordSchema::withoutBookkeeping(['uid', 'l18n_diffsource', 'header', 'l10n_state', 't3ver_wsid', 't3ver_state']),
+        );
+    }
+
+    #[Test]
     public function compactFieldsFallsBackToFirstColumnsForNonTcaTable(): void
     {
         $columns = ['id', 'value', 'created'];

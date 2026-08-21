@@ -16,6 +16,7 @@ namespace KonradMichalik\Typo3AiMate\Command\Support;
 use KonradMichalik\Typo3AiMate\Support\Cast;
 
 use function array_key_exists;
+use function in_array;
 use function is_string;
 
 /**
@@ -53,6 +54,30 @@ final class RecordTrimmer
         $out = [];
         foreach ($row as $key => $value) {
             $out[$key] = is_string($value) ? self::truncate($value, $limit) : $value;
+        }
+
+        return $out;
+    }
+
+    /**
+     * Drop columns whose value carries no information. Four fifths of a full
+     * tt_content row are `0`, `null` or `""`, and every one of those lines stays
+     * in the prompt for the rest of the session. The columns in $keep survive
+     * regardless, because `pid: 0` (a root-level record) is a fact, not a
+     * default.
+     *
+     * @param array<string, mixed> $row
+     * @param list<string>         $keep
+     *
+     * @return array<string, mixed>
+     */
+    public static function dropEmpty(array $row, array $keep): array
+    {
+        $out = [];
+        foreach ($row as $column => $value) {
+            if (in_array($column, $keep, true) || !self::isEmptyValue($value)) {
+                $out[$column] = $value;
+            }
         }
 
         return $out;
@@ -103,6 +128,11 @@ final class RecordTrimmer
         }
 
         return $flags;
+    }
+
+    private static function isEmptyValue(mixed $value): bool
+    {
+        return null === $value || '' === $value || 0 === $value || '0' === $value;
     }
 
     /**
