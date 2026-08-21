@@ -29,6 +29,9 @@ this package's own) do not resolve to a single version.
 | `settings.php` / `additional.php`    | `typo3-config`        |
 | `config/sites/*/config.yaml`         | `typo3-site`          |
 | a raw `pi_flexform` XML blob         | `typo3-flexform`      |
+| grepping for ViewHelper namespaces   | `typo3-fluid-namespaces` |
+| grepping `Configuration/Icons.php`   | `typo3-icons`         |
+| `Configuration/Backend/Modules.php`  | `typo3-backend-modules` |
 
 ## Diagnose instead of guessing
 
@@ -97,6 +100,18 @@ request_id ──┬── typo3-profiler-*  (SQL, N+1, timing, page.id)
   looks like; `missing` fields are declared but not stored, so their default
   applies. Use it for "the configured value has no effect". A record without a
   FlexForm answers `hasFlexForm: false`.
+- `typo3-fluid-namespaces` — which ViewHelper prefixes resolve in every template
+  without an `xmlns` declaration, mapped to their PHP namespaces in order. No
+  arguments. Answers "may this template use `<foo:bar>`" in one call instead of
+  grepping `ext_localconf.php` and `Configuration/Fluid/Namespaces.php`.
+- `typo3-icons` — whether icon identifiers are registered and which extension
+  provides them. `registered: false` is the answer: the identifier renders no icon
+  at all, not a placeholder. Pass several `identifiers` at once (a miss carries the
+  closest registered ones as suggestions) or nothing for the count grouped by
+  leading segment. Never grep `vendor/typo3` for this.
+- `typo3-backend-modules` — registered backend modules with parent, route path,
+  access level and the *resolved* `navigationComponent` (a submodule declaring
+  `inheritNavigationComponent` reports its parent's). No arguments, no user context.
 - `typo3-db-schema` — the physical schema, counterpart to `typo3-tca`: without a
   `table`, every table name with a row-count estimate (optional `pattern` substring
   filter); with a `table`, its real columns (name, type, length, nullable, default),

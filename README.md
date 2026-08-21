@@ -64,13 +64,25 @@ Download the zip file from [TYPO3 extension repository (TER)](https://extensions
 
 ## 🔌 Connect your assistant
 
-One command scaffolds the Mate workspace, registers the `typo3-*` tools and adds the MCP server to your project's `.mcp.json`:
+One command scaffolds the Mate workspace, registers the `typo3-*` tools and adds the MCP server to the configuration file your assistant reads:
 
 ```bash
 vendor/bin/typo3 typo3-ai-mate:install
 ```
 
-It detects whether the project runs under DDEV and registers the matching launch command (`ddev exec vendor/bin/mate serve` vs. `./vendor/bin/mate serve`), never touches other `mcpServers` entries already in `.mcp.json`, and is safe to run again after every `composer update`. `--dry-run` reports every planned change without writing anything; `--skip-mcp-json` runs the Mate workspace steps only, in case your assistant registers MCP servers another way.
+It detects whether the project runs under DDEV and registers the matching launch command (`ddev exec vendor/bin/mate serve` vs. `./vendor/bin/mate serve`), never touches entries already in the file, and is safe to run again after every `composer update`.
+
+| Assistant | File | Entry |
+|---|---|---|
+| Claude Code | `.mcp.json` | `mcpServers.typo3-ai-mate` with `command` and `args` |
+| opencode | `opencode.json` | `mcp.typo3-ai-mate` with `type: local`, one `command` array and `enabled: true` |
+
+Which one gets written is decided by `--agent=<claude\|opencode\|all>`. Without it the project is inspected (`.mcp.json`, `.claude/`, `CLAUDE.md` → Claude Code; `opencode.json`, `.opencode/` → opencode) and every recognised harness is registered; when nothing is recognisable, all of them are. Registering for only one leaves the others with instructions for tools they cannot call, which is worse than either extreme.
+
+`--dry-run` reports every planned change without writing anything; `--skip-mcp-json` runs the Mate workspace steps only, in case your assistant registers MCP servers another way.
+
+> [!NOTE]
+> `mate init` also leaves `bin/codex` and `bin/codex.bat` in the project — launcher shims for the Codex CLI, written by `symfony/ai-mate` rather than by this extension. A Windows batch file appearing in a Composer-managed project is unexpected; it is harmless and can be deleted or gitignored if you do not use Codex. Codex itself registers MCP servers in a global `~/.codex/config.toml`, outside the project, and is therefore not a target of `--agent`.
 
 > [!NOTE]
 > `mate discover` writes the aggregated instructions (this extension's `INSTRUCTIONS.md` plus every other installed Mate extension's) to `mate/AGENT_INSTRUCTIONS.md`, and adds a managed `<!-- BEGIN AI_MATE_INSTRUCTIONS --> … <!-- END AI_MATE_INSTRUCTIONS -->` block to `AGENTS.md` pointing at it. It does **not** write to `CLAUDE.md`, `.cursor/rules`, or any other client-specific file — only `AGENTS.md`. If your assistant reads `AGENTS.md` directly, you are covered automatically. **Claude Code reads `CLAUDE.md`, not `AGENTS.md`** — add a single line to your project's `CLAUDE.md` — `@AGENTS.md` — so it gets pulled in; do not hand-write a second managed block, Mate's own markers above are the only ones this project uses. Any other assistant that only reads its own client-specific file (e.g. `.cursor/rules`) needs the same kind of import.
@@ -98,11 +110,14 @@ flowchart LR
 | Page | `typo3-page` | Show a page's composition: content elements, cache signals and `USER_INT` plugins. |
 | Records | `typo3-records` | Read-only record query for any table (structured, parameterised — equality filters via `uid`/`pid`/`where`, never raw SQL). Returns compact rows (uid, pid, label/type, enable columns, timestamps; long text truncated) each with a `_flags` list (hidden/deleted/timed/fe_group). No restrictions by default so hidden/deleted rows are visible — the answer to "why is this record not showing?". Pass `fields` for specific columns, `mode=full` for all columns, `respectEnableFields=true` for the frontend view. Sensitive columns (passwords and `password`-type TCA fields) are always redacted, and any embedded emails, IPv4 addresses or secrets in text values are redacted too. |
 | Logs | `typo3-logs-search` / `-tail` / `-by-level` | Search, tail or filter the TYPO3 logs. Returns a compact summary (distinct messages with occurrence counts and `lastSeen`, no stack traces) by default; pass `mode=full` for individual entries with truncated traces, and `since` (e.g. `1h`, `2d`) to scope to recent entries. Emails, IPv4 addresses and secrets embedded in messages/traces are redacted before output. |
-| TCA | `typo3-tca` | Dump the resolved (merged, trimmed) TCA of a table. |
+| TCA | `typo3-tca` | Dump the resolved (merged, trimmed) TCA of a table, or narrow it to one `recordType` or a set of `fields`. |
 | FlexForm | `typo3-flexform` | Reconcile a record's stored FlexForm against the data structure currently valid for it, resolved through `FlexFormTools` from the record's own pointer field. Reports `orphaned` values (stored but no longer declared, so silently ignored at runtime — what a renamed field looks like) and `missing` fields (declared but not stored, so the default applies). A record without a FlexForm answers `hasFlexForm: false` rather than an empty structure. |
 | TypoScript | `typo3-typoscript` | Dump the resolved frontend TypoScript of a page. |
 | TSconfig | `typo3-tsconfig` | Dump the resolved Page TSconfig (rootline-merged: `mod.*`, `TCEFORM`, `TCEMAIN`, RTE) or User TSconfig — the backend configuration layer that no single file reveals. Scope large output with a dotted path, e.g. `mod.web_layout`. |
 | Fluid | `typo3-fluid-resolve` | Resolve the `templateRootPaths`/`partialRootPaths`/`layoutRootPaths` override chain for a plugin/view (e.g. `plugin.tx_news_pi1`) and report which physical template/partial/layout file wins — ordered candidate directories with `exists` flags plus the resolved file. |
+| Fluid | `typo3-fluid-namespaces` | Which ViewHelper prefixes a template may use without declaring them, mapped to the PHP namespaces they resolve to in order. Takes no arguments. Read from the `ViewHelperResolver`, so on v14 it already reflects the merge of every package's `Configuration/Fluid/Namespaces.php` with the deprecated `TYPO3_CONF_VARS` registration and any `ModifyNamespacesEvent` listener. |
+| Icons | `typo3-icons` | Whether icon identifiers are registered and which extension provides them. `registered: false` is the answer, not an empty result — an unregistered identifier renders no icon at all. A miss carries the closest registered identifiers as suggestions, so a half-remembered name is answered rather than denied; without arguments you get the identifier count grouped by leading segment. |
+| Backend modules | `typo3-backend-modules` | Registered backend modules with their parent, route path, access level and *resolved* navigation component — a submodule declaring `inheritNavigationComponent` reports its parent's, which its own `Configuration/Backend/Modules.php` does not show. Takes no arguments, applies no user context. |
 | Middlewares | `typo3-middlewares` | List the resolved PSR-15 middleware order. |
 | Events | `typo3-events` | List the resolved PSR-14 event listener registry. |
 | Upgrade | `typo3-upgrade-wizards` | List pending and completed upgrade wizards — outstanding DB/config migrations. |
@@ -112,7 +127,7 @@ flowchart LR
 
 ## 🔒 Security model
 
-**Read-only by default.** 20 of the 23 tools only read resolved runtime state and are annotated `readOnlyHint: true` in `tools/list`, so an MCP client can run them without a confirmation prompt. The exceptions are annotated explicitly, never left to prose:
+**Read-only by default.** 23 of the 26 tools only read resolved runtime state and are annotated `readOnlyHint: true` in `tools/list`, so an MCP client can run them without a confirmation prompt. The exceptions are annotated explicitly, never left to prose:
 
 - `typo3-profiler-start` / `-stop` — the only tools that change profiler control state, and only a time-boxed dev switch (max 60 minutes); they touch no records.
 - `typo3-render-page` — issues a real internal HTTP request, so it has side effects in caches and logs (`readOnlyHint: false`, `openWorldHint: true`). Its URL is restricted to the installation's configured site hosts (SSRF guard).

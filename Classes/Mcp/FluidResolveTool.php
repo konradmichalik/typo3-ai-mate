@@ -35,7 +35,7 @@ final readonly class FluidResolveTool
      * @param string|null $layout   layout name to resolve to a file
      * @param string      $format   file format (default html)
      */
-    #[McpTool(name: 'typo3-fluid-resolve', title: 'TYPO3 Fluid Path Resolution', description: 'Which physical Fluid file wins for a template/partial/layout name, given the merged templateRootPaths/partialRootPaths/layoutRootPaths override chain (highest numeric key first). Returns the ordered candidate directories with exists flags plus the resolved file — use it to debug why an override does not take effect.', annotations: new ToolAnnotations(readOnlyHint: true))]
+    #[McpTool(name: 'typo3-fluid-resolve', title: 'TYPO3 Fluid Path Resolution', description: 'Which physical Fluid file wins for a template/partial/layout name, given the merged templateRootPaths/partialRootPaths/layoutRootPaths override chain (highest numeric key first). Returns the ordered candidate directories with exists flags plus the resolved file — use it to debug why an override does not take effect. A plugin path with no view configuration answers with viewPathFound=false plus the view paths that do have one, so a wrong guess costs one call, not several.', annotations: new ToolAnnotations(readOnlyHint: true))]
     public function resolve(int $pageId, string $plugin, ?string $template = null, ?string $partial = null, ?string $layout = null, string $format = 'html'): string
     {
         $options = ['plugin' => $plugin];

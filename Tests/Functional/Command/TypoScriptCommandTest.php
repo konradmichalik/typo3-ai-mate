@@ -79,6 +79,19 @@ final class TypoScriptCommandTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function answersAPathMissWithTheSiblingsThatDoExist(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['pageId' => '1', '--path' => 'lib.missing']);
+
+        // A miss is a successful answer, not a failed call.
+        self::assertSame(0, $exitCode);
+        self::assertFalse($result['found']);
+        self::assertSame('lib', $result['resolvedUpTo']);
+        self::assertContains('foo', $result['siblings']);
+        self::assertArrayHasKey('_hint', $result);
+    }
+
+    #[Test]
     public function failsWithAReadableErrorForAnUnresolvablePage(): void
     {
         [$exitCode, $result] = $this->runCommand(['pageId' => '999']);

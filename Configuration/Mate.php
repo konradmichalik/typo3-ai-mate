@@ -12,7 +12,7 @@ declare(strict_types=1);
  */
 
 use KonradMichalik\Typo3AiMate\Mate\{DescriptionAwareDiscoverer, ProfileProvider, ProfilerStateProvider, SiteHostsProvider, ToolDescriptionComputer, Typo3CliRunner};
-use KonradMichalik\Typo3AiMate\Mcp\{ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidResolveTool, InfoTool, LogsTool, MiddlewaresTool, PageTool, PerformanceTool, ProfileResource, ProfilerControlTool, RenderPageTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
+use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LogsTool, MiddlewaresTool, PageTool, PerformanceTool, ProfileResource, ProfilerControlTool, RenderPageTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
 use Mcp\Capability\Discovery\DiscovererInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
@@ -44,6 +44,9 @@ return static function (ContainerConfigurator $container): void {
     $services->set(TsConfigTool::class);
     $services->set(FluidResolveTool::class);
     $services->set(FlexFormTool::class);
+    $services->set(FluidNamespacesTool::class);
+    $services->set(IconsTool::class);
+    $services->set(BackendModulesTool::class);
     $services->set(MiddlewaresTool::class);
     $services->set(EventsTool::class);
     $services->set(LogsTool::class);

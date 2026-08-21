@@ -17,6 +17,8 @@ use KonradMichalik\Typo3AiMate\Support\TypoScriptTree;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+use function sprintf;
+
 /**
  * TypoScriptTreeTest.
  *
@@ -73,25 +75,71 @@ final class TypoScriptTreeTest extends TestCase
     }
 
     #[Test]
-    public function scopeReturnsAnErrorEnvelopeWhenThePathIsNotFound(): void
+    public function scopeReportsTheSiblingsBelowTheDeepestResolvedSegmentOnAMiss(): void
     {
-        $tree = ['lib.' => ['foo.' => []]];
+        $tree = ['lib.' => ['foo.' => [], 'bar.' => [], 'baz' => 'scalar']];
 
-        self::assertSame(
-            ['error' => 'Path "lib.missing" not found in resolved TypoScript.'],
-            TypoScriptTree::scope($tree, 'lib.missing'),
-        );
+        $miss = TypoScriptTree::scope($tree, 'lib.missing');
+
+        self::assertIsArray($miss);
+        self::assertSame('lib.missing', $miss['path']);
+        self::assertFalse($miss['found']);
+        self::assertSame('lib', $miss['resolvedUpTo']);
+        self::assertSame(['bar', 'baz', 'foo'], $miss['siblings']);
+        self::assertSame(3, $miss['siblingCount']);
+        self::assertStringContainsString('"lib" does', self::hint($miss));
     }
 
     #[Test]
-    public function scopeReturnsAnErrorEnvelopeWhenDescendingIntoAScalar(): void
+    public function scopeReportsTheTopLevelKeysWhenNothingOfThePathResolves(): void
+    {
+        $tree = ['lib.' => [], 'page' => 'PAGE'];
+
+        $miss = TypoScriptTree::scope($tree, 'nope.deeper');
+
+        self::assertIsArray($miss);
+        self::assertNull($miss['resolvedUpTo']);
+        self::assertSame(['lib', 'page'], $miss['siblings']);
+        self::assertStringContainsString('top-level', self::hint($miss));
+    }
+
+    #[Test]
+    public function scopeSaysSoWhenThePathDescendsIntoAValue(): void
     {
         $tree = ['lib.' => ['foo' => 'scalar']];
 
-        self::assertSame(
-            ['error' => 'Path "lib.foo.deeper" not found in resolved TypoScript.'],
-            TypoScriptTree::scope($tree, 'lib.foo.deeper'),
-        );
+        $miss = TypoScriptTree::scope($tree, 'lib.foo.deeper');
+
+        self::assertIsArray($miss);
+        self::assertFalse($miss['found']);
+        self::assertSame('lib.foo', $miss['resolvedUpTo']);
+        self::assertSame([], $miss['siblings']);
+        self::assertStringContainsString('is a value, not a branch', self::hint($miss));
+    }
+
+    #[Test]
+    public function scopeNamesTheTreeItSearchedInTheHint(): void
+    {
+        $miss = TypoScriptTree::scope(['mod.' => []], 'TCEFORM.pages', 'resolved TSconfig');
+
+        self::assertIsArray($miss);
+        self::assertStringContainsString('resolved TSconfig', self::hint($miss));
+    }
+
+    #[Test]
+    public function scopeCapsTheSiblingListAndSaysHowManyWereOmitted(): void
+    {
+        $tree = [];
+        for ($i = 0; $i < 60; ++$i) {
+            $tree[sprintf('key%02d.', $i)] = [];
+        }
+
+        $miss = TypoScriptTree::scope($tree, 'missing');
+
+        self::assertIsArray($miss);
+        self::assertSame(60, $miss['siblingCount']);
+        self::assertCount(40, (array) $miss['siblings']);
+        self::assertStringContainsString('first 40 of 60', self::hint($miss));
     }
 
     #[Test]
@@ -159,5 +207,16 @@ final class TypoScriptTreeTest extends TestCase
 
         // A secret-named *object* node (trailing dot) is descended into, not masked.
         self::assertSame(['secret.' => ['value' => 'kept']], TypoScriptTree::redactSecrets($tree));
+    }
+
+    /**
+     * @param array<mixed> $miss
+     */
+    private static function hint(array $miss): string
+    {
+        $hint = $miss['_hint'] ?? null;
+        self::assertIsString($hint);
+
+        return $hint;
     }
 }
