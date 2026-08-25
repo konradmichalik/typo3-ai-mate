@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Command;
 
+use JsonException;
 use KonradMichalik\Typo3AiMate\Command\Support\{FlexFormDiff, RecordSchema, RecordTrimmer};
 use KonradMichalik\Typo3AiMate\Support\{Cast, Redactor};
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -29,6 +30,7 @@ use function count;
 use function in_array;
 use function is_array;
 use function is_string;
+use function json_decode;
 use function sprintf;
 
 /**
@@ -180,6 +182,20 @@ final class FlexFormCommand extends AbstractJsonCommand
             is_array($parsedXml) ? FlexFormDiff::storedValues($parsedXml) : [],
         );
 
+        $hint = 'orphaned values are stored on the record but no longer declared by the current data structure, so they are ignored at runtime — a renamed field looks exactly like this. missing fields are declared but not stored, so their default applies. Section and container contents are not descended into.';
+        // Every stored value orphaned and nothing matched reads like wholesale
+        // data loss, and hardly ever is one: that is what a record looks like
+        // when it resolves to a structure other than the one being read, for
+        // instance because a record type's columnsOverrides was overwritten
+        // after the data structure was registered for it.
+        if ([] === $diff['matched'] && [] !== $diff['orphaned']) {
+            $hint .= sprintf(
+                ' Not one stored value matches, which usually means this record resolves to a different data structure than the one you have in mind: it resolved by dataStructureKey "%s", so check that record type\'s columnsOverrides for %s before reading a file.',
+                $this->dataStructureKey($identifier),
+                $field,
+            );
+        }
+
         return $answer + [
             'dataStructureResolved' => true,
             'dataStructureIdentifier' => $identifier,
@@ -188,8 +204,23 @@ final class FlexFormCommand extends AbstractJsonCommand
             'orphaned' => $this->presentValues($diff['orphaned']),
             'missing' => $diff['missing'],
             'matched' => $this->presentValues($diff['matched']),
-            '_hint' => 'orphaned values are stored on the record but no longer declared by the current data structure, so they are ignored at runtime — a renamed field looks exactly like this. missing fields are declared but not stored, so their default applies. Section and container contents are not descended into.',
+            '_hint' => $hint,
         ];
+    }
+
+    /**
+     * The record type the data structure was resolved by, read back out of the
+     * identifier so the answer can name it without resolving it a second time.
+     */
+    private function dataStructureKey(string $identifier): string
+    {
+        try {
+            $decoded = json_decode($identifier, true, 512, \JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            return $identifier;
+        }
+
+        return is_array($decoded) ? Cast::string($decoded['dataStructureKey'] ?? '') : '';
     }
 
     /**
