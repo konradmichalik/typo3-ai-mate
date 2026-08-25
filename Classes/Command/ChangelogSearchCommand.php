@@ -168,7 +168,9 @@ final class ChangelogSearchCommand extends AbstractJsonCommand
         $this
             ->addArgument('query', InputArgument::REQUIRED, 'Search terms, e.g. a class/method/hook name; every word must match in the filename or content')
             ->addOption('type', null, InputOption::VALUE_REQUIRED, 'Breaking | Deprecation | Feature | Important')
-            ->addOption('version', null, InputOption::VALUE_REQUIRED, 'Version directory prefix, e.g. 13 or 13.4; defaults to the installed major')
+            // Not `version`: the console application reserves that name, and a command
+            // carrying it cannot be invoked at all.
+            ->addOption('core-version', null, InputOption::VALUE_REQUIRED, 'Version directory prefix, e.g. 13 or 13.4; defaults to the installed major')
             ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Maximum results (capped at 30)', (string) self::DEFAULT_LIMIT);
     }
 
@@ -191,7 +193,7 @@ final class ChangelogSearchCommand extends AbstractJsonCommand
             return $this->emit($output, ['error' => 'type must be one of Breaking, Deprecation, Feature, or Important.'], Command::FAILURE);
         }
         $type = ChangelogType::tryFrom($typeOption);
-        $versionOption = Cast::string($input->getOption('version'));
+        $versionOption = Cast::string($input->getOption('core-version'));
         $versionPrefix = '' !== $versionOption ? $versionOption : (string) $this->typo3Version->getMajorVersion();
         $limit = min(self::MAX_LIMIT, max(1, Cast::int($input->getOption('limit'))));
 

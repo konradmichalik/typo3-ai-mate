@@ -42,7 +42,7 @@ final readonly class ChangelogSearchTool
             $options['type'] = $type->value;
         }
         if (null !== $version && '' !== $version) {
-            $options['version'] = $version;
+            $options['core-version'] = $version;
         }
 
         return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:changelog:search', [$query], $options));
