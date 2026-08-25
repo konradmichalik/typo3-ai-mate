@@ -42,6 +42,7 @@ final class Typo3CliRunnerTest extends TestCase
             case 'notjson':  echo 'this is not json'; break;
             case 'warned':   echo "PHP Warning:  Undefined array key \"encryptionKey\" in HashService.php on line 43\n"; echo json_encode(['extension' => 'ext', 'matches' => []]); break;
             case 'errfield': echo json_encode(['error' => 'something broke']); break;
+            case 'errwithcontext': echo json_encode(['table' => 'tt_content', 'dataStructureResolved' => false, 'error' => 'no such plugin']); break;
             case 'fail':     fwrite(STDERR, 'boom'); exit(1);
         }
         PHP_WRAP;
@@ -107,6 +108,20 @@ final class Typo3CliRunnerTest extends TestCase
         $this->expectExceptionMessageMatches('/something broke/');
 
         (new Typo3CliRunner($this->rootDir))->json('errfield');
+    }
+
+    #[Test]
+    public function jsonPassesThroughADomainMissThatPairsErrorWithOtherFields(): void
+    {
+        // A bare {"error": "..."} means the command could not run at all. An
+        // "error" key alongside other fields is a domain miss with context (e.g.
+        // FlexFormCommand's dataStructureResolved=false), which must reach the
+        // caller intact rather than being collapsed to a bare error.
+        $result = (new Typo3CliRunner($this->rootDir))->json('errwithcontext');
+
+        self::assertSame('tt_content', $result['table']);
+        self::assertFalse($result['dataStructureResolved']);
+        self::assertSame('no such plugin', $result['error']);
     }
 
     #[Test]

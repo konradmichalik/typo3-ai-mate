@@ -48,7 +48,13 @@ final readonly class Typo3CliRunner
             throw new RuntimeException(sprintf('Command "%s" did not return valid JSON: %s', $command, $this->excerpt($output)), 1718000101);
         }
 
-        if (isset($decoded['error']) && is_string($decoded['error'])) {
+        // Only a bare {"error": "..."} means the command could not run at all (bad
+        // bootstrap, missing argument, ...). A response that pairs "error" with
+        // other keys is a domain miss with context (e.g. FlexFormCommand's
+        // dataStructureResolved=false + table/uid/field) - {@see ToolResult}
+        // relies on that same sole-key shape to report it as "unsupported", so it
+        // must reach jsonOrError() unthrown and intact here.
+        if (['error'] === array_keys($decoded) && is_string($decoded['error'])) {
             throw new RuntimeException(sprintf('Command "%s" reported an error: %s', $command, $decoded['error']), 1718000102);
         }
 
