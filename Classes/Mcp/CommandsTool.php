@@ -15,6 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
 use Mcp\Capability\Attribute\McpTool;
+use Mcp\Schema\ToolAnnotations;
 use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
 /**
@@ -31,7 +32,7 @@ final readonly class CommandsTool
      * @param string|null $pattern substring matched against the command name to filter the registry; omit to list all commands
      * @param bool        $ownOnly true hides core and third-party (vendor) commands, keeping only commands from own extensions
      */
-    #[McpTool(name: 'typo3-commands', title: 'TYPO3 Commands', description: 'All registered console commands (name, description, synopsis), including third-party extensions — read this instead of guessing CLI commands from other frameworks or TYPO3 versions. Optional substring filter on the command name; ownOnly=true hides core and third-party (vendor) commands.')]
+    #[McpTool(name: 'typo3-commands', title: 'TYPO3 Commands', description: 'All registered console commands (name, description, synopsis), including third-party extensions — read this instead of guessing CLI commands from other frameworks or TYPO3 versions. Optional substring filter on the command name; ownOnly=true hides core and third-party (vendor) commands.', annotations: new ToolAnnotations(readOnlyHint: true))]
     public function list(?string $pattern = null, bool $ownOnly = false): string
     {
         $options = [];

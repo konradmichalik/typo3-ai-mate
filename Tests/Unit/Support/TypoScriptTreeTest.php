@@ -35,6 +35,39 @@ final class TypoScriptTreeTest extends TestCase
     }
 
     #[Test]
+    public function getReachesAFlatKeyThatCarriesDotsItself(): void
+    {
+        // Site settings arrive as one key with dots in its name. scope() offers
+        // exactly these as the siblings to try next, so refusing them here means
+        // handing back a name and then rejecting it.
+        $tree = ['riversideSite.cardColumns' => '4', 'config.' => ['no_cache' => '0']];
+
+        self::assertSame('4', TypoScriptTree::get($tree, 'riversideSite.cardColumns'));
+    }
+
+    #[Test]
+    public function getPrefersAFlatKeyOverDescendingIntoNothing(): void
+    {
+        $tree = ['riversideSite.' => ['apiEndpoint' => 'https://example.org'], 'riversideSite.cardColumns' => '4'];
+
+        self::assertSame('https://example.org', TypoScriptTree::get($tree, 'riversideSite.apiEndpoint'));
+        self::assertSame('4', TypoScriptTree::get($tree, 'riversideSite.cardColumns'));
+    }
+
+    #[Test]
+    public function getPrefersAnExactFlatKeyOverDescendingIntoTheSameName(): void
+    {
+        // Both spellings can coexist in a resolved tree. The exact match of the
+        // whole remaining path is the more specific answer and wins; a path that
+        // reaches past such a key still descends.
+        $collision = ['riversideSite.' => ['cardColumns' => 'nested'], 'riversideSite.cardColumns' => 'flat'];
+        self::assertSame('flat', TypoScriptTree::get($collision, 'riversideSite.cardColumns'));
+
+        $deeper = ['a.' => ['b.' => ['c' => 'deep']], 'a.b' => ['c' => 'flat']];
+        self::assertSame('deep', TypoScriptTree::get($deeper, 'a.b.c'));
+    }
+
+    #[Test]
     public function getTrimsLeadingAndTrailingDotsFromThePath(): void
     {
         $tree = ['lib.' => ['foo.' => ['bar' => 'baz']]];
