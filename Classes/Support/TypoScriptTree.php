@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Support;
 
 use function array_key_exists;
+use function array_shift;
 use function array_slice;
 use function count;
 use function is_array;
@@ -146,18 +147,52 @@ final class TypoScriptTree
     {
         $node = $tree;
         $resolved = [];
-        foreach (explode('.', trim($path, '.')) as $segment) {
-            if (is_array($node) && array_key_exists($segment.'.', $node)) {
-                $node = $node[$segment.'.'];
-            } elseif (is_array($node) && array_key_exists($segment, $node)) {
-                $node = $node[$segment];
-            } else {
+        $segments = explode('.', trim($path, '.'));
+        while ([] !== $segments) {
+            // A key can carry dots itself — site settings arrive as one flat
+            // `vendor.setting` key — and childKeys() offers those verbatim as the
+            // next step, so the whole remainder is tried before its first
+            // segment. Without this the answer names a sibling and then refuses
+            // the very path it just handed out.
+            $remainder = implode('.', $segments);
+            [$found, $value] = self::child($node, $remainder);
+            if ($found) {
+                $resolved[] = $remainder;
+
+                return ['node' => $value, 'resolved' => implode('.', $resolved), 'complete' => true];
+            }
+
+            $segment = array_shift($segments);
+            [$found, $value] = self::child($node, $segment);
+            if (!$found) {
                 return ['node' => $node, 'resolved' => implode('.', $resolved), 'complete' => false];
             }
+            $node = $value;
             $resolved[] = $segment;
         }
 
         return ['node' => $node, 'resolved' => implode('.', $resolved), 'complete' => true];
+    }
+
+    /**
+     * The value behind a key, honouring TypoScript's trailing object dot, and
+     * whether the key is there at all — `null` is a legitimate value.
+     *
+     * @return array{0: bool, 1: mixed}
+     */
+    private static function child(mixed $node, string $key): array
+    {
+        if (!is_array($node)) {
+            return [false, null];
+        }
+
+        foreach ([$key.'.', $key] as $candidate) {
+            if (array_key_exists($candidate, $node)) {
+                return [true, $node[$candidate]];
+            }
+        }
+
+        return [false, null];
     }
 
     /**
