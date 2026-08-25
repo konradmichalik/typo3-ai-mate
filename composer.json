@@ -87,7 +87,7 @@
 			},
 			"cms-package-dir": "{$vendor-dir}/typo3/cms",
 			"extension-key": "typo3_ai_mate",
-			"version": "0.3.0",
+			"version": "0.4.0",
 			"web-dir": "public"
 		}
 	},
