@@ -135,6 +135,19 @@ final class RecordsCommandTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function saysNoRowMatchedInsteadOfExplainingOmittedColumns(): void
+    {
+        // Zero rows is the answer. The default hint talks about columns dropped
+        // from a row, which says nothing when there is no row to drop them from.
+        [$exitCode, $result] = $this->runCommand(['table' => 'tt_content', '--pid' => '9999']);
+
+        self::assertSame(0, $exitCode);
+        self::assertSame(0, $result['count']);
+        self::assertStringContainsString('No row', (string) $result['_hint']);
+        self::assertStringNotContainsString('omitted per row', (string) $result['_hint']);
+    }
+
+    #[Test]
     public function limitCapsResultsAndReportsWhenTruncated(): void
     {
         [$exitCode, $result] = $this->runCommand(['table' => 'tt_content', '--pid' => '1', '--limit' => '1']);
