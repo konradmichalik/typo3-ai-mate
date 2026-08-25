@@ -106,6 +106,28 @@ final class FlexFormCommandTest extends FunctionalTestCase
             </data>
         </T3FlexForms>
         XML;
+    /**
+     * Not one of these keys is declared by the data structure above. Stored
+     * values without a single match are what a record looks like when it
+     * resolves to a different structure than the one being read.
+     */
+    private const STORED_FOREIGN = <<<'XML'
+        <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+        <T3FlexForms>
+            <data>
+                <sheet index="sDEF">
+                    <language index="lDEF">
+                        <field index="settings.source">
+                            <value index="vDEF">featured</value>
+                        </field>
+                        <field index="settings.layout">
+                            <value index="vDEF">list</value>
+                        </field>
+                    </language>
+                </sheet>
+            </data>
+        </T3FlexForms>
+        XML;
     protected array $coreExtensionsToLoad = [
         'install',
         'frontend',
@@ -133,6 +155,7 @@ final class FlexFormCommandTest extends FunctionalTestCase
         $connection->insert('tt_content', ['uid' => 1, 'pid' => 1, 'CType' => 'list', 'header' => 'With FlexForm', 'pi_flexform' => self::STORED_FLEXFORM]);
         $connection->insert('tt_content', ['uid' => 2, 'pid' => 1, 'CType' => 'text', 'header' => 'Without FlexForm', 'pi_flexform' => '']);
         $connection->insert('tt_content', ['uid' => 3, 'pid' => 1, 'CType' => 'list', 'header' => 'With a section', 'pi_flexform' => self::STORED_SECTION]);
+        $connection->insert('tt_content', ['uid' => 4, 'pid' => 1, 'CType' => 'list', 'header' => 'Nothing in common', 'pi_flexform' => self::STORED_FOREIGN]);
     }
 
     #[Test]
@@ -155,6 +178,24 @@ final class FlexFormCommandTest extends FunctionalTestCase
         // A field that exists in both is neither orphaned nor missing.
         self::assertSame(['sDEF/settings.plain' => 'kept'], $result['matched']);
         self::assertArrayHasKey('_hint', $result);
+    }
+
+    #[Test]
+    public function warnsWhenNotOneStoredValueMatchesTheResolvedDataStructure(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['table' => 'tt_content', 'uid' => '4']);
+
+        self::assertSame(0, $exitCode);
+        self::assertSame([], $result['matched']);
+        self::assertSame(2, $result['orphanedCount']);
+
+        // Every value orphaned and nothing matched reads like wholesale data
+        // loss, and almost never is: the record resolves to another structure
+        // than the one being read. The hint has to say so, or the answer is
+        // true and useless.
+        $hint = (string) $result['_hint'];
+        self::assertStringContainsString('resolves to a different data structure', $hint);
+        self::assertStringContainsString('columnsOverrides', $hint);
     }
 
     #[Test]
