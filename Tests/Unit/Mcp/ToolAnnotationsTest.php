@@ -13,13 +13,14 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
-use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, LogsTool, MiddlewaresTool, PageTool, PerformanceTool, ProfilerControlTool, RecordsTool, RenderPageTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
 use Mcp\Capability\Attribute\McpTool;
 use Mcp\Schema\ToolAnnotations;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
+use function basename;
+use function glob;
 use function in_array;
 use function sprintf;
 
@@ -36,31 +37,6 @@ use function sprintf;
 final class ToolAnnotationsTest extends TestCase
 {
     /**
-     * @var list<class-string>
-     */
-    private const TOOL_CLASSES = [
-        BackendModulesTool::class,
-        DeprecationsTool::class,
-        EventsTool::class,
-        ExtensionScannerTool::class,
-        FlexFormTool::class,
-        FluidNamespacesTool::class,
-        FluidResolveTool::class,
-        IconsTool::class,
-        LogsTool::class,
-        MiddlewaresTool::class,
-        PageTool::class,
-        PerformanceTool::class,
-        ProfilerControlTool::class,
-        RecordsTool::class,
-        RenderPageTool::class,
-        TcaTool::class,
-        TsConfigTool::class,
-        TypoScriptTool::class,
-        UpgradeWizardsTool::class,
-    ];
-
-    /**
      * @var list<string>
      */
     private const MUTATING_TOOLS = ['typo3-profiler-start', 'typo3-profiler-stop', 'typo3-render-page'];
@@ -70,7 +46,7 @@ final class ToolAnnotationsTest extends TestCase
     {
         $annotations = $this->collectAnnotations();
 
-        self::assertCount(26, $annotations, 'Expected exactly 26 registered #[McpTool] methods.');
+        self::assertCount(32, $annotations, 'Expected exactly 32 registered #[McpTool] methods.');
 
         foreach ($annotations as $name => $annotation) {
             self::assertNotNull($annotation, sprintf('Tool "%s" is missing #[McpTool] annotations.', $name));
@@ -123,7 +99,7 @@ final class ToolAnnotationsTest extends TestCase
     {
         $annotations = [];
 
-        foreach (self::TOOL_CLASSES as $class) {
+        foreach (self::toolClasses() as $class) {
             foreach ((new ReflectionClass($class))->getMethods() as $method) {
                 foreach ($method->getAttributes(McpTool::class) as $attribute) {
                     $instance = $attribute->newInstance();
@@ -134,5 +110,25 @@ final class ToolAnnotationsTest extends TestCase
         }
 
         return $annotations;
+    }
+
+    /**
+     * Every class in Classes/Mcp, read off the directory rather than listed:
+     * a list is only as complete as the last person to remember it, and the six
+     * tools that reached a release without annotations were exactly the ones
+     * missing from it.
+     *
+     * @return list<class-string>
+     */
+    private static function toolClasses(): array
+    {
+        $classes = [];
+        foreach (glob(__DIR__.'/../../../Classes/Mcp/*.php') ?: [] as $file) {
+            /** @var class-string $class */
+            $class = 'KonradMichalik\\Typo3AiMate\\Mcp\\'.basename($file, '.php');
+            $classes[] = $class;
+        }
+
+        return $classes;
     }
 }
