@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
+use Mcp\Schema\Content\TextContent;
+use Mcp\Schema\Result\CallToolResult;
 use PHPUnit\Framework\Assert;
 use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
@@ -26,8 +28,15 @@ trait DecodesResponses
     /**
      * @return array<mixed>
      */
-    private function decode(string $response): array
+    private function decode(string|CallToolResult $response): array
     {
+        if ($response instanceof CallToolResult) {
+            $content = $response->content[0];
+            Assert::assertInstanceOf(TextContent::class, $content);
+            Assert::assertIsString($content->text);
+            $response = $content->text;
+        }
+
         $data = ResponseEncoder::decode($response);
         Assert::assertIsArray($data);
 

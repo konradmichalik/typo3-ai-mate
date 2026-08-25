@@ -292,6 +292,8 @@ final class TcaCommandTest extends TestCase
         $result = json_decode($tester->getDisplay(), true);
         self::assertIsArray($result);
         self::assertSame('pages', $result['table']);
+        // legacy_field only exists in raw TCA, not in the Schema API's field collection.
+        self::assertSame('schema-api+tca-fallback', $result['answeredBy']);
         self::assertSame(['title' => 'Pages', 'sortby' => 'sorting'], $result['ctrl']);
         self::assertSame(['softDelete' => null, 'workspace' => false, 'language' => false, 'sorting' => 'sorting'], $result['capabilities']);
         self::assertSame([], $result['recordTypes']);
@@ -310,6 +312,35 @@ final class TcaCommandTest extends TestCase
         self::assertSame(['label' => 'Title', 'type' => 'input'], $columns['title']);
         self::assertArrayHasKey('media', $columns);
         self::assertSame(['label' => 'Legacy', 'type' => 'input'], $columns['legacy_field']);
+    }
+
+    #[Test]
+    public function executeReportsSchemaApiAsTheSoleSourceWhenNoColumnFallsBackToRawTca(): void
+    {
+        $GLOBALS['TCA'] = [
+            'pages' => [
+                'ctrl' => ['title' => 'Pages'],
+                'columns' => [
+                    'title' => ['label' => 'Title', 'config' => ['type' => 'input']],
+                ],
+            ],
+        ];
+
+        $schema = new TcaSchema('pages', new FieldCollection([
+            'title' => new InputFieldType('title', ['label' => 'Title']),
+        ]), []);
+
+        $factory = $this->createMock(TcaSchemaFactory::class);
+        $factory->method('has')->with('pages')->willReturn(true);
+        $factory->method('get')->with('pages')->willReturn($schema);
+
+        $tester = new CommandTester(new TcaCommand($factory));
+        $exitCode = $tester->execute(['table' => 'pages']);
+
+        self::assertSame(0, $exitCode);
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        self::assertSame('schema-api', $result['answeredBy']);
     }
 
     #[Test]
