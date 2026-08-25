@@ -42,7 +42,10 @@ final readonly class ChangelogSearchTool
             $options['type'] = $type->value;
         }
         if (null !== $version && '' !== $version) {
-            $options['version'] = $version;
+            // The names differ on purpose: the console reserves `version`, while
+            // the tool parameter stays as it is so the contract towards the
+            // assistant does not change. Renaming either side breaks one of the two.
+            $options['core-version'] = $version;
         }
 
         return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:changelog:search', [$query], $options));

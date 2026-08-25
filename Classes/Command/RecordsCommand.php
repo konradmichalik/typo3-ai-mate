@@ -119,7 +119,19 @@ final class RecordsCommand extends AbstractJsonCommand
             'limited' => $limited,
             'restrictionsApplied' => $respectEnableFields,
         ];
-        if (!$explicit) {
+        // Zero rows is a stated result, not an empty one, so it gets the hint
+        // that addresses it: the column-trimming note has nothing to trim. The
+        // clause about restrictions is added only when they were applied, since
+        // then a record can exist without being visible; that they were not is
+        // already in restrictionsApplied above.
+        if ([] === $rows) {
+            $hint = sprintf('No row in %s matched these filters.', $table);
+            if ($respectEnableFields) {
+                $hint .= ' Deleted, hidden and timed rows were excluded — drop respectEnableFields to see whether one exists but is not visible.';
+            }
+
+            $result['_hint'] = $hint;
+        } elseif (!$explicit) {
             $result['_hint'] = 'Columns with an empty, zero or null value are omitted per row; pass fields=<names> to read one regardless of its value.';
         }
         $result['rows'] = $this->shape($rows, $enableColumns, $deleteField, $redactColumns, $isFull, $explicit);

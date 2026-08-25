@@ -79,7 +79,7 @@ final class ChangelogSearchCommandTest extends FunctionalTestCase
     #[Test]
     public function widensToBothMajorsWithAnExplicitVersionOverride(): void
     {
-        [, $result] = $this->runCommand(['query' => 'foobar', '--version' => '1'], 14);
+        [, $result] = $this->runCommand(['query' => 'foobar', '--core-version' => '1'], 14);
 
         self::assertSame(3, $result['resultCount']);
     }

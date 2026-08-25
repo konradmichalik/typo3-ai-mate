@@ -209,7 +209,7 @@ final class ChangelogSearchCommandTest extends TestCase
         $this->writeFixture('14.0', 'Breaking-100002-RemoveFooBar.rst', 'Breaking: #100002 - Remove FooBar'."\n");
 
         $tester = new CommandTester($this->command(majorVersion: 14));
-        $tester->execute(['query' => 'foobar', '--version' => '1']);
+        $tester->execute(['query' => 'foobar', '--core-version' => '1']);
 
         $result = json_decode($tester->getDisplay(), true);
         self::assertIsArray($result);

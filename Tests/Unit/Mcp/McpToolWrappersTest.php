@@ -77,7 +77,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new ChangelogSearchTool($this->runner))->search('CType', ChangelogType::Breaking, '13', 5));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:changelog:search');
-        self::assertJsonPath($result, 'args', ['--limit', '5', '--type', 'Breaking', '--version', '13', '--', 'CType']);
+        self::assertJsonPath($result, 'args', ['--limit', '5', '--type', 'Breaking', '--core-version', '13', '--', 'CType']);
     }
 
     #[Test]
