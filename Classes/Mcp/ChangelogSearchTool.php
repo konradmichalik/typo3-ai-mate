@@ -13,11 +13,11 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Mcp;
 
-use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
+use KonradMichalik\Typo3AiMate\Mate\{ToolResult, Typo3CliRunner};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\ChangelogType;
 use Mcp\Capability\Attribute\McpTool;
+use Mcp\Schema\Result\CallToolResult;
 use Mcp\Schema\ToolAnnotations;
-use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
 /**
  * ChangelogSearchTool.
@@ -35,8 +35,38 @@ final readonly class ChangelogSearchTool
      * @param string|null        $version version directory prefix, e.g. "13" or "13.4"; omit to default to the installed TYPO3 major (the core ships every historical version, so this keeps results relevant)
      * @param int                $limit   maximum results (capped at 30)
      */
-    #[McpTool(name: 'typo3-changelog-search', title: 'TYPO3 Changelog Search', description: 'Search the installed typo3/cms-core changelog (Breaking/Deprecation/Feature/Important RST files under Documentation/Changelog/) for migration guidance — offline, no training-data guessing. Pair with typo3-extension-scanner/typo3-deprecations: they find that an API breaks, this tool supplies how to migrate it. Defaults to the installed major version so results stay relevant; the core ships every historical major, so an unscoped search would return irrelevant hits. Each result has type, issue number, version, title, a bounded excerpt around the first match, and the relative path to read the full file.', annotations: new ToolAnnotations(readOnlyHint: true))]
-    public function search(string $query, ?ChangelogType $type = null, ?string $version = null, int $limit = 10): string
+    #[McpTool(
+        name: 'typo3-changelog-search',
+        title: 'TYPO3 Changelog Search',
+        description: 'Search the installed typo3/cms-core changelog (Breaking/Deprecation/Feature/Important RST files under Documentation/Changelog/) for migration guidance — offline, no training-data guessing. Pair with typo3-extension-scanner/typo3-deprecations: they find that an API breaks, this tool supplies how to migrate it. Defaults to the installed major version so results stay relevant; the core ships every historical major, so an unscoped search would return irrelevant hits. Each result has type, issue number, version, title, a bounded excerpt around the first match, and the relative path to read the full file.',
+        annotations: new ToolAnnotations(readOnlyHint: true),
+        outputSchema: [
+            'type' => 'object',
+            'properties' => [
+                'version' => ['type' => 'string', 'description' => 'The version directory prefix actually searched (the requested one, or the installed TYPO3 major by default).'],
+                'results' => [
+                    'type' => 'array',
+                    'description' => 'Empty when nothing matched — a real answer, not a failure. Ordered by relevance (filename matches first).',
+                    'items' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'type' => ['type' => 'string', 'description' => 'Breaking | Deprecation | Feature | Important.'],
+                            'issue' => ['type' => 'integer', 'description' => 'Core issue/PR number.'],
+                            'version' => ['type' => 'string', 'description' => 'Version directory this entry was found under.'],
+                            'title' => ['type' => 'string'],
+                            'excerpt' => ['type' => 'string', 'description' => 'A bounded window of the RST content around the first matching word.'],
+                            'path' => ['type' => 'string', 'description' => 'Relative path (under the typo3/cms-core package) to the full RST file.'],
+                        ],
+                    ],
+                ],
+                'resultCount' => ['type' => 'integer', 'description' => 'Total matches before the limit was applied.'],
+                '_truncated' => ['type' => 'boolean', 'description' => 'true if resultCount exceeds limit and results was cut off.'],
+                'unsupported' => ['type' => 'boolean', 'description' => 'true if the tool could not answer at all: the console was unreachable, no changelog directory is shipped, query was empty, or type was invalid.'],
+                'reason' => ToolResult::REASON_PROPERTY,
+            ],
+        ],
+    )]
+    public function search(string $query, ?ChangelogType $type = null, ?string $version = null, int $limit = 10): CallToolResult
     {
         $options = ['limit' => $limit];
         if (null !== $type) {
@@ -49,6 +79,6 @@ final readonly class ChangelogSearchTool
             $options['core-version'] = $version;
         }
 
-        return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:changelog:search', [$query], $options));
+        return ToolResult::from($this->typo3->jsonOrError('typo3-ai-mate:changelog:search', [$query], $options));
     }
 }
