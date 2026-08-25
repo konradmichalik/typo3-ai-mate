@@ -19,8 +19,13 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 
+use function array_filter;
+use function array_keys;
 use function basename;
+use function class_exists;
+use function count;
 use function glob;
+use function implode;
 use function in_array;
 use function sprintf;
 
@@ -51,6 +56,15 @@ final class ToolAnnotationsTest extends TestCase
         foreach ($annotations as $name => $annotation) {
             self::assertNotNull($annotation, sprintf('Tool "%s" is missing #[McpTool] annotations.', $name));
         }
+
+        // README states how many of the tools are read-only. Deriving the count
+        // here keeps that sentence from going stale when a writing tool arrives.
+        $writing = array_filter($annotations, static fn (?ToolAnnotations $a): bool => true !== $a?->readOnlyHint);
+        self::assertCount(
+            count(self::MUTATING_TOOLS),
+            $writing,
+            sprintf('Tools without readOnlyHint: %s. README says 29 of the 32 are read-only.', implode(', ', array_keys($writing))),
+        );
     }
 
     #[Test]
@@ -124,8 +138,12 @@ final class ToolAnnotationsTest extends TestCase
     {
         $classes = [];
         foreach (glob(__DIR__.'/../../../Classes/Mcp/*.php') ?: [] as $file) {
-            /** @var class-string $class */
             $class = 'KonradMichalik\\Typo3AiMate\\Mcp\\'.basename($file, '.php');
+            self::assertTrue(
+                class_exists($class),
+                sprintf('%s does not declare the class its filename promises, so the surface cannot be read off the directory.', $file),
+            );
+            /* @var class-string $class */
             $classes[] = $class;
         }
 

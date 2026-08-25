@@ -139,6 +139,10 @@ final class TypoScriptTree
      * Walk a dotted path as far as it resolves, reporting the deepest node
      * reached and whether every segment matched.
      *
+     * Where both spellings exist, an exact literal match of the whole remaining
+     * path wins over descending into a node of the same name: it is the more
+     * specific answer. A path that reaches past such a key still descends.
+     *
      * @param array<mixed> $tree
      *
      * @return array{node: mixed, resolved: string, complete: bool}
