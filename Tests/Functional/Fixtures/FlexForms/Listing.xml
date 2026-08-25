@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<T3DataStructure>
+    <sheets>
+        <sDEF>
+            <ROOT>
+                <sheetTitle>Listing</sheetTitle>
+                <el>
+                    <settings.source>
+                        <label>Record source</label>
+                        <config>
+                            <type>select</type>
+                            <renderType>selectSingle</renderType>
+                            <default>latest</default>
+                        </config>
+                    </settings.source>
+                    <settings.maxItems>
+                        <label>Maximum items</label>
+                        <config>
+                            <type>number</type>
+                            <default>6</default>
+                        </config>
+                    </settings.maxItems>
+                </el>
+            </ROOT>
+        </sDEF>
+        <sAppearance>
+            <ROOT>
+                <sheetTitle>Appearance</sheetTitle>
+                <el>
+                    <settings.layout>
+                        <label>Layout</label>
+                        <config>
+                            <type>select</type>
+                            <renderType>selectSingle</renderType>
+                        </config>
+                    </settings.layout>
+                </el>
+            </ROOT>
+        </sAppearance>
+    </sheets>
+</T3DataStructure>
