@@ -15,7 +15,7 @@
 
 </div>
 
-A _dev-only_ TYPO3 introspection bridge for AI coding assistants. It exposes the **resolved runtime state** of an installation — TCA, page composition, resolved TypoScript, the PSR-15 middleware order, logs and per-request profiles — to assistants like Claude Code, Cursor or Copilot over [**MCP**](https://modelcontextprotocol.io/), so they reason from facts instead of guessing from source files.
+A _dev-only_ TYPO3 introspection bridge for AI coding assistants. It exposes the **resolved runtime state** of an installation — TCA, page composition, resolved TypoScript, the PSR-15 middleware order, logs and per-request profiles — to assistants like Claude Code, Cursor or Copilot via [**symfony/ai-mate**](https://github.com/symfony/ai-mate)'s `mate` CLI, so they reason from facts instead of guessing from source files.
 
 > [!WARNING]
 > This package is in early development stage and may change significantly in the future. I am working steadily to release a stable version as soon as possible.
@@ -53,7 +53,7 @@ composer require --dev konradmichalik/typo3-ai-mate
 ```
 
 > [!NOTE]
-> Requiring `typo3-ai-mate` automatically pulls in `symfony/ai-mate` (the MCP server and `mate` binary) and [`konradmichalik/typo3-ai-mate`](https://packagist.org/packages/konradmichalik/typo3-ai-mate) (the profile source for the `typo3-profiler-*` tools) — no separate installs needed.
+> Requiring `typo3-ai-mate` automatically pulls in `symfony/ai-mate` (the `mate` CLI) and [`konradmichalik/typo3-request-profiler`](https://packagist.org/packages/konradmichalik/typo3-request-profiler) (the profile source for the `typo3-profiler-*` tools) — no separate installs needed.
 
 ### TER
 
@@ -64,46 +64,38 @@ Download the zip file from [TYPO3 extension repository (TER)](https://extensions
 
 ## 🔌 Connect your assistant
 
-One command scaffolds the Mate workspace, registers the `typo3-*` tools and adds the MCP server to the configuration file your assistant reads:
+One command scaffolds the Mate workspace and materializes agent instructions:
 
 ```bash
 vendor/bin/typo3 typo3-ai-mate:install
 ```
 
-It detects whether the project runs under DDEV and registers the matching launch command (`ddev exec vendor/bin/mate serve` vs. `./vendor/bin/mate serve`), never touches entries already in the file, and is safe to run again after every `composer update`.
+This runs `mate init` and `mate discover`, which is all `typo3-ai-mate:install` does — a thin wrapper so `composer require`/`composer update` has one command to point at. It is safe to run again after every `composer update`.
 
-| Assistant | File | Entry |
-|---|---|---|
-| Claude Code | `.mcp.json` | `mcpServers.typo3-ai-mate` with `command` and `args` |
-| opencode | `opencode.json` | `mcp.typo3-ai-mate` with `type: local`, one `command` array and `enabled: true` |
+`mate` has no server process to connect to: your assistant discovers and calls the `typo3-*` tools by running `vendor/bin/mate tools:call <name> --<param>=<value>` directly as a shell command. `mate init`/`discover` write the instructions that tell it how: a managed `CLAUDE.md`/`AGENTS.md` block pointing at `mate/AGENT_INSTRUCTIONS.md` (this extension's `INSTRUCTIONS.md` plus every other installed Mate extension's), which documents every tool and its parameters. **Claude Code reads `CLAUDE.md`, not `AGENTS.md`** — `mate init` adds a `@AGENTS.md` import line there automatically. Any assistant that only reads its own client-specific file (e.g. `.cursor/rules`) needs the same kind of import added by hand.
 
-Which one gets written is decided by `--agent=<claude\|opencode\|all>`. Without it the project is inspected (`.mcp.json`, `.claude/`, `CLAUDE.md` → Claude Code; `opencode.json`, `.opencode/` → opencode) and every recognised harness is registered; when nothing is recognisable, all of them are. Registering for only one leaves the others with instructions for tools they cannot call, which is worse than either extreme.
-
-`--dry-run` reports every planned change without writing anything; `--skip-mcp-json` runs the Mate workspace steps only, in case your assistant registers MCP servers another way.
+`--dry-run` reports every planned step without running anything.
 
 > [!NOTE]
-> `mate init` also leaves `bin/codex` and `bin/codex.bat` in the project — launcher shims for the Codex CLI, written by `symfony/ai-mate` rather than by this extension. A Windows batch file appearing in a Composer-managed project is unexpected; it is harmless and can be deleted or gitignored if you do not use Codex. Codex itself registers MCP servers in a global `~/.codex/config.toml`, outside the project, and is therefore not a target of `--agent`.
+> `mate init` also leaves `bin/codex` and `bin/codex.bat` in the project — launcher shims for the Codex CLI, written by `symfony/ai-mate` rather than by this extension. A Windows batch file appearing in a Composer-managed project is unexpected; it is harmless and can be deleted or gitignored if you do not use Codex.
 
 > [!NOTE]
-> `mate discover` writes the aggregated instructions (this extension's `INSTRUCTIONS.md` plus every other installed Mate extension's) to `mate/AGENT_INSTRUCTIONS.md`, and adds a managed `<!-- BEGIN AI_MATE_INSTRUCTIONS --> … <!-- END AI_MATE_INSTRUCTIONS -->` block to `AGENTS.md` pointing at it. It does **not** write to `CLAUDE.md`, `.cursor/rules`, or any other client-specific file — only `AGENTS.md`. If your assistant reads `AGENTS.md` directly, you are covered automatically. **Claude Code reads `CLAUDE.md`, not `AGENTS.md`** — add a single line to your project's `CLAUDE.md` — `@AGENTS.md` — so it gets pulled in; do not hand-write a second managed block, Mate's own markers above are the only ones this project uses. Any other assistant that only reads its own client-specific file (e.g. `.cursor/rules`) needs the same kind of import.
-
-> [!NOTE]
-> After updating the package (`composer update`), **re-run the install command and reconnect the MCP server** so the assistant picks up new or changed tool schemas — in Claude Code run `/mcp` and reconnect `typo3-ai-mate`. Freshly installed vendor code alone is not enough; without a reconnect the assistant keeps using the previously registered tool definitions. The same applies mid-session: a few tool descriptions (the profiler tools, `typo3-render-page`) state current runtime facts — whether a profile exists yet, whether profiling is active, which hosts are allowed — captured once when the server started. If that state changes (a profile gets recorded, profiling gets toggled), reconnect to see it reflected in the description.
+> After updating the package (`composer update`), **re-run `typo3-ai-mate:install`** so any changed tool descriptions or parameters are reflected in `mate/AGENT_INSTRUCTIONS.md` before your next assistant session.
 
 ## ⚙️ How it works
 
-The MCP tools run in the **Mate process** (its own Symfony DI container, `Configuration/Mate.php`). They boot no TYPO3; they reach it by shelling out to `vendor/bin/typo3 <command>` (`TYPO3_CONTEXT=Development`, stdout→JSON) via the `Typo3CliRunner` service, or by reading profile artifacts directly. The console commands run in the **TYPO3 process** (TYPO3 DI, `Configuration/Services.yaml`) and emit raw JSON.
+The `typo3-*` tools run in the **Mate process** (its own Symfony DI container, `Configuration/Mate.php`), invoked per call by `vendor/bin/mate tools:call`. They boot no TYPO3; they reach it by shelling out to `vendor/bin/typo3 <command>` (`TYPO3_CONTEXT=Development`, stdout→JSON) via the `Typo3CliRunner` service, or by reading profile artifacts directly. The console commands run in the **TYPO3 process** (TYPO3 DI, `Configuration/Services.yaml`) and emit raw JSON.
 
 ```mermaid
 flowchart LR
-    A["AI agent (e.g. Claude)"] -->|MCP| B["Mate process (typo3-* tools)"]
+    A["AI agent (e.g. Claude)"] -->|"vendor/bin/mate tools:call"| B["Mate process (typo3-* tools)"]
     B -->|shell out| C["TYPO3 process (vendor/bin/typo3)"]
     C -->|JSON| B
 ```
 
 ### Tools
 
-| Area | MCP tool | Purpose |
+| Area | Tool | Purpose |
 |---|---|---|
 | Profiling | `typo3-profiler-latest` / `-list` / `-search` / `-get` | Inspect recorded per-request profiles as compact summaries (timing, N+1, cache, `page.id`, `activation_mode`), each linking a `typo3-profiler://profile/{token}` resource for the full SQL/section detail. |
 | Profiling control | `typo3-profiler-start` / `-stop` / `-status` | Enable request profiling for a bounded window (`duration` e.g. `15m`, capped at 60 minutes), disable it again, and report the remaining time — so an agent can turn profiling on, exercise the site and read the resulting profiles in one session. Writes go through the profiler's own `profiler:activate`/`:deactivate` commands and therefore require those to be registered as console commands; `-status` reads the state file directly and therefore reflects only this window, not the Development context or the per-request header trigger (a profile's `activation_mode` records which mode actually applied). |
@@ -125,18 +117,20 @@ flowchart LR
 | Deprecations | `typo3-deprecations` | Report runtime deprecation notices, deduplicated and counted. Each one carries `origins` — the likely caller in own code. With deprecation logging enabled, a dev-only log processor records the caller's backtrace at log time for a high-confidence file:line; otherwise it falls back to a class-aware static reverse search across own PHP/Fluid files. |
 | Rendering | `typo3-render-page` | Render a frontend page via an internal HTTP request (no external curl/Playwright) so runtime notices fire, and report the HTTP status plus the log entries written during that request. Requires a running webserver (e.g. DDEV). An explicit `--url` is only allowed for the installation's configured site hosts (SSRF guard) and the request is capped at 60s. |
 
-### Tool clusters gated on runtime state
+### Tool clusters that may have nothing to report yet
 
-Two clusters are only registered when they have something to report: the profile-reading tools (`typo3-profiler-latest` / `-list` / `-search` / `-get`, plus `-stop` / `-status`) once a profile exists or profiling is active, and the log search tools (`typo3-logs-search`, `typo3-logs-by-level`) once the log has entries. Until then only `typo3-profiler-start` and `typo3-logs-tail` are offered, with a description saying what is missing and how to get the rest.
+All `typo3-*` tools are always callable — `mate`'s tool list is fixed at discovery time from the `#[MateTool]` attributes in this extension, nothing here changes it at runtime. Two clusters can still come back empty though: the profile-reading tools (`typo3-profiler-latest` / `-list` / `-search` / `-get`) until a profile exists or profiling is active, and the log search tools (`typo3-logs-search`, `typo3-logs-by-level`) until the log has entries — each answers with an honest `{"unsupported": true, "reason": "..."}` rather than an empty success.
 
-This is not deletion: a cluster whose subject does not exist yet costs the model a longer name list on every tool search and returns nothing when called. `typo3-info` reports the current state under `toolClusters` with the reason for each, so a tool that seems missing can be explained rather than guessed at. Reconnect the MCP server after recording a profile or triggering a log entry to pick the cluster up.
+`typo3-info` reports the current state under `toolClusters` (evaluated fresh on every call, from the filesystem) with a reason for each, so an assistant can check first instead of finding out via a wasted call.
 
 ## 🔒 Security model
 
-**Read-only by default.** 29 of the 32 tools only read resolved runtime state and are annotated `readOnlyHint: true` in `tools/list`, so an MCP client can run them without a confirmation prompt. The exceptions are annotated explicitly, never left to prose:
+**Read-only by default.** Only 3 of the 32 tools mutate anything:
 
 - `typo3-profiler-start` / `-stop` — the only tools that change profiler control state, and only a time-boxed dev switch (max 60 minutes); they touch no records.
-- `typo3-render-page` — issues a real internal HTTP request, so it has side effects in caches and logs (`readOnlyHint: false`, `openWorldHint: true`). Its URL is restricted to the installation's configured site hosts (SSRF guard).
+- `typo3-render-page` — issues a real internal HTTP request, so it has side effects in caches and logs. Its URL is restricted to the installation's configured site hosts (SSRF guard).
+
+Every other tool response captured from the inspected application (records, TCA labels, logs, rendered pages, profiler data, ...) is wrapped by `Symfony\AI\Mate\Encoding\ResponseEncoder::encodeUntrusted()`, which nests the payload under an `untrusted_data` key alongside a notice telling the model to treat it strictly as data — never as instructions. That data is frequently authored by editors or third-party extensions and is exactly the kind of content a prompt-injection attempt would try to plant.
 
 No tool executes arbitrary code and none expose a raw SQL surface — `typo3-records` is a structured, parameterised query (equality filters only), never a `SELECT` string. Every command runs only in a Development context (`Environment::getContext()->isDevelopment()`).
 
