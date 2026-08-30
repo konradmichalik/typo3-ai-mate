@@ -12,7 +12,6 @@ declare(strict_types=1);
  */
 
 use KonradMichalik\Typo3AiMate\Mate\{ProfileProvider, ProfilerStateProvider, Typo3CliRunner};
-use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LogsTool, MiddlewaresTool, PageTool, PerformanceTool, ProfileResource, ProfilerControlTool, RenderPageTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
 /*
@@ -20,6 +19,14 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
  * composer.json extra.ai-mate.includes). This is NOT the TYPO3 DI container —
  * the #[MateTool] classes run in the Mate process and never boot TYPO3; they
  * reach TYPO3 by shelling out (Typo3CliRunner) or by reading profile artifacts.
+ *
+ * Only collaborators are declared here, never the tool and resource classes
+ * themselves. ai-mate's ContainerFactory already registers every discovered
+ * handler autowired and public, and it does so *before* this file is loaded —
+ * so a `$services->set(SomeTool::class)` here replaces that public definition
+ * with a private one, the compiler drops it, and every call to the tool fails
+ * with "Handler ... is not registered as a service". A tool that ever needs an
+ * explicit definition must therefore also carry ->public().
  *
  * %mate.root_dir% is the project root parameter provided by ai-mate v0.9.
  */
@@ -34,40 +41,13 @@ return static function (ContainerConfigurator $container): void {
         ->public()
         ->arg('$rootDir', '%mate.root_dir%');
 
-    // CLI-wrapping tools (autowire Typo3CliRunner).
-    $services->set(TcaTool::class);
-    $services->set(PageTool::class);
-    $services->set(TypoScriptTool::class);
-    $services->set(TsConfigTool::class);
-    $services->set(FluidResolveTool::class);
-    $services->set(FlexFormTool::class);
-    $services->set(FluidNamespacesTool::class);
-    $services->set(IconsTool::class);
-    $services->set(BackendModulesTool::class);
-    $services->set(MiddlewaresTool::class);
-    $services->set(EventsTool::class);
-    $services->set(LogsTool::class);
-    $services->set(UpgradeWizardsTool::class);
-    $services->set(ExtensionScannerTool::class);
-    $services->set(DeprecationsTool::class);
-    $services->set(RenderPageTool::class);
-    $services->set(CommandsTool::class);
-    $services->set(DbSchemaTool::class);
-    $services->set(ConfigTool::class);
-    $services->set(SiteTool::class);
-    $services->set(InfoTool::class);
-    $services->set(ChangelogSearchTool::class);
-
     // Shared profile access needs the project root to locate var/log/profiles;
     // the profiler tools and the profile resource autowire it.
     $services->set(ProfileProvider::class)
         ->arg('$rootDir', '%mate.root_dir%');
-    $services->set(PerformanceTool::class);
-    $services->set(ProfileResource::class);
 
     // Toggling profiling reads the state file below the project root and writes
-    // through the profiler's console commands, so it needs both collaborators.
+    // through the profiler's console commands.
     $services->set(ProfilerStateProvider::class)
         ->arg('$rootDir', '%mate.root_dir%');
-    $services->set(ProfilerControlTool::class);
 };
