@@ -54,7 +54,7 @@ entries — calling one before then answers `{"unsupported": true, "reason":
 under `toolClusters`, evaluated fresh on every call, so you can check first
 instead of finding out via a wasted call.
 
-## Three things the tool surface does consistently
+## What the tool surface does consistently
 
 - **`request_id`** (= profile `token` = TYPO3 `Core\RequestId`, logged as
   `request="…"`) links the request-scoped tools: `typo3-profiler-*`, `typo3-page`
@@ -66,6 +66,12 @@ instead of finding out via a wasted call.
 - **An empty result is not always an answer.** `typo3-deprecations` reports
   `loggingEnabled`; when it is `false` the `deprecations` log channel is off (the
   default) and an empty list means "not measured", not "none".
+- **"Could not answer" is spelled `unsupported`.** Any tool that could not run at
+  all (console unreachable, unknown table, nothing recorded yet) answers
+  `{"unsupported": true, "reason": "..."}`. That is distinct from a domain miss
+  such as `registered: false`, `found: false` or an empty list, which are real
+  answers about the installation. Read `reason` before retrying: it says whether
+  a precondition is missing or the call itself could not be made.
 - **Data captured from the installation is nested under `untrusted_data`.** Most
   tools (records, logs, TCA labels, profiler data, rendered pages, ...) wrap
   their payload this way because it is frequently authored by editors or
