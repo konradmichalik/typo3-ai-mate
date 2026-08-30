@@ -51,6 +51,6 @@ final readonly class ChangelogSearchTool
             $options['core-version'] = $version;
         }
 
-        return ToolResult::from($this->typo3->jsonOrError('typo3-ai-mate:changelog:search', [$query], $options));
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:changelog:search', [$query], $options));
     }
 }

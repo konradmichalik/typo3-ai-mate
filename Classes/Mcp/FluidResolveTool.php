@@ -52,6 +52,6 @@ final readonly class FluidResolveTool
         }
         $options['format'] = $format;
 
-        return ToolResult::from($this->typo3->jsonOrError('typo3-ai-mate:fluid:resolve', [$pageId], $options));
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:fluid:resolve', [$pageId], $options));
     }
 }

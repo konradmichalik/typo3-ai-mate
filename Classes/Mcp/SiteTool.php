@@ -46,6 +46,6 @@ final readonly class SiteTool
             $options['identifier'] = $identifier;
         }
 
-        return ToolResult::from($this->typo3->jsonOrError('typo3-ai-mate:site:dump', [], $options));
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:site:dump', [], $options));
     }
 }

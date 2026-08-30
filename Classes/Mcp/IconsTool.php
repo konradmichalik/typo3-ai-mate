@@ -38,6 +38,6 @@ final readonly class IconsTool
     {
         $options = null !== $identifiers && '' !== $identifiers ? ['identifiers' => $identifiers] : [];
 
-        return ToolResult::from($this->typo3->jsonOrError('typo3-ai-mate:icons:lookup', [], $options));
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:icons:lookup', [], $options));
     }
 }

@@ -33,6 +33,6 @@ final readonly class FluidNamespacesTool
     )]
     public function list(): string
     {
-        return ToolResult::from($this->typo3->jsonOrError('typo3-ai-mate:fluid:namespaces'));
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:fluid:namespaces'));
     }
 }

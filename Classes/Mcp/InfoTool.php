@@ -38,6 +38,6 @@ final readonly class InfoTool
     {
         $options = $contentTypes ? ['content-types' => true] : [];
 
-        return ToolResult::from($this->typo3->jsonOrError('typo3-ai-mate:info:dump', [], $options));
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:info:dump', [], $options));
     }
 }
