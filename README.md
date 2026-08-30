@@ -77,7 +77,10 @@ This runs `mate init` and `mate discover`, which is all `typo3-ai-mate:install` 
 `--dry-run` reports every planned step without running anything.
 
 > [!NOTE]
-> `mate init` also leaves `bin/codex` and `bin/codex.bat` in the project — launcher shims for the Codex CLI, written by `symfony/ai-mate` rather than by this extension. A Windows batch file appearing in a Composer-managed project is unexpected; it is harmless and can be deleted or gitignored if you do not use Codex.
+> `mate discover` also installs the Agent Skills that installed Mate extensions ship, as real copies under `.agents/skills/mate-<name>/` with relative symlinks mirrored into `.claude/skills/`. They are written by `symfony/ai-mate`, not by this extension, and the generated folders are deliberately not gitignored so an upstream change to a skill shows up as a reviewable diff. `vendor/bin/mate skills:list` shows what is installed, `skills:disable <name>` switches one off and `skills:prune` removes folders that no longer belong to any skill.
+
+> [!NOTE]
+> If you used this extension before the v0.13 migration, `mate init` may have left `bin/codex` and `bin/codex.bat` behind. Those Codex CLI launcher shims are no longer written, and leftovers can be deleted.
 
 > [!NOTE]
 > After updating the package (`composer update`), **re-run `typo3-ai-mate:install`** so any changed tool descriptions or parameters are reflected in `mate/AGENT_INSTRUCTIONS.md` before your next assistant session.

@@ -11,7 +11,7 @@
 
 $EM_CONF[$_EXTKEY] = [
     'title' => 'AI Mate',
-    'description' => 'Dev-only TYPO3 extension and symfony/ai-mate bridge that exposes the resolved runtime state of a TYPO3 installation (TCA, pages, TypoScript, middlewares, logs, request profiles) to AI coding assistants via MCP tools.',
+    'description' => 'Dev-only TYPO3 extension and symfony/ai-mate bridge that exposes the resolved runtime state of a TYPO3 installation (TCA, pages, TypoScript, middlewares, logs, request profiles) to AI coding assistants through the symfony/ai-mate CLI.',
     'category' => 'misc',
     'author' => 'Konrad Michalik',
     'author_email' => 'hej@konradmichalik.dev',

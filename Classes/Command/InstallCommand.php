@@ -83,7 +83,8 @@ final class InstallCommand extends Command
         $io->comment([
             'Next steps:',
             '  • "mate init" wrote agent instructions (a managed CLAUDE.md/AGENTS.md block) telling your assistant how to call the typo3-* tools via "vendor/bin/mate tools:call". Reload/restart your assistant so it picks them up.',
-            '  • "mate init" also leaves bin/codex and bin/codex.bat in the project; they are launcher shims, not part of this extension.',
+            '  • "mate discover" also installed the Agent Skills of every Mate extension into .agents/skills/ and mirrored them into .claude/skills/. Run "vendor/bin/mate skills:list" to see them.',
+            '  • Upgrading from 0.4 or earlier? Remove the stale "typo3-ai-mate" entry from .mcp.json by hand; it points at "mate serve", which no longer exists.',
         ]);
 
         return Command::SUCCESS;
