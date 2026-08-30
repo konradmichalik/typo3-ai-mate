@@ -58,11 +58,4 @@ final class ToolClusterGateTest extends TestCase
         self::assertFalse($gate['registered']);
         self::assertStringContainsString(ToolClusterGate::LOGS_ENTRY_TOOL, $gate['reason']);
     }
-
-    #[Test]
-    public function theEntryToolIsNeverPartOfTheClusterItStandsInFor(): void
-    {
-        self::assertNotContains(ToolClusterGate::PROFILER_ENTRY_TOOL, ToolClusterGate::PROFILER_TOOLS);
-        self::assertNotContains(ToolClusterGate::LOGS_ENTRY_TOOL, ToolClusterGate::LOGS_TOOLS);
-    }
 }

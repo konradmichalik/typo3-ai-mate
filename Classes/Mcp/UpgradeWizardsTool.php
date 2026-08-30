@@ -14,9 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\{ToolResult, Typo3CliRunner};
-use Mcp\Capability\Attribute\McpTool;
-use Mcp\Schema\Result\CallToolResult;
-use Mcp\Schema\ToolAnnotations;
+use Symfony\AI\Mate\Attribute\MateTool;
 
 /**
  * UpgradeWizardsTool.
@@ -28,35 +26,13 @@ final readonly class UpgradeWizardsTool
 {
     public function __construct(private Typo3CliRunner $typo3) {}
 
-    #[McpTool(
+    #[MateTool(
         name: 'typo3-upgrade-wizards',
         title: 'TYPO3 Upgrade Wizards',
         description: 'List all TYPO3 upgrade wizards (pending and done) with identifier, title, description and status — which DB/config migrations are still outstanding. Read-only; running a wizard is not exposed.',
-        annotations: new ToolAnnotations(readOnlyHint: true),
-        outputSchema: [
-            'type' => 'object',
-            'properties' => [
-                'wizards' => [
-                    'type' => 'array',
-                    'description' => 'All upgrade wizards, pending and done. Empty is a real answer (nothing registered), not a failure.',
-                    'items' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'identifier' => ['type' => 'string'],
-                            'title' => ['type' => 'string'],
-                            'description' => ['type' => 'string'],
-                            'status' => ['type' => 'string', 'enum' => ['DONE', 'AVAILABLE'], 'description' => 'Whether the wizard has already run.'],
-                            'updateNecessary' => ['type' => 'boolean', 'description' => 'Whether the wizard still needs to run.'],
-                        ],
-                    ],
-                ],
-                'unsupported' => ['type' => 'boolean', 'description' => 'true if the tool could not answer at all (e.g. the console was unreachable).'],
-                'reason' => ToolResult::REASON_PROPERTY,
-            ],
-        ],
     )]
-    public function list(): CallToolResult
+    public function list(): string
     {
-        return ToolResult::from($this->typo3->jsonOrError('typo3-ai-mate:upgrade:wizards'));
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:upgrade:wizards'));
     }
 }

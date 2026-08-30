@@ -14,9 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\{ToolResult, Typo3CliRunner};
-use Mcp\Capability\Attribute\McpTool;
-use Mcp\Schema\Result\CallToolResult;
-use Mcp\Schema\ToolAnnotations;
+use Symfony\AI\Mate\Attribute\MateTool;
 
 /**
  * DeprecationsTool.
@@ -28,37 +26,13 @@ final readonly class DeprecationsTool
 {
     public function __construct(private Typo3CliRunner $typo3) {}
 
-    #[McpTool(
+    #[MateTool(
         name: 'typo3-deprecations',
         title: 'TYPO3 Deprecations',
         description: 'Runtime deprecation notices, deduplicated and grouped by message with occurrence counts. Each entry carries origins: the likely caller in own code — a backtrace frame when available (high confidence), otherwise a static reverse search for the deprecated symbol across own (non-vendor) PHP/Fluid files (low confidence). Reports loggingEnabled=false when the (default-disabled) deprecations log channel is off, so an empty list is not misread as "no deprecations".',
-        annotations: new ToolAnnotations(readOnlyHint: true),
-        outputSchema: [
-            'type' => 'object',
-            'properties' => [
-                'loggingEnabled' => ['type' => 'boolean', 'description' => 'Whether the deprecations log channel is active. false means an empty deprecations list is unknown, not "no deprecations" — the channel is off by default.'],
-                'deprecations' => [
-                    'type' => 'array',
-                    'description' => 'Deduplicated by message. Empty when loggingEnabled is true and nothing was logged — that is a real answer, distinct from loggingEnabled=false.',
-                    'items' => [
-                        'type' => 'object',
-                        'properties' => [
-                            'message' => ['type' => 'string'],
-                            'component' => ['type' => 'string'],
-                            'count' => ['type' => 'integer', 'description' => 'Occurrence count.'],
-                            'lastSeen' => ['type' => 'string', 'description' => 'Timestamp of the most recent occurrence.'],
-                            'exampleRequestId' => ['type' => 'string'],
-                            'origins' => ['type' => 'array', 'description' => 'Likely caller(s) in own (non-vendor) code: {file, line, snippet, symbol, via, confidence}. via is "logged" (backtrace, high confidence) or a static-search method (lower confidence).'],
-                        ],
-                    ],
-                ],
-                'unsupported' => ['type' => 'boolean', 'description' => 'true if the tool could not answer at all (e.g. the console was unreachable) — distinct from loggingEnabled=false, which is a real answer.'],
-                'reason' => ToolResult::REASON_PROPERTY,
-            ],
-        ],
     )]
-    public function list(): CallToolResult
+    public function list(): string
     {
-        return ToolResult::from($this->typo3->jsonOrError('typo3-ai-mate:upgrade:deprecations'));
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:upgrade:deprecations'));
     }
 }

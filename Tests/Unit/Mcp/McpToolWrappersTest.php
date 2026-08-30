@@ -17,7 +17,6 @@ use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
 use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\{ChangelogType, ConfigSection, LogLevel, MiddlewareStack, OutputMode, TsConfigType, TypoScriptType};
-use Mcp\Schema\Result\CallToolResult;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -487,15 +486,6 @@ final class McpToolWrappersTest extends TestCase
     }
 
     #[Test]
-    public function iconsToolPopulatesStructuredContentFromTheSameDataAsTheTextContent(): void
-    {
-        $callResult = (new IconsTool($this->runner))->lookup();
-
-        self::assertInstanceOf(CallToolResult::class, $callResult);
-        self::assertSame($this->decode($callResult), $callResult->structuredContent);
-    }
-
-    #[Test]
     public function migratedToolsReportAnUnsupportedResultWhenTheConsoleIsUnreachable(): void
     {
         $rootDir = sys_get_temp_dir().'/typo3-ai-mate-mcp-failing-'.bin2hex(random_bytes(8));
@@ -504,14 +494,10 @@ final class McpToolWrappersTest extends TestCase
         $runner = new Typo3CliRunner($rootDir);
 
         try {
-            $result = (new IconsTool($runner))->lookup();
+            $result = $this->decode((new IconsTool($runner))->lookup());
 
-            self::assertInstanceOf(CallToolResult::class, $result);
-            $structuredContent = $result->structuredContent;
-            self::assertIsArray($structuredContent);
-            self::assertTrue($structuredContent['unsupported'] ?? null);
-            self::assertIsString($structuredContent['reason'] ?? null);
-            self::assertSame($structuredContent, $this->decode($result));
+            self::assertTrue($result['unsupported'] ?? null);
+            self::assertIsString($result['reason'] ?? null);
         } finally {
             @unlink($rootDir.'/vendor/bin/typo3');
             @rmdir($rootDir.'/vendor/bin');

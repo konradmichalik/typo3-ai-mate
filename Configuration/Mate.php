@@ -11,18 +11,14 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-use KonradMichalik\Typo3AiMate\Mate\{DescriptionAwareDiscoverer, ProfileProvider, ProfilerStateProvider, SiteHostsProvider, ToolDescriptionComputer, Typo3CliRunner};
+use KonradMichalik\Typo3AiMate\Mate\{ProfileProvider, ProfilerStateProvider, Typo3CliRunner};
 use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LogsTool, MiddlewaresTool, PageTool, PerformanceTool, ProfileResource, ProfilerControlTool, RenderPageTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
-use KonradMichalik\Typo3AiMate\Support\RuntimeArtifacts;
-use Mcp\Capability\Discovery\DiscovererInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
-
-use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 /*
  * Symfony DI configuration for the symfony/ai-mate process (referenced via
  * composer.json extra.ai-mate.includes). This is NOT the TYPO3 DI container —
- * the #[McpTool] classes run in the Mate process and never boot TYPO3; they
+ * the #[MateTool] classes run in the Mate process and never boot TYPO3; they
  * reach TYPO3 by shelling out (Typo3CliRunner) or by reading profile artifacts.
  *
  * %mate.root_dir% is the project root parameter provided by ai-mate v0.9.
@@ -33,7 +29,7 @@ return static function (ContainerConfigurator $container): void {
         ->autowire()
         ->autoconfigure();
 
-    // Public so third-party MCP tools sharing this container can autowire it.
+    // Public so third-party Mate tools sharing this container can autowire it.
     $services->set(Typo3CliRunner::class)
         ->public()
         ->arg('$rootDir', '%mate.root_dir%');
@@ -74,23 +70,4 @@ return static function (ContainerConfigurator $container): void {
     $services->set(ProfilerStateProvider::class)
         ->arg('$rootDir', '%mate.root_dir%');
     $services->set(ProfilerControlTool::class);
-
-    // Advisory-only reader of config/sites/*/config.yaml for the render-page
-    // tool's description; the actual SSRF guard stays in
-    // RenderPageCommand::isAllowedHost(), sourced from the booted SiteFinder.
-    $services->set(SiteHostsProvider::class)
-        ->arg('$rootDir', '%mate.root_dir%');
-
-    // Whether anything has been logged decides, together with the profiler
-    // state, which tool clusters are registered at all.
-    $services->set(RuntimeArtifacts::class)
-        ->arg('$rootDir', '%mate.root_dir%');
-    $services->set(ToolDescriptionComputer::class);
-
-    // #[McpTool] descriptions are static strings (a PHP attribute argument must
-    // be a compile-time constant), so runtime state is spliced in here, once
-    // per server start, by decorating the SDK's discovery step.
-    $services->set(DescriptionAwareDiscoverer::class)
-        ->decorate(DiscovererInterface::class)
-        ->arg('$inner', service('.inner'));
 };

@@ -13,13 +13,19 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
-use Mcp\Schema\Content\TextContent;
-use Mcp\Schema\Result\CallToolResult;
 use PHPUnit\Framework\Assert;
 use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
+use function array_key_exists;
+
 /**
  * DecodesResponses.
+ *
+ * Unwraps {@see ResponseEncoder::encodeUntrusted()}'s envelope transparently:
+ * most callers below only care about the payload a tool computed, not whether
+ * it went through {@see \KonradMichalik\Typo3AiMate\Mate\ToolResult::from()} or
+ * {@see \KonradMichalik\Typo3AiMate\Mate\ToolResult::untrusted()}. The envelope
+ * itself is asserted once, explicitly, in ToolResultTest.
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
  */
@@ -28,17 +34,15 @@ trait DecodesResponses
     /**
      * @return array<mixed>
      */
-    private function decode(string|CallToolResult $response): array
+    private function decode(string $response): array
     {
-        if ($response instanceof CallToolResult) {
-            $content = $response->content[0];
-            Assert::assertInstanceOf(TextContent::class, $content);
-            Assert::assertIsString($content->text);
-            $response = $content->text;
-        }
-
         $data = ResponseEncoder::decode($response);
         Assert::assertIsArray($data);
+
+        if (array_key_exists('untrusted_data', $data) && array_key_exists('_security_notice', $data)) {
+            $data = $data['untrusted_data'];
+            Assert::assertIsArray($data);
+        }
 
         return $data;
     }

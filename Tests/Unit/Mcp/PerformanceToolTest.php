@@ -17,7 +17,6 @@ use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3AiMate\Mate\ProfileProvider;
 use KonradMichalik\Typo3AiMate\Mcp\PerformanceTool;
 use KonradMichalik\Typo3AiMate\Tests\Unit\ProfileFixtures;
-use Mcp\Schema\Result\CallToolResult;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -141,7 +140,7 @@ final class PerformanceToolTest extends TestCase
     /**
      * @return array<mixed>
      */
-    private function profiles(string|CallToolResult $response): array
+    private function profiles(string $response): array
     {
         $profiles = $this->decode($response)['profiles'];
         self::assertIsArray($profiles);

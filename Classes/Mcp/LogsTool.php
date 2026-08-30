@@ -15,9 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\{ToolResult, Typo3CliRunner};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\{LogLevel, OutputMode};
-use Mcp\Capability\Attribute\McpTool;
-use Mcp\Schema\Result\CallToolResult;
-use Mcp\Schema\ToolAnnotations;
+use Symfony\AI\Mate\Attribute\MateTool;
 
 /**
  * LogsTool.
@@ -26,26 +24,6 @@ use Mcp\Schema\ToolAnnotations;
  */
 final readonly class LogsTool
 {
-    /**
-     * Shared by all three tools below: each is a different filter on the same
-     * typo3-ai-mate:logs:search command, so the response shape is identical.
-     */
-    private const OUTPUT_SCHEMA = [
-        'type' => 'object',
-        'properties' => [
-            'mode' => ['type' => 'string', 'enum' => ['summary', 'full'], 'description' => 'Echoes back the requested format.'],
-            'totalMatched' => ['type' => 'integer', 'description' => 'Total entries matching the filters, before limit truncates them. 0 is a real answer: nothing matched.'],
-            'distinct' => ['type' => 'integer', 'description' => 'Present only when mode is summary: number of distinct messages after deduplication.'],
-            'entries' => [
-                'type' => 'array',
-                'description' => 'summary mode: deduplicated messages, most frequent first, each {message, level, component, count, lastSeen, exampleRequestId}. full mode: individual entries in file order, each {time, level, component, request_id, message, trace?} — trace is present only when the log line carried a stack trace. An empty array is a real answer: nothing matched.',
-                'items' => ['type' => 'object'],
-            ],
-            'unsupported' => ['type' => 'boolean', 'description' => 'true if the tool could not answer at all (e.g. the console was unreachable).'],
-            'reason' => ToolResult::REASON_PROPERTY,
-        ],
-    ];
-
     public function __construct(private Typo3CliRunner $typo3) {}
 
     /**
@@ -57,7 +35,7 @@ final readonly class LogsTool
      * @param OutputMode    $mode      summary (default, distinct messages grouped with counts) | full (individual entries with truncated traces)
      * @param string|null   $since     Relative time window, e.g. 1h, 2d; omit for all entries regardless of age.
      */
-    #[McpTool(name: 'typo3-logs-search', title: 'TYPO3 Log Search', description: 'Full-text search the TYPO3 logs with optional level/component/request-id filters. Returns a compact summary (distinct messages with occurrence counts and lastSeen, no stack traces) by default. Use this for a text search, or to filter by component/request-id without one; for severity-only filtering use typo3-logs-by-level.', annotations: new ToolAnnotations(readOnlyHint: true), outputSchema: self::OUTPUT_SCHEMA)]
+    #[MateTool(name: 'typo3-logs-search', title: 'TYPO3 Log Search', description: 'Full-text search the TYPO3 logs with optional level/component/request-id filters. Returns a compact summary (distinct messages with occurrence counts and lastSeen, no stack traces) by default. Use this for a text search, or to filter by component/request-id without one; for severity-only filtering use typo3-logs-by-level.')]
     public function search(
         ?string $query = null,
         ?LogLevel $level = null,
@@ -66,8 +44,8 @@ final readonly class LogsTool
         int $limit = 50,
         OutputMode $mode = OutputMode::Summary,
         ?string $since = null,
-    ): CallToolResult {
-        return ToolResult::from($this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], $this->options([
+    ): string {
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], $this->options([
             'query' => $query,
             'level' => $level?->value,
             'component' => $component,
@@ -83,10 +61,10 @@ final readonly class LogsTool
      * @param OutputMode  $mode  summary (default, distinct messages grouped with counts) | full (individual entries with truncated traces)
      * @param string|null $since Relative time window, e.g. 1h, 2d; omit for all entries regardless of age.
      */
-    #[McpTool(name: 'typo3-logs-tail', title: 'TYPO3 Log Tail', description: 'Return the most recent TYPO3 log entries. Defaults to a compact summary (distinct messages with counts). Use this when you want the last N entries regardless of severity or text.', annotations: new ToolAnnotations(readOnlyHint: true), outputSchema: self::OUTPUT_SCHEMA)]
-    public function tail(int $limit = 50, OutputMode $mode = OutputMode::Summary, ?string $since = null): CallToolResult
+    #[MateTool(name: 'typo3-logs-tail', title: 'TYPO3 Log Tail', description: 'Return the most recent TYPO3 log entries. Defaults to a compact summary (distinct messages with counts). Use this when you want the last N entries regardless of severity or text.')]
+    public function tail(int $limit = 50, OutputMode $mode = OutputMode::Summary, ?string $since = null): string
     {
-        return ToolResult::from($this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], $this->options([
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], $this->options([
             'limit' => $limit,
             'format' => $mode->value,
             'since' => $since,
@@ -100,10 +78,10 @@ final readonly class LogsTool
      * @param OutputMode  $mode      summary (default, distinct messages grouped with counts) | full (individual entries with truncated traces)
      * @param string|null $since     Relative time window, e.g. 1h, 2d; omit for all entries regardless of age.
      */
-    #[McpTool(name: 'typo3-logs-by-level', title: 'TYPO3 Logs by Level', description: 'Return TYPO3 log entries at or above a minimum severity (e.g. error), optionally filtered by request-id. Defaults to a compact summary (distinct messages with counts and lastSeen, no stack traces). Use this when you want every entry from a severity upwards regardless of message text.', annotations: new ToolAnnotations(readOnlyHint: true), outputSchema: self::OUTPUT_SCHEMA)]
-    public function byLevel(LogLevel $level, ?string $requestId = null, int $limit = 50, OutputMode $mode = OutputMode::Summary, ?string $since = null): CallToolResult
+    #[MateTool(name: 'typo3-logs-by-level', title: 'TYPO3 Logs by Level', description: 'Return TYPO3 log entries at or above a minimum severity (e.g. error), optionally filtered by request-id. Defaults to a compact summary (distinct messages with counts and lastSeen, no stack traces). Use this when you want every entry from a severity upwards regardless of message text.')]
+    public function byLevel(LogLevel $level, ?string $requestId = null, int $limit = 50, OutputMode $mode = OutputMode::Summary, ?string $since = null): string
     {
-        return ToolResult::from($this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], $this->options([
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], $this->options([
             'level' => $level->value,
             'request-id' => $requestId,
             'limit' => $limit,

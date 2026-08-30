@@ -14,7 +14,6 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mate;
 
 use KonradMichalik\Typo3AiMate\Mate\ToolResult;
-use Mcp\Schema\Content\TextContent;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\AI\Mate\Encoding\ResponseEncoder;
@@ -28,41 +27,49 @@ use Symfony\AI\Mate\Encoding\ResponseEncoder;
 final class ToolResultTest extends TestCase
 {
     #[Test]
-    public function wrapsSuccessDataAsTextAndStructuredContent(): void
+    public function fromEncodesSuccessDataAsIs(): void
     {
         $data = ['registered' => false, 'suggestions' => ['actions-add']];
 
         $result = ToolResult::from($data);
 
-        self::assertFalse($result->isError);
-        self::assertSame($data, $result->structuredContent);
-        self::assertCount(1, $result->content);
-        $content = $result->content[0];
-        self::assertInstanceOf(TextContent::class, $content);
-        self::assertIsString($content->text);
-        self::assertSame($data, ResponseEncoder::decode($content->text));
+        self::assertSame($data, ResponseEncoder::decode($result));
     }
 
     #[Test]
-    public function convertsAConsoleFailureIntoAnUnsupportedResult(): void
+    public function fromConvertsAConsoleFailureIntoAnUnsupportedResult(): void
     {
         $result = ToolResult::from(['error' => 'TYPO3 command "x" failed.']);
 
-        $expected = ['unsupported' => true, 'reason' => 'TYPO3 command "x" failed.'];
-        self::assertSame($expected, $result->structuredContent);
-        $content = $result->content[0];
-        self::assertInstanceOf(TextContent::class, $content);
-        self::assertIsString($content->text);
-        self::assertSame($expected, ResponseEncoder::decode($content->text));
+        self::assertSame(['unsupported' => true, 'reason' => 'TYPO3 command "x" failed.'], ResponseEncoder::decode($result));
     }
 
     #[Test]
-    public function doesNotTreatADomainErrorFieldAlongsideOtherDataAsUnsupported(): void
+    public function fromDoesNotTreatADomainErrorFieldAlongsideOtherDataAsUnsupported(): void
     {
         $data = ['error' => 'ignored', 'other' => 'field'];
 
-        $result = ToolResult::from($data);
+        self::assertSame($data, ResponseEncoder::decode(ToolResult::from($data)));
+    }
 
-        self::assertSame($data, $result->structuredContent);
+    #[Test]
+    public function untrustedWrapsSuccessDataUnderTheUntrustedDataEnvelope(): void
+    {
+        $data = ['entries' => ['a log line']];
+
+        $decoded = ResponseEncoder::decode(ToolResult::untrusted($data));
+
+        self::assertIsArray($decoded);
+        self::assertSame(ResponseEncoder::UNTRUSTED_NOTICE, $decoded['_security_notice'] ?? null);
+        self::assertSame($data, $decoded['untrusted_data'] ?? null);
+    }
+
+    #[Test]
+    public function untrustedStillConvertsAConsoleFailureIntoAnUnsupportedResult(): void
+    {
+        $decoded = ResponseEncoder::decode(ToolResult::untrusted(['error' => 'TYPO3 command "x" failed.']));
+
+        self::assertIsArray($decoded);
+        self::assertSame(['unsupported' => true, 'reason' => 'TYPO3 command "x" failed.'], $decoded['untrusted_data'] ?? null);
     }
 }

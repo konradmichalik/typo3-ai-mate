@@ -13,8 +13,6 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Mate;
 
-use Mcp\Schema\Content\TextContent;
-use Mcp\Schema\Result\CallToolResult;
 use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
 use function is_string;
@@ -22,10 +20,12 @@ use function is_string;
 /**
  * ToolResult.
  *
- * Wraps a tool's response data as a {@see CallToolResult}: the same TOON/JSON
- * text the model always saw, plus structuredContent built from the same data
- * so a tool's declared outputSchema is actually populated by the MCP SDK
- * instead of being inert metadata.
+ * Encodes a tool's response data the same way every #[MateTool] method must
+ * return it: as the TOON/JSON string {@see ResponseEncoder} produces. {@see
+ * untrusted()} additionally wraps the payload as data captured from the
+ * inspected TYPO3 installation (records, labels, log lines, rendered markup,
+ * ...), which is frequently authored by editors or third-party extensions and
+ * must never be read as instructions.
  *
  * {@see Typo3CliRunner::jsonOrError()}'s sole failure shape, {"error": "..."},
  * means the tool could not answer at all (console unreachable, bad bootstrap,
@@ -39,24 +39,29 @@ use function is_string;
 final readonly class ToolResult
 {
     /**
-     * The outputSchema property for the standard `reason` field every
-     * "unsupported" result carries. Shared by every tool's schema (repeating
-     * this literal per tool invited drift between them); a tool whose
-     * unsupported case needs a more specific description writes its own
-     * `reason` property instead of using this constant.
-     *
-     * @var array{type: string, description: string}
+     * @param array<mixed> $data
      */
-    public const REASON_PROPERTY = ['type' => 'string', 'description' => 'Present only when unsupported is true: why the tool could not answer.'];
+    public static function from(array $data): string
+    {
+        return ResponseEncoder::encode(self::payload($data));
+    }
 
     /**
      * @param array<mixed> $data
      */
-    public static function from(array $data): CallToolResult
+    public static function untrusted(array $data): string
     {
-        $payload = self::isUnreachable($data) ? ['unsupported' => true, 'reason' => $data['error']] : $data;
+        return ResponseEncoder::encodeUntrusted(self::payload($data));
+    }
 
-        return new CallToolResult([new TextContent(ResponseEncoder::encode($payload))], structuredContent: $payload);
+    /**
+     * @param array<mixed> $data
+     *
+     * @return array<mixed>
+     */
+    private static function payload(array $data): array
+    {
+        return self::isUnreachable($data) ? ['unsupported' => true, 'reason' => $data['error']] : $data;
     }
 
     /**
