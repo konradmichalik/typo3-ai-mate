@@ -148,6 +148,10 @@ Custom `typo3-*` tools and the `Typo3CliRunner` recipe live in [`DEVELOPMENT.md`
 
 Please have a look at [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
+## 📓 Changelog
+
+Notable changes per release, including breaking ones and what to do about them, are in [`CHANGELOG.md`](CHANGELOG.md).
+
 ## ⭐ License
 
 This project is licensed under [GNU General Public License 2.0 (or later)](LICENSE.md).
