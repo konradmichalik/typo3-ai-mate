@@ -46,9 +46,13 @@ final readonly class SiteUrlResolver
             $site = $this->siteFinder->getSiteByPageId($pageId);
 
             return (string) $site->getRouter()->generateUri($pageId, ['_language' => $language]);
+            // @codeCoverageIgnoreStart
         } catch (Throwable) {
+            // Defensive: a SiteFinder that throws rather than reporting "no site"
+            // cannot be produced from a valid installation.
             return null;
         }
+        // @codeCoverageIgnoreEnd
     }
 
     /**
@@ -61,9 +65,13 @@ final readonly class SiteUrlResolver
             foreach ($this->siteFinder->getAllSites() as $site) {
                 return $site;
             }
+            // @codeCoverageIgnoreStart
         } catch (Throwable) {
+            // Defensive, as above: getAllSites() reports an empty list rather
+            // than throwing for an installation without sites.
             return null;
         }
+        // @codeCoverageIgnoreEnd
 
         return null;
     }

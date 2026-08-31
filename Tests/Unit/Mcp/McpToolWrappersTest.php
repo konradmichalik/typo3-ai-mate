@@ -99,6 +99,26 @@ final class McpToolWrappersTest extends TestCase
     }
 
     #[Test]
+    public function tcaToolForwardsTheScopingOptions(): void
+    {
+        // recordType and fields are the difference between a few hundred bytes
+        // and roughly 15 kB on tt_content, so a dropped option is expensive
+        // rather than merely wrong.
+        $result = $this->decode((new TcaTool($this->runner))->dump('tt_content', recordType: 'textmedia', fields: 'header,bodytext'));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:tca:dump');
+        self::assertJsonPath($result, 'args', ['--record-type', 'textmedia', '--fields', 'header,bodytext', '--', 'tt_content']);
+    }
+
+    #[Test]
+    public function tcaToolOmitsScopingOptionsThatAreEmpty(): void
+    {
+        $result = $this->decode((new TcaTool($this->runner))->dump('tt_content', recordType: '', fields: ''));
+
+        self::assertJsonPath($result, 'args', ['--', 'tt_content']);
+    }
+
+    #[Test]
     public function pageToolForwardsPageId(): void
     {
         $result = $this->decode((new PageTool($this->runner))->info(5));

@@ -71,7 +71,11 @@ final readonly class ProfilerStateProvider
                 $seconds = Duration::fromString($duration)->seconds();
             } catch (InvalidArgumentException $exception) {
                 return ['error' => $exception->getMessage()];
+                // @codeCoverageIgnoreStart
             } catch (Throwable $exception) {
+                // Only reachable on an installation whose profiler predates 0.5 and
+                // therefore ships no Duration class at all, which the composer
+                // constraint excludes and a test cannot construct.
                 // An installation carrying a profiler older than 0.5 has no
                 // Duration class at all. Report that as a readable cause rather
                 // than letting a fatal Error surface as an opaque MCP error.
@@ -79,6 +83,7 @@ final readonly class ProfilerStateProvider
                     'Cannot validate the duration (%s). Check that konradmichalik/typo3-request-profiler ^0.5 is installed in this instance.',
                     $exception->getMessage(),
                 )];
+                // @codeCoverageIgnoreEnd
             }
 
             if ($seconds > self::MAX_DURATION_SECONDS) {

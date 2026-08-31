@@ -145,6 +145,20 @@ final class TcaCommandTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function saysThatATableWithoutRecordTypesCannotBeFilteredByOne(): void
+    {
+        // be_groups has no type field in ctrl, so there is no value the filter
+        // could ever accept. Handing back an empty availableRecordTypes without
+        // saying why reads like the table has types and none matched.
+        [$exitCode, $result] = $this->runCommand(['table' => 'be_groups', '--record-type' => 'anything']);
+
+        self::assertSame(0, $exitCode);
+        self::assertFalse($result['recordTypeFound']);
+        self::assertSame([], (array) $result['availableRecordTypes']);
+        self::assertStringContainsString('no record types', (string) $result['_hint']);
+    }
+
+    #[Test]
     public function failsForAnUnknownTable(): void
     {
         [$exitCode, $result] = $this->runCommand(['table' => 'tx_does_not_exist']);

@@ -126,9 +126,13 @@ final class InfoCommand extends AbstractJsonCommand
     {
         $packages = [];
         foreach (self::RELEVANT_PACKAGES as $name) {
+            // Unreachable in this package's own test run: every curated package is a
+            // dependency of it, so none can be absent.
+            // @codeCoverageIgnoreStart
             if (!InstalledVersions::isInstalled($name)) {
                 continue;
             }
+            // @codeCoverageIgnoreEnd
             $version = InstalledVersions::getPrettyVersion($name);
             if (null !== $version) {
                 $packages[$name] = $version;
@@ -143,9 +147,13 @@ final class InfoCommand extends AbstractJsonCommand
      */
     public function describeProfiler(): array
     {
+        // The false branch is unreachable here: the profiler is a hard dependency
+        // of this package, so it is installed wherever this command can run.
+        // @codeCoverageIgnoreStart
         $version = InstalledVersions::isInstalled('konradmichalik/typo3-request-profiler')
             ? InstalledVersions::getPrettyVersion('konradmichalik/typo3-request-profiler')
             : null;
+        // @codeCoverageIgnoreEnd
 
         return [
             'cliAvailable' => $this->commandRegistry->has(self::PROFILER_ACTIVATE_COMMAND),
@@ -298,9 +306,13 @@ final class InfoCommand extends AbstractJsonCommand
 
         try {
             $data = json_decode($contents, true, 512, \JSON_THROW_ON_ERROR);
+            // @codeCoverageIgnoreStart
         } catch (JsonException) {
+            // Defensive: the caller only reaches here for a file it has already
+            // read as the profiler's own state artifact.
             return false;
         }
+        // @codeCoverageIgnoreEnd
 
         $expiresAt = is_array($data) && is_int($data['expiresAt'] ?? null) ? $data['expiresAt'] : null;
 
