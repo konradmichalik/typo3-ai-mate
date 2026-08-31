@@ -31,6 +31,15 @@ vendor/bin/mate skills:disable <name>  # switch one off
 vendor/bin/mate skills:prune           # remove folders no skill claims any more
 ```
 
+## Why there is no MCP server any more
+
+> [!NOTE]
+> This was an upstream decision in `symfony/ai-mate` 0.13, not one this extension made. The reasoning is worth knowing, because it explains why the agent instructions above matter so much more than they used to.
+>
+> Mate previously shipped as an MCP server. Upstream replaced it with a plain CLI **plus a discovery layer**, and argued that the two only work together: in their controlled comparison the bare CLI was invoked **0 out of 30 times**. It was installed, working and invisible, performing no better than not having Mate at all. With the materialised agent instructions and skills on top, the same CLI became clearly effective.
+>
+> Upstream states plainly that this was one task family with small samples and should be read as a direction rather than as figures to quote. Taken as a direction it is the important part for you: the CLI is not self-advertising the way an MCP tool list was. If the managed `AGENTS.md`/`CLAUDE.md` block does not reach your assistant, the tools exist and nothing will call them.
+
 ## Upgrading from 0.4 or earlier
 
 Version 0.5.0 followed `symfony/ai-mate` 0.13 in removing the MCP server. Two leftovers need attention, because nothing removes them for you:

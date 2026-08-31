@@ -92,12 +92,6 @@ Read-only by default: only `typo3-profiler-start`, `-stop` and `typo3-render-pag
 
 Full guard list and the trust boundary: [Security](docs/security.md).
 
-## 🔗 Related
-
-Other projects connect assistants to TYPO3 and answer different questions: [`TYPO3/dev-companion`](https://github.com/TYPO3/dev-companion) supplies version-bound TYPO3 knowledge, while [`hauptsacheNet/typo3-mcp-server`](https://github.com/hauptsacheNet/typo3-mcp-server) and [`marekskopal/typo3-mcp-server`](https://github.com/marekskopal/typo3-mcp-server) write content. This extension writes none and reports what one installation actually computed, so it sits next to them rather than against them.
-
-Which one you want, and why more than one is often the answer: [Related projects](docs/related.md).
-
 ## 📚 Documentation
 
 | Page | What is inside |

@@ -22,6 +22,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Whi
 
 - Tool handlers are registered so `mate` can resolve them. Declaring a tool class in `Configuration/Mate.php` replaced the public definition that `ContainerFactory` had already created, the compiler dropped it, and every call failed with "Handler ... is not registered as a service". This affected the package used as the root project, for instance when developing it; an installed extension loads in the opposite order and was not affected.
 
+- Rewrote the tool reference as one section per tool with a table of contents and a short use case per tool, and added the six tools the old README table never listed (`typo3-info`, `typo3-site`, `typo3-commands`, `typo3-config`, `typo3-db-schema`, `typo3-changelog-search`).
 - Restructured the documentation: the README is an entry point again, and reference material moved into `docs/` (`tools.md`, `connecting-an-assistant.md`, `how-it-works.md`, `security.md`, `extending.md`, `tool-surface.md`, `use-cases.md`). `DEVELOPMENT.md` is dissolved into those pages. `INSTRUCTIONS.md` stays at the root, since `mate discover` reads it from there.
 
 ### Upgrading from 0.4.0
