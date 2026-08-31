@@ -69,15 +69,13 @@ final class DeprecationsCommand extends AbstractJsonCommand
             if ('' === $message) {
                 continue;
             }
-            if (!isset($grouped[$message])) {
-                $grouped[$message] = [
-                    'message' => $message,
-                    'component' => Cast::string($entry['component'] ?? ''),
-                    'count' => 0,
-                    'lastSeen' => '',
-                    'exampleRequestId' => Cast::string($entry['request_id'] ?? ''),
-                ];
-            }
+            $grouped[$message] ??= [
+                'message' => $message,
+                'component' => Cast::string($entry['component'] ?? ''),
+                'count' => 0,
+                'lastSeen' => '',
+                'exampleRequestId' => Cast::string($entry['request_id'] ?? ''),
+            ];
             ++$grouped[$message]['count'];
             $grouped[$message]['lastSeen'] = Cast::string($entry['time'] ?? '');
         }

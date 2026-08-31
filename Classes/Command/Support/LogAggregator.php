@@ -112,16 +112,14 @@ final readonly class LogAggregator
         if ('' === $message) {
             return $grouped;
         }
-        if (!isset($grouped[$message])) {
-            $grouped[$message] = [
-                'message' => $message,
-                'level' => Cast::string($entry['level'] ?? ''),
-                'component' => Cast::string($entry['component'] ?? ''),
-                'count' => 0,
-                'lastSeen' => '',
-                'exampleRequestId' => Cast::string($entry['request_id'] ?? ''),
-            ];
-        }
+        $grouped[$message] ??= [
+            'message' => $message,
+            'level' => Cast::string($entry['level'] ?? ''),
+            'component' => Cast::string($entry['component'] ?? ''),
+            'count' => 0,
+            'lastSeen' => '',
+            'exampleRequestId' => Cast::string($entry['request_id'] ?? ''),
+        ];
         ++$grouped[$message]['count'];
         $grouped[$message]['lastSeen'] = Cast::string($entry['time'] ?? '');
 
