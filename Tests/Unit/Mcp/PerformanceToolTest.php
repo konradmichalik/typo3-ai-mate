@@ -63,7 +63,7 @@ final class PerformanceToolTest extends TestCase
     {
         $empty = new PerformanceTool(new ProfileProvider(sys_get_temp_dir().'/typo3-ai-mate-empty-'.bin2hex(random_bytes(8))));
 
-        self::assertJsonHasPath($this->decode($empty->latest()), 'error');
+        self::assertJsonPath($this->decode($empty->latest()), 'unsupported', true);
     }
 
     #[Test]
@@ -127,14 +127,14 @@ final class PerformanceToolTest extends TestCase
     #[Test]
     public function getReportsAnErrorForUnknownToken(): void
     {
-        self::assertJsonHasPath($this->decode($this->tool()->get('does-not-exist')), 'error');
+        self::assertJsonPath($this->decode($this->tool()->get('does-not-exist')), 'unsupported', true);
     }
 
     #[Test]
     public function getReportsAnErrorForAnInvalidToken(): void
     {
         // The profiler's reader rejects traversal-unsafe tokens -> treated as not found.
-        self::assertJsonHasPath($this->decode($this->tool()->get('../../etc/passwd')), 'error');
+        self::assertJsonPath($this->decode($this->tool()->get('../../etc/passwd')), 'unsupported', true);
     }
 
     /**

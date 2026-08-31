@@ -13,10 +13,8 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Mcp;
 
-use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use Mcp\Capability\Attribute\McpTool;
-use Mcp\Schema\ToolAnnotations;
-use Symfony\AI\Mate\Encoding\ResponseEncoder;
+use KonradMichalik\Typo3AiMate\Mate\{ToolResult, Typo3CliRunner};
+use Symfony\AI\Mate\Attribute\MateTool;
 
 /**
  * FluidResolveTool.
@@ -35,7 +33,11 @@ final readonly class FluidResolveTool
      * @param string|null $layout   layout name to resolve to a file
      * @param string      $format   file format (default html)
      */
-    #[McpTool(name: 'typo3-fluid-resolve', title: 'TYPO3 Fluid Path Resolution', description: 'Which physical Fluid file wins for a template/partial/layout name, given the merged templateRootPaths/partialRootPaths/layoutRootPaths override chain (highest numeric key first). Returns the ordered candidate directories with exists flags plus the resolved file — use it to debug why an override does not take effect. A plugin path with no view configuration answers with viewPathFound=false plus the view paths that do have one, so a wrong guess costs one call, not several.', annotations: new ToolAnnotations(readOnlyHint: true))]
+    #[MateTool(
+        name: 'typo3-fluid-resolve',
+        title: 'TYPO3 Fluid Path Resolution',
+        description: 'Which physical Fluid file wins for a template/partial/layout name, given the merged templateRootPaths/partialRootPaths/layoutRootPaths override chain (highest numeric key first). Returns the ordered candidate directories with exists flags plus the resolved file — use it to debug why an override does not take effect. A plugin path with no view configuration answers with viewPathFound=false plus the view paths that do have one, so a wrong guess costs one call, not several.',
+    )]
     public function resolve(int $pageId, string $plugin, ?string $template = null, ?string $partial = null, ?string $layout = null, string $format = 'html'): string
     {
         $options = ['plugin' => $plugin];
@@ -50,6 +52,6 @@ final readonly class FluidResolveTool
         }
         $options['format'] = $format;
 
-        return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:fluid:resolve', [$pageId], $options));
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:fluid:resolve', [$pageId], $options));
     }
 }

@@ -219,6 +219,31 @@ final class TcaCommand extends AbstractJsonCommand
     }
 
     /**
+     * Columns from the Schema API, with a per-field fallback to the raw-TCA
+     * extraction for fields it does not build (rare, non-standard config).
+     * answeredBy names which source ultimately answered, since a fallback
+     * changes what the caller can trust about a column's shape.
+     *
+     * @param array<string, array<string, mixed>> $fallbackColumns
+     *
+     * @return array{columns: array<string, array<string, mixed>>, answeredBy: string}
+     */
+    private function describeColumns(TcaSchema $schema, array $fallbackColumns): array
+    {
+        $columns = [];
+        foreach ($schema->getFields() as $fieldName => $field) {
+            $columns[Cast::string($fieldName)] = $this->describeField($field);
+        }
+        $schemaApiFields = array_keys($columns);
+        $columns += $fallbackColumns;
+
+        return [
+            'columns' => $columns,
+            'answeredBy' => [] === array_diff(array_keys($columns), $schemaApiFields) ? 'schema-api' : 'schema-api+tca-fallback',
+        ];
+    }
+
+    /**
      * @param array<string, list<string>> $recordTypes
      * @param list<string>|null           $fields
      *
@@ -232,13 +257,7 @@ final class TcaCommand extends AbstractJsonCommand
         $tableDefinition = is_array($tca[$table] ?? null) ? $tca[$table] : [];
         $fallback = $this->extractTable($tableDefinition);
 
-        $columns = [];
-        foreach ($schema->getFields() as $fieldName => $field) {
-            $columns[Cast::string($fieldName)] = $this->describeField($field);
-        }
-        // A field the Schema API does not build (rare, non-standard config)
-        // falls back to the raw-TCA extraction instead of being dropped.
-        $columns += $fallback['columns'];
+        ['columns' => $columns, 'answeredBy' => $answeredBy] = $this->describeColumns($schema, $fallback['columns']);
         $relations = $this->describeRelations($schema);
 
         $scope = $fields ?? (null !== $recordType ? $recordTypes[$recordType] : null);
@@ -262,6 +281,7 @@ final class TcaCommand extends AbstractJsonCommand
 
         return $result + [
             'ctrl' => $fallback['ctrl'],
+            'answeredBy' => $answeredBy,
             'capabilities' => $this->describeCapabilities($schema),
             'recordTypes' => [] === $recordTypes ? [] : TcaRecordTypes::collapse($recordTypes),
             'relations' => $relations,

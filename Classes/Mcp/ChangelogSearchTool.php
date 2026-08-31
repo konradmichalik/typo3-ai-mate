@@ -13,11 +13,9 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Mcp;
 
-use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
+use KonradMichalik\Typo3AiMate\Mate\{ToolResult, Typo3CliRunner};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\ChangelogType;
-use Mcp\Capability\Attribute\McpTool;
-use Mcp\Schema\ToolAnnotations;
-use Symfony\AI\Mate\Encoding\ResponseEncoder;
+use Symfony\AI\Mate\Attribute\MateTool;
 
 /**
  * ChangelogSearchTool.
@@ -35,7 +33,11 @@ final readonly class ChangelogSearchTool
      * @param string|null        $version version directory prefix, e.g. "13" or "13.4"; omit to default to the installed TYPO3 major (the core ships every historical version, so this keeps results relevant)
      * @param int                $limit   maximum results (capped at 30)
      */
-    #[McpTool(name: 'typo3-changelog-search', title: 'TYPO3 Changelog Search', description: 'Search the installed typo3/cms-core changelog (Breaking/Deprecation/Feature/Important RST files under Documentation/Changelog/) for migration guidance — offline, no training-data guessing. Pair with typo3-extension-scanner/typo3-deprecations: they find that an API breaks, this tool supplies how to migrate it. Defaults to the installed major version so results stay relevant; the core ships every historical major, so an unscoped search would return irrelevant hits. Each result has type, issue number, version, title, a bounded excerpt around the first match, and the relative path to read the full file.', annotations: new ToolAnnotations(readOnlyHint: true))]
+    #[MateTool(
+        name: 'typo3-changelog-search',
+        title: 'TYPO3 Changelog Search',
+        description: 'Search the installed typo3/cms-core changelog (Breaking/Deprecation/Feature/Important RST files under Documentation/Changelog/) for migration guidance — offline, no training-data guessing. Pair with typo3-extension-scanner/typo3-deprecations: they find that an API breaks, this tool supplies how to migrate it. Defaults to the installed major version so results stay relevant; the core ships every historical major, so an unscoped search would return irrelevant hits. Each result has type, issue number, version, title, a bounded excerpt around the first match, and the relative path to read the full file.',
+    )]
     public function search(string $query, ?ChangelogType $type = null, ?string $version = null, int $limit = 10): string
     {
         $options = ['limit' => $limit];
@@ -49,6 +51,6 @@ final readonly class ChangelogSearchTool
             $options['core-version'] = $version;
         }
 
-        return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:changelog:search', [$query], $options));
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:changelog:search', [$query], $options));
     }
 }

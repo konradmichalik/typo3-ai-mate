@@ -13,10 +13,8 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Mcp;
 
-use KonradMichalik\Typo3AiMate\Mate\ProfileProvider;
-use Mcp\Capability\Attribute\McpTool;
-use Mcp\Schema\ToolAnnotations;
-use Symfony\AI\Mate\Encoding\ResponseEncoder;
+use KonradMichalik\Typo3AiMate\Mate\{ProfileProvider, ToolResult};
+use Symfony\AI\Mate\Attribute\MateTool;
 
 use function sprintf;
 
@@ -29,12 +27,16 @@ final readonly class PerformanceTool
 {
     public function __construct(private ProfileProvider $profiles) {}
 
-    #[McpTool(name: 'typo3-profiler-latest', title: 'TYPO3 Profiler: Latest', description: 'Compact summary of the most recent request profile (timing, query count, N+1, cache, page.id) plus a resource_uri to read the full profile. Use this first for a single "this page is slow" complaint — no token or filter needed. Use typo3-profiler-list to browse several requests, or typo3-profiler-get once you already have a token.', annotations: new ToolAnnotations(readOnlyHint: true))]
+    #[MateTool(
+        name: 'typo3-profiler-latest',
+        title: 'TYPO3 Profiler: Latest',
+        description: 'Compact summary of the most recent request profile (timing, query count, N+1, cache, page.id) plus a resource_uri to read the full profile. Use this first for a single "this page is slow" complaint — no token or filter needed. Use typo3-profiler-list to browse several requests, or typo3-profiler-get once you already have a token.',
+    )]
     public function latest(): string
     {
         $profile = $this->profiles->rawLatest();
 
-        return ResponseEncoder::encode(null === $profile
+        return ToolResult::untrusted(null === $profile
             ? ['error' => 'No profiles found. Trigger a frontend request in the Development context first.']
             : $this->profiles->summarize($profile));
     }
@@ -42,11 +44,15 @@ final readonly class PerformanceTool
     /**
      * @param int $limit maximum number of recent profiles to list
      */
-    #[McpTool(name: 'typo3-profiler-list', title: 'TYPO3 Profiler: List', description: 'List the most recent request profiles as compact summaries (token, url, status, timing, queries, cache), each with a resource_uri for the full profile. Use this to browse recent activity when no single request is known yet — not for one specific complaint (typo3-profiler-latest) or a known url/status filter (typo3-profiler-search).', annotations: new ToolAnnotations(readOnlyHint: true))]
+    #[MateTool(
+        name: 'typo3-profiler-list',
+        title: 'TYPO3 Profiler: List',
+        description: 'List the most recent request profiles as compact summaries (token, url, status, timing, queries, cache), each with a resource_uri for the full profile. Use this to browse recent activity when no single request is known yet — not for one specific complaint (typo3-profiler-latest) or a known url/status filter (typo3-profiler-search).',
+    )]
     public function list(int $limit = 20): string
     {
         // Label the list so the AI gets a named field instead of a bare top-level array.
-        return ResponseEncoder::encode(['profiles' => $this->profiles->summaries($limit)]);
+        return ToolResult::untrusted(['profiles' => $this->profiles->summaries($limit)]);
     }
 
     /**
@@ -54,22 +60,30 @@ final readonly class PerformanceTool
      * @param int|null    $status HTTP status code to match (e.g. 500); omit to match any status.
      * @param int         $limit  maximum number of matching profiles to return
      */
-    #[McpTool(name: 'typo3-profiler-search', title: 'TYPO3 Profiler: Search', description: 'Search request profiles by url substring and/or HTTP status; returns matching summaries (with resource_uri), newest first. Use this when you know a URL substring or status code to filter by (e.g. "the 500 on /checkout") — otherwise use typo3-profiler-list to browse or typo3-profiler-latest for the most recent request.', annotations: new ToolAnnotations(readOnlyHint: true))]
+    #[MateTool(
+        name: 'typo3-profiler-search',
+        title: 'TYPO3 Profiler: Search',
+        description: 'Search request profiles by url substring and/or HTTP status; returns matching summaries (with resource_uri), newest first. Use this when you know a URL substring or status code to filter by (e.g. "the 500 on /checkout") — otherwise use typo3-profiler-list to browse or typo3-profiler-latest for the most recent request.',
+    )]
     public function search(?string $url = null, ?int $status = null, int $limit = 20): string
     {
         // Label the list so the AI gets a named field instead of a bare top-level array.
-        return ResponseEncoder::encode(['profiles' => $this->profiles->search($url, $status, $limit)]);
+        return ToolResult::untrusted(['profiles' => $this->profiles->search($url, $status, $limit)]);
     }
 
     /**
      * @param string $token profiler token (= request_id, correlates with logs) identifying the profile
      */
-    #[McpTool(name: 'typo3-profiler-get', title: 'TYPO3 Profiler: Get', description: 'Compact summary of a single request profile by its token (= request_id, correlates with logs), plus a resource_uri to read the full profile. Use this once you already have a token — typically a log entry\'s request_id, or a result from typo3-profiler-list/-search.', annotations: new ToolAnnotations(readOnlyHint: true))]
+    #[MateTool(
+        name: 'typo3-profiler-get',
+        title: 'TYPO3 Profiler: Get',
+        description: 'Compact summary of a single request profile by its token (= request_id, correlates with logs), plus a resource_uri to read the full profile. Use this once you already have a token — typically a log entry\'s request_id, or a result from typo3-profiler-list/-search.',
+    )]
     public function get(string $token): string
     {
         $profile = $this->profiles->rawByToken($token);
 
-        return ResponseEncoder::encode(null === $profile
+        return ToolResult::untrusted(null === $profile
             ? ['error' => sprintf('Profile "%s" not found.', $token)]
             : $this->profiles->summarize($profile));
     }

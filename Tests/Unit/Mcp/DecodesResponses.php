@@ -16,8 +16,16 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 use PHPUnit\Framework\Assert;
 use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
+use function array_key_exists;
+
 /**
  * DecodesResponses.
+ *
+ * Unwraps {@see ResponseEncoder::encodeUntrusted()}'s envelope transparently:
+ * most callers below only care about the payload a tool computed, not whether
+ * it went through {@see \KonradMichalik\Typo3AiMate\Mate\ToolResult::from()} or
+ * {@see \KonradMichalik\Typo3AiMate\Mate\ToolResult::untrusted()}. The envelope
+ * itself is asserted once, explicitly, in ToolResultTest.
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
  */
@@ -30,6 +38,11 @@ trait DecodesResponses
     {
         $data = ResponseEncoder::decode($response);
         Assert::assertIsArray($data);
+
+        if (array_key_exists('untrusted_data', $data) && array_key_exists('_security_notice', $data)) {
+            $data = $data['untrusted_data'];
+            Assert::assertIsArray($data);
+        }
 
         return $data;
     }

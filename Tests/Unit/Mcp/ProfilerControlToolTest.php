@@ -74,7 +74,7 @@ final class ProfilerControlToolTest extends TestCase
     {
         $result = $this->decode($this->tool()->start('99h'));
 
-        self::assertJsonHasPath($result, 'error');
+        self::assertJsonPath($result, 'unsupported', true);
     }
 
     #[Test]

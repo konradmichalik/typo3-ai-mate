@@ -16,17 +16,13 @@ namespace KonradMichalik\Typo3AiMate\Support;
 /**
  * ToolClusterGate.
  *
- * Decides which tool clusters are worth putting in front of the model. Seven
- * profiler tools and three logs tools were offered across a whole benchmark run
- * in which not one of them was called, because there were no profiles in
- * `var/log/profiles/` and nothing worth reading in the log. Their names still
- * lengthened the list every tool search had to work through.
+ * Reports whether the profiler/logs tool clusters currently have anything to
+ * read, so a model can check first instead of finding out via a wasted call.
  *
- * Not deletion: a cluster whose subject does not exist yet collapses to the one
- * tool that brings it into existence, and comes back whole as soon as it does.
- * The rules are pure functions of runtime state so both processes — the Mate
- * server that registers the tools and the TYPO3 command that reports the state —
- * derive the same answer from the same rule.
+ * Advisory only: every tool stays registered regardless of this state (ai-mate
+ * v0.13 removed the discovery-time hook that could once suppress a whole
+ * cluster), so an empty cluster's tools are always callable and simply come
+ * back as an honest {@see \KonradMichalik\Typo3AiMate\Mate\ToolResult} miss.
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
  * @license GPL-2.0-or-later
@@ -34,36 +30,15 @@ namespace KonradMichalik\Typo3AiMate\Support;
 final class ToolClusterGate
 {
     /**
-     * The one profiler tool that stays: without profiles there is nothing to
-     * read, but there is always something to switch on.
+     * The profiler tool that turns the cluster on: without profiles there is
+     * nothing to read yet, but there is always something to switch on.
      */
     public const PROFILER_ENTRY_TOOL = 'typo3-profiler-start';
 
     /**
-     * @var list<string>
-     */
-    public const PROFILER_TOOLS = [
-        'typo3-profiler-latest',
-        'typo3-profiler-list',
-        'typo3-profiler-search',
-        'typo3-profiler-get',
-        'typo3-profiler-stop',
-        'typo3-profiler-status',
-    ];
-
-    /**
-     * The one logs tool that stays, so "has anything been logged since?" is still
-     * one call away.
+     * The logs tool that answers "has anything been logged since?" first.
      */
     public const LOGS_ENTRY_TOOL = 'typo3-logs-tail';
-
-    /**
-     * @var list<string>
-     */
-    public const LOGS_TOOLS = [
-        'typo3-logs-search',
-        'typo3-logs-by-level',
-    ];
 
     /**
      * @return array{registered: bool, reason: string}
@@ -77,7 +52,7 @@ final class ToolClusterGate
             return ['registered' => true, 'reason' => 'profiling is currently active'];
         }
 
-        return ['registered' => false, 'reason' => 'no profile has been recorded and profiling is off; only '.self::PROFILER_ENTRY_TOOL.' is offered'];
+        return ['registered' => false, 'reason' => 'no profile has been recorded and profiling is off; call '.self::PROFILER_ENTRY_TOOL.' first'];
     }
 
     /**
@@ -87,6 +62,6 @@ final class ToolClusterGate
     {
         return $logHasEntries
             ? ['registered' => true, 'reason' => 'the log has entries']
-            : ['registered' => false, 'reason' => 'the log is empty; only '.self::LOGS_ENTRY_TOOL.' is offered'];
+            : ['registered' => false, 'reason' => 'the log is empty; call '.self::LOGS_ENTRY_TOOL.' to check again once it is not'];
     }
 }

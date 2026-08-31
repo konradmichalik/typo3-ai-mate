@@ -13,10 +13,8 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Mcp;
 
-use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use Mcp\Capability\Attribute\McpTool;
-use Mcp\Schema\ToolAnnotations;
-use Symfony\AI\Mate\Encoding\ResponseEncoder;
+use KonradMichalik\Typo3AiMate\Mate\{ToolResult, Typo3CliRunner};
+use Symfony\AI\Mate\Attribute\MateTool;
 
 /**
  * PageTool.
@@ -31,12 +29,16 @@ final readonly class PageTool
      * @param int|null    $pageId Page UID to inspect — typically the page.id reported by a profiler summary. Provide exactly one of pageId or url.
      * @param string|null $url    Speaking URL to resolve to a page instead of a UID. Provide exactly one of pageId or url.
      */
-    #[McpTool(name: 'typo3-page', title: 'TYPO3 Page Composition', description: 'Page composition (content elements incl. CType/plugin, backend layout) plus cache signals and USER_INT plugins. Expand the page.id reported by the profiler tools to see what rendered on a slow page.', annotations: new ToolAnnotations(readOnlyHint: true))]
+    #[MateTool(
+        name: 'typo3-page',
+        title: 'TYPO3 Page Composition',
+        description: 'Page composition (content elements incl. CType/plugin, backend layout) plus cache signals and USER_INT plugins. Expand the page.id reported by the profiler tools to see what rendered on a slow page.',
+    )]
     public function info(?int $pageId = null, ?string $url = null): string
     {
         $arguments = null !== $pageId ? [$pageId] : [];
         $options = null !== $url && '' !== $url ? ['url' => $url] : [];
 
-        return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:page:info', $arguments, $options));
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:page:info', $arguments, $options));
     }
 }

@@ -13,11 +13,9 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Mcp;
 
-use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
+use KonradMichalik\Typo3AiMate\Mate\{ToolResult, Typo3CliRunner};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\TypoScriptType;
-use Mcp\Capability\Attribute\McpTool;
-use Mcp\Schema\ToolAnnotations;
-use Symfony\AI\Mate\Encoding\ResponseEncoder;
+use Symfony\AI\Mate\Attribute\MateTool;
 
 /**
  * TypoScriptTool.
@@ -34,7 +32,11 @@ final readonly class TypoScriptTool
      * @param string|null    $path   Dotted scope to limit large output to one branch, e.g. lib.foo. Omitted returns a top-level overview.
      * @param bool           $full   return the entire resolved tree instead of the top-level overview (can be very large)
      */
-    #[McpTool(name: 'typo3-typoscript', title: 'TYPO3 TypoScript', description: 'Resolved frontend TypoScript (setup|constants) of a page. Without a path you get a top-level overview; drill in with a dotted path (e.g. lib.foo) or pass full=true for the whole tree. A path that does not exist answers with found=false plus the keys that do exist at the deepest segment that resolved — read those instead of guessing another path.', annotations: new ToolAnnotations(readOnlyHint: true))]
+    #[MateTool(
+        name: 'typo3-typoscript',
+        title: 'TYPO3 TypoScript',
+        description: 'Resolved frontend TypoScript (setup|constants) of a page. Without a path you get a top-level overview; drill in with a dotted path (e.g. lib.foo) or pass full=true for the whole tree. A path that does not exist answers with found=false plus the keys that do exist at the deepest segment that resolved — read those instead of guessing another path.',
+    )]
     public function dump(int $pageId, TypoScriptType $type = TypoScriptType::Setup, ?string $path = null, bool $full = false): string
     {
         $options = ['type' => $type->value];
@@ -45,6 +47,6 @@ final readonly class TypoScriptTool
             $options['full'] = true;
         }
 
-        return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:typoscript:dump', [$pageId], $options));
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:typoscript:dump', [$pageId], $options));
     }
 }

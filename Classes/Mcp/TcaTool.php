@@ -13,10 +13,8 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Mcp;
 
-use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use Mcp\Capability\Attribute\McpTool;
-use Mcp\Schema\ToolAnnotations;
-use Symfony\AI\Mate\Encoding\ResponseEncoder;
+use KonradMichalik\Typo3AiMate\Mate\{ToolResult, Typo3CliRunner};
+use Symfony\AI\Mate\Attribute\MateTool;
 
 /**
  * TcaTool.
@@ -34,12 +32,20 @@ final readonly class TcaTool
      * @param string|null $recordType Limit columns, relations and recordTypes to one type value, e.g. textmedia. Answers with availableRecordTypes when the value is unknown.
      * @param string|null $fields     comma-separated field names to limit columns and relations to, e.g. header,bodytext
      */
-    #[McpTool(name: 'typo3-tca', title: 'TYPO3 TCA', description: 'Resolved TCA of a table, or the list of all TCA table names when no table is given. A table returns capabilities (softDelete/workspace/language/sorting), recordTypes, relations (field => resolved target table + relationship type, e.g. a file field resolves to sys_file_reference instead of leaving type=file for you to interpret) and the trimmed columns. Ask narrowly: recordType or fields limits columns and relations to what you asked about, which for tt_content is the difference between a few hundred bytes and 15 kB that every later turn re-reads. recordTypes lists the fields shared by all types once under shared and only the additions per type.', annotations: new ToolAnnotations(readOnlyHint: true))]
+    #[MateTool(
+        name: 'typo3-tca',
+        title: 'TYPO3 TCA',
+        description: 'Resolved TCA of a table, or the list of all TCA table names when no table is given. A table returns capabilities (softDelete/workspace/language/sorting), recordTypes, relations (field => resolved target table + relationship type, e.g. a file field resolves to sys_file_reference instead of leaving type=file for you to interpret) and the trimmed columns. Ask narrowly: recordType or fields limits columns and relations to what you asked about, which for tt_content is the difference between a few hundred bytes and 15 kB that every later turn re-reads. recordTypes lists the fields shared by all types once under shared and only the additions per type. answeredBy names which source built the columns: schema-api alone, or schema-api+tca-fallback when a field the Schema API does not build (rare, non-standard config) was recovered from raw TCA and may therefore carry a less complete shape.',
+    )]
     public function dump(?string $table = null, bool $list = false, ?string $recordType = null, ?string $fields = null): string
     {
         if ($list || null === $table || '' === $table) {
-            // Label the list so the AI gets a named field instead of a bare top-level array.
-            return ResponseEncoder::encode(['tables' => $this->typo3->jsonOrError('typo3-ai-mate:tca:dump', [], ['list' => true])]);
+            $names = $this->typo3->jsonOrError('typo3-ai-mate:tca:dump', [], ['list' => true]);
+
+            // Label the list so the AI gets a named field instead of a bare top-level
+            // array — unless the call itself failed, which ToolResult must still see
+            // as {"error": "..."} to report it as unsupported rather than as a table list.
+            return ToolResult::untrusted(['error'] === array_keys($names) ? $names : ['tables' => $names]);
         }
 
         $options = [];
@@ -50,6 +56,6 @@ final readonly class TcaTool
             $options['fields'] = $fields;
         }
 
-        return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:tca:dump', [$table], $options));
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:tca:dump', [$table], $options));
     }
 }

@@ -484,4 +484,25 @@ final class McpToolWrappersTest extends TestCase
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:icons:lookup');
         self::assertJsonPath($result, 'args', ['--identifiers', 'actions-add,actions-edit']);
     }
+
+    #[Test]
+    public function migratedToolsReportAnUnsupportedResultWhenTheConsoleIsUnreachable(): void
+    {
+        $rootDir = sys_get_temp_dir().'/typo3-ai-mate-mcp-failing-'.bin2hex(random_bytes(8));
+        mkdir($rootDir.'/vendor/bin', 0777, true);
+        file_put_contents($rootDir.'/vendor/bin/typo3', "<?php fwrite(STDERR, 'boom'); exit(1);");
+        $runner = new Typo3CliRunner($rootDir);
+
+        try {
+            $result = $this->decode((new IconsTool($runner))->lookup());
+
+            self::assertTrue($result['unsupported'] ?? null);
+            self::assertIsString($result['reason'] ?? null);
+        } finally {
+            @unlink($rootDir.'/vendor/bin/typo3');
+            @rmdir($rootDir.'/vendor/bin');
+            @rmdir($rootDir.'/vendor');
+            @rmdir($rootDir);
+        }
+    }
 }

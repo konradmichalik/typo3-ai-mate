@@ -13,10 +13,8 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Mcp;
 
-use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use Mcp\Capability\Attribute\McpTool;
-use Mcp\Schema\ToolAnnotations;
-use Symfony\AI\Mate\Encoding\ResponseEncoder;
+use KonradMichalik\Typo3AiMate\Mate\{ToolResult, Typo3CliRunner};
+use Symfony\AI\Mate\Attribute\MateTool;
 
 /**
  * FluidNamespacesTool.
@@ -28,9 +26,13 @@ final readonly class FluidNamespacesTool
 {
     public function __construct(private Typo3CliRunner $typo3) {}
 
-    #[McpTool(name: 'typo3-fluid-namespaces', title: 'TYPO3 Fluid Namespaces', description: 'Which Fluid ViewHelper prefixes a template may use without declaring them, mapped to the PHP namespaces they resolve to in order. Takes no arguments. Every other namespace has to be declared per template with an xmlns attribute, so this answers "is <foo:bar> available here" in one call. Resolved from the ViewHelperResolver, which on v14 has already merged Configuration/Fluid/Namespaces.php of every package with the deprecated TYPO3_CONF_VARS registration and applied any ModifyNamespacesEvent listener — none of which is visible in a single configuration file.', annotations: new ToolAnnotations(readOnlyHint: true))]
+    #[MateTool(
+        name: 'typo3-fluid-namespaces',
+        title: 'TYPO3 Fluid Namespaces',
+        description: 'Which Fluid ViewHelper prefixes a template may use without declaring them, mapped to the PHP namespaces they resolve to in order. Takes no arguments. Every other namespace has to be declared per template with an xmlns attribute, so this answers "is <foo:bar> available here" in one call. Resolved from the ViewHelperResolver, which on v14 has already merged Configuration/Fluid/Namespaces.php of every package with the deprecated TYPO3_CONF_VARS registration and applied any ModifyNamespacesEvent listener — none of which is visible in a single configuration file.',
+    )]
     public function list(): string
     {
-        return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:fluid:namespaces'));
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:fluid:namespaces'));
     }
 }

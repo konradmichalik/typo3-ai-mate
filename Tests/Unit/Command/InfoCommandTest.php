@@ -86,7 +86,6 @@ final class InfoCommandTest extends TestCase
 
         self::assertArrayHasKey('konradmichalik/typo3-ai-mate', $packages);
         self::assertArrayHasKey('symfony/ai-mate', $packages);
-        self::assertArrayHasKey('mcp/sdk', $packages);
         self::assertArrayHasKey('konradmichalik/typo3-request-profiler', $packages);
         foreach ($packages as $version) {
             self::assertNotSame('', $version);

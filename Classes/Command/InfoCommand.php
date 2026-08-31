@@ -71,7 +71,6 @@ final class InfoCommand extends AbstractJsonCommand
         'konradmichalik/typo3-ai-mate',
         'konradmichalik/typo3-request-profiler',
         'symfony/ai-mate',
-        'mcp/sdk',
     ];
 
     public function __construct(
@@ -161,14 +160,10 @@ final class InfoCommand extends AbstractJsonCommand
     }
 
     /**
-     * Which tool clusters the state *right now* would register, and why. Gating
-     * means two installs of the same version can expose a different tool
-     * surface; without this, a bug report about a "missing" tool is unreadable.
-     *
-     * This is availability, not the running session's registry: the Mate server
-     * decides its tool list once at start, this command runs in its own process
-     * and probes again per call. A cluster that became available since then is
-     * offered after a reconnect, which is what the hint says.
+     * Whether the profiler/logs tool clusters have anything to report *right
+     * now*, and why. All tools stay registered regardless — calling one with
+     * nothing behind it comes back as an honest unsupported result — but this
+     * saves a wasted round trip when a model is deciding whether to bother.
      *
      * @return array{profiler: array{available: bool, reason: string}, logs: array{available: bool, reason: string}, _hint: string}
      */
@@ -181,7 +176,7 @@ final class InfoCommand extends AbstractJsonCommand
         return [
             'profiler' => ['available' => $profiler['registered'], 'reason' => $profiler['reason']],
             'logs' => ['available' => $logs['registered'], 'reason' => $logs['reason']],
-            '_hint' => 'Evaluated now. The MCP session registered its tools when it started, so a cluster that has become available since then is offered after a reconnect of the server.',
+            '_hint' => 'Evaluated now, from the current filesystem state; state changed since is picked up on the next call.',
         ];
     }
 

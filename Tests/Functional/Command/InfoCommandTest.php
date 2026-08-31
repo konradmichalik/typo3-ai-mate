@@ -70,16 +70,15 @@ final class InfoCommandTest extends FunctionalTestCase
         self::assertIsBool($profiler['activationWindowOpen']);
         self::assertIsBool($profiler['developmentContext']);
 
-        // Availability, not registration: this command runs in its own process
-        // and evaluates the state now, while the MCP session fixed its tool list
-        // when it started.
+        // Advisory only: every tool stays registered regardless, this just says
+        // whether calling one right now would find anything to report.
         $toolClusters = (array) $result['toolClusters'];
         foreach (['profiler', 'logs'] as $cluster) {
             $state = (array) $toolClusters[$cluster];
             self::assertIsBool($state['available']);
             self::assertNotSame('', $state['reason']);
         }
-        self::assertStringContainsString('reconnect', (string) $toolClusters['_hint']);
+        self::assertStringContainsString('current filesystem state', (string) $toolClusters['_hint']);
 
         // The catalogue itself stays behind the flag; the entry point only says
         // how many there are.

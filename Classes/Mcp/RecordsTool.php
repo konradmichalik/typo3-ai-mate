@@ -13,11 +13,9 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Mcp;
 
-use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
+use KonradMichalik\Typo3AiMate\Mate\{ToolResult, Typo3CliRunner};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\OutputMode;
-use Mcp\Capability\Attribute\McpTool;
-use Mcp\Schema\ToolAnnotations;
-use Symfony\AI\Mate\Encoding\ResponseEncoder;
+use Symfony\AI\Mate\Attribute\MateTool;
 
 /**
  * RecordsTool.
@@ -39,7 +37,11 @@ final readonly class RecordsTool
      * @param OutputMode  $mode                summary (default, compact core fields with long text truncated) | full (every column but the bookkeeping ones, untruncated)
      * @param bool        $respectEnableFields apply Deleted/Hidden/StartEnd restrictions (frontend view); default false shows every row with _flags
      */
-    #[McpTool(name: 'typo3-records', title: 'TYPO3 Records', description: 'Read-only record query for a TYPO3 table. Returns rows as compact JSON (uid, pid, label/type, enable columns, timestamps; long text truncated), each with a _flags list (hidden/deleted/timed/fe_group) explaining visibility. No restrictions are applied by default, so hidden/deleted rows are visible — use this instead of raw SQL to answer "why is this record not showing?". Columns whose value is empty, zero or null are left out of a row (uid and pid always stay), and mode=full omits the versioning and l18n_diffsource bookkeeping columns; name a column in fields to read it regardless.', annotations: new ToolAnnotations(readOnlyHint: true))]
+    #[MateTool(
+        name: 'typo3-records',
+        title: 'TYPO3 Records',
+        description: 'Read-only record query for a TYPO3 table. Returns rows as compact JSON (uid, pid, label/type, enable columns, timestamps; long text truncated), each with a _flags list (hidden/deleted/timed/fe_group) explaining visibility. No restrictions are applied by default, so hidden/deleted rows are visible — use this instead of raw SQL to answer "why is this record not showing?". Columns whose value is empty, zero or null are left out of a row (uid and pid always stay), and mode=full omits the versioning and l18n_diffsource bookkeeping columns; name a column in fields to read it regardless.',
+    )]
     public function query(
         string $table,
         ?int $uid = null,
@@ -62,7 +64,7 @@ final readonly class RecordsTool
             'respect-enable-fields' => $respectEnableFields ?: null,
         ]);
 
-        return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:records:query', [$table], $options));
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:records:query', [$table], $options));
     }
 
     /**

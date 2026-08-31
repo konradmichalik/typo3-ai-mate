@@ -13,10 +13,8 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Mcp;
 
-use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use Mcp\Capability\Attribute\McpTool;
-use Mcp\Schema\ToolAnnotations;
-use Symfony\AI\Mate\Encoding\ResponseEncoder;
+use KonradMichalik\Typo3AiMate\Mate\{ToolResult, Typo3CliRunner};
+use Symfony\AI\Mate\Attribute\MateTool;
 
 /**
  * SiteTool.
@@ -33,7 +31,11 @@ final readonly class SiteTool
      * @param int|null    $pageId     switch to URL mode and resolve the frontend/backend URL for this page; omit entirely to list sites instead. Pass 0 for a URL without knowing a page id — resolves to the root page of the first configured site
      * @param int         $language   site language id used when resolving a URL (0 = default language)
      */
-    #[McpTool(name: 'typo3-site', title: 'TYPO3 Site Configuration', description: 'Configured sites — identifier, base URL, root page id, languages (id, locale, base path, title) and error handling. Needed to construct sensible arguments for typo3-render-page and typo3-typoscript, and to diagnose multi-language setups. Omit pageId to list all sites (or one via identifier); pass pageId to instead resolve its absolute frontend URL (via the site router, same resolution typo3-render-page uses) plus the matching backend URL — a lookup with no rendering side effect. pageId=0 resolves the root page of the first configured site when no specific page id is known.', annotations: new ToolAnnotations(readOnlyHint: true))]
+    #[MateTool(
+        name: 'typo3-site',
+        title: 'TYPO3 Site Configuration',
+        description: 'Configured sites — identifier, base URL, root page id, languages (id, locale, base path, title) and error handling. Needed to construct sensible arguments for typo3-render-page and typo3-typoscript, and to diagnose multi-language setups. Omit pageId to list all sites (or one via identifier); pass pageId to instead resolve its absolute frontend URL (via the site router, same resolution typo3-render-page uses) plus the matching backend URL — a lookup with no rendering side effect. pageId=0 resolves the root page of the first configured site when no specific page id is known.',
+    )]
     public function dump(?string $identifier = null, ?int $pageId = null, int $language = 0): string
     {
         $options = [];
@@ -44,6 +46,6 @@ final readonly class SiteTool
             $options['identifier'] = $identifier;
         }
 
-        return ResponseEncoder::encode($this->typo3->jsonOrError('typo3-ai-mate:site:dump', [], $options));
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:site:dump', [], $options));
     }
 }
