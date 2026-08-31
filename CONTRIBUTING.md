@@ -23,7 +23,7 @@ ddev add-on get konradmichalik/ddev-typo3-multi-version-extension
 ddev restart
 ddev install all
 
-# Register the typo3-* MCP tools in each instance (composer plugin + mate discover)
+# Register the typo3-* tools in each instance (composer plugin + mate discover)
 ddev mate-setup
 ```
 
@@ -31,13 +31,13 @@ ddev mate-setup
 extension and the demo sitepackage, and imports `Tests/Acceptance/Fixtures/data.xml`.
 
 `ddev mate-setup` then allows the ai-mate composer plugin and runs
-`mate init` / `mate discover` in each instance, so `mate serve` (and the
-`mcp-inspect` / `mcp-smoke` commands) expose the tools. Re-run it after a fresh
+`mate init` / `mate discover` in each instance, so `mate tools:call` (and the
+`mate-smoke` command) find the tools. Re-run it after a fresh
 `ddev install`, since the add-on rebuilds the instance from scratch.
 
 ## Exercising the request profiler flow
 
-The `typo3-profiler-*` MCP tools read the profiles written by
+The `typo3-profiler-*` tools read the profiles written by
 [`konradmichalik/typo3-request-profiler`](https://packagist.org/packages/konradmichalik/typo3-request-profiler),
 which is a dependency of this extension — so `ddev install all` already provides
 it. Just trigger a request to record a profile:
@@ -52,42 +52,40 @@ ddev launch 14 /
 # A profile now exists under .Build/<version>/var/log/profiles/{token}.json and is
 # served by the typo3-profiler-* tools. Discover and call them via mate:
 ddev 13 ./vendor/bin/mate discover
-ddev 13 ./vendor/bin/mate mcp:tools:call typo3-profiler-latest
+ddev 13 ./vendor/bin/mate tools:call typo3-profiler-latest
 ```
 
-## Inspecting the MCP protocol layer
+## Smoke-testing the whole tool surface
 
-`ddev mcp-inspect` wraps the [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector)
-and connects it to `vendor/bin/mate serve` (stdio transport) inside the chosen
-instance. This validates the real protocol — the `initialize` handshake, the tool
-JSON-schemas as an assistant sees them, and that stdout stays clean — which the
-`mate mcp:tools:*` commands bypass.
+`ddev mate-smoke [13|14]` calls every tool through `vendor/bin/mate tools:call`
+and prints a pass/fail summary (exit code non-zero if any fail):
 
 ```bash
-# Interactive browser UI against v13 (default), or pass 14
-ddev mcp-inspect 13
-
-# Headless checks (CLI mode)
-ddev mcp-inspect 13 --cli --method tools/list
-ddev mcp-inspect 13 --cli --method tools/call --tool-name typo3-tca --tool-arg table=tt_content
-```
-
-The command intentionally connects via `ddev exec` rather than the `ddev <version>`
-wrapper: the wrapper prints a `[TYPO3 v<n>] …` header that would corrupt the stdio
-MCP stream.
-
-To verify **all** tools at once, `ddev mcp-smoke [13|14]` calls every tool over the
-protocol and prints a pass/fail summary (exit code non-zero if any fail):
-
-```bash
-ddev mcp-smoke 13
+ddev mate-smoke 13
 #   ✔ typo3-tca
 #   …
-#   12 passed, 0 failed
+#   21 passed, 0 failed
 ```
+
+A tool passes when the CLI exits cleanly **and** the payload is not an honest miss
+(`"unsupported": true`). That is stricter than it looks: the unit and functional
+suites construct tool classes directly, so they cannot catch a tool that is
+discovered but not resolvable from the Mate container. This harness can, because
+it goes through the real CLI.
+
+On top of the sweep it asserts behaviour that must not regress silently: the
+`typo3-render-page` SSRF guard rejecting a cloud-metadata host, `typo3-profiler-get`
+refusing a traversal-shaped token without leaking file content, `typo3-records`
+redacting `be_users` PII, and application-derived output arriving inside the
+`untrusted_data` envelope.
 
 The `typo3-profiler-*` tools only pass once the profiler is installed and a request
 has been recorded (see above).
+
+> [!NOTE]
+> There is no MCP protocol layer to inspect any more. `symfony/ai-mate` 0.13
+> removed the server (`mate serve`) in favour of a plain CLI, so the former
+> `ddev mcp-inspect` command and its MCP Inspector wrapper are gone.
 
 ## Run tests & checks
 

@@ -15,6 +15,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Whi
 
 ### Removed
 
+- The `ddev mcp-inspect` command and its MCP Inspector wrapper. There is no protocol left to inspect. `ddev mcp-smoke` is replaced by `ddev mate-smoke`, which sweeps every tool through `mate tools:call` and additionally asserts the SSRF guard, profile-token validation, PII redaction and the untrusted-data envelope.
 - `outputSchema` and `readOnlyHint`/`destructiveHint`/`openWorldHint` annotations on every tool. The native `#[MateTool]` attribute has no parameter to carry them. The read-only nature of the tool surface is unchanged and documented in the README instead.
 
 ### Fixed

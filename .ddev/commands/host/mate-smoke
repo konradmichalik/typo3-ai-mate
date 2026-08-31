@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+
+## Description: Smoke-test every typo3-ai-mate tool via the mate CLI and print a pass/fail summary
+## Usage: mate-smoke [13|14]
+## Example: "ddev mate-smoke 13"
+
+set -uo pipefail
+
+VERSION="${1:-13}"
+INSTANCE="/var/www/html/.Build/${VERSION}"
+
+# Newest profile token for typo3-profiler-get (the profiler must be installed and
+# a request recorded — see CONTRIBUTING "Exercising the request profiler flow").
+TOKEN="$(ddev exec bash -c "ls -t ${INSTANCE}/var/log/profiles/*.json 2>/dev/null | head -1 | xargs -n1 basename 2>/dev/null | sed 's/.json//'")"
+
+# tool|space-separated options, in the mate CLI's own `--<param>=<value>` form
+TESTS=(
+  "typo3-tca|--table=tt_content"
+  "typo3-page|--pageId=1"
+  "typo3-typoscript|--pageId=1 --path=tt_content"
+  "typo3-middlewares|--stack=frontend"
+  "typo3-events|"
+  "typo3-logs-search|--query=intentional"
+  "typo3-logs-tail|--limit=5"
+  "typo3-logs-by-level|--level=error"
+  "typo3-upgrade-wizards|"
+  "typo3-deprecations|"
+  "typo3-extension-scanner|--extension=typo3_ai_mate"
+  "typo3-profiler-latest|"
+  "typo3-profiler-list|--limit=5"
+  "typo3-profiler-search|--url=/"
+  # Ordered so the run ends with profiling switched back off.
+  "typo3-profiler-status|"
+  "typo3-profiler-start|--duration=1m"
+  "typo3-profiler-stop|"
+)
+[ -n "${TOKEN}" ] && TESTS+=("typo3-profiler-get|--token=${TOKEN}")
+
+# Call one tool through the mate CLI. Returns its output on stdout and the CLI's
+# own exit code, which is non-zero when the tool could not be invoked at all
+# (handler not wired, unknown option, uncastable argument).
+call_tool() {
+  local name="$1" args="$2"
+  # shellcheck disable=SC2086
+  ddev exec bash -c "cd ${INSTANCE} && ./vendor/bin/mate tools:call ${name} ${args} --format=json" 2>&1
+}
+
+# A tool passes when the CLI exited cleanly *and* the payload is not an honest
+# miss. This is deliberately stricter than the MCP-era check this replaces: over
+# the protocol a guarded or failed call still came back as "isError": false, so
+# the old sweep passed on responses that reported an error inside the payload.
+call_ok() {
+  local out
+  out="$(call_tool "$1" "$2")" || return 1
+  ! grep -q '"unsupported":[[:space:]]*true' <<<"${out}"
+}
+
+printf "Smoke-testing typo3-ai-mate tools on TYPO3 v%s\n\n" "${VERSION}"
+pass=0
+fail=0
+failed=()
+
+record() {
+  local label="$1" detail="${2:-}"
+  if [ "$3" -eq 0 ]; then
+    printf "  \033[32m✔\033[0m %s\n" "${label}"
+    pass=$((pass + 1))
+  else
+    printf "  \033[31m✘\033[0m %s%s\n" "${label}" "${detail:+ (${detail})}"
+    fail=$((fail + 1))
+    failed+=("${label}")
+  fi
+}
+
+for entry in "${TESTS[@]}"; do
+  name="${entry%%|*}"
+  args="${entry#*|}"
+
+  if call_ok "${name}" "${args}"; then
+    record "${name}" "" 0
+  else
+    record "${name}" "call failed or reported unsupported" 1
+  fi
+done
+
+# Security-behavior checks: assert the guard actually fired, rather than only
+# that the call completed. These read the payload, so they are unaffected by the
+# untrusted_data envelope the responses now carry.
+assert_behavior() {
+  local label="$1" description="$2" fn="$3"
+  if "${fn}"; then
+    record "${label}" "" 0
+  else
+    record "${label}" "${description}" 1
+  fi
+}
+
+# SSRF guard: an absolute URL whose host is not a configured site must be
+# rejected rather than fetched.
+check_ssrf_guard() {
+  call_tool typo3-render-page "--url=http://169.254.169.254/latest/meta-data/" \
+    | grep -q 'not among the configured site bases'
+}
+assert_behavior "typo3-render-page (SSRF guard)" "expected the cloud-metadata host to be rejected" check_ssrf_guard
+
+# Profile token validation: a path-traversal-shaped token must be rejected before
+# any file-based lookup, and must never leak filesystem content.
+check_token_validation() {
+  local result
+  result="$(call_tool typo3-profiler-get "--token=../../../../etc/passwd")"
+  grep -qi 'error\|unsupported' <<<"${result}" && ! grep -q 'root:' <<<"${result}"
+}
+assert_behavior "typo3-profiler-get (token validation)" "expected the traversal-shaped token to be rejected" check_token_validation
+
+# PII/secret redaction: be_users PII columns must never reach the client verbatim.
+check_pii_redaction() {
+  call_tool typo3-records "--table=be_users --fields=email,realName,password --mode=full" \
+    | grep -q '\*\*\*'
+}
+assert_behavior "typo3-records (PII/secret redaction)" "expected email/realName/password to be redacted" check_pii_redaction
+
+# The envelope is part of the contract: application-derived output must arrive
+# flagged as untrusted data, so a regression that drops the wrapper is caught
+# here rather than in a reviewer's head.
+check_untrusted_envelope() {
+  call_tool typo3-tca "--table=tt_content" | grep -q '"untrusted_data"'
+}
+assert_behavior "typo3-tca (untrusted_data envelope)" "expected the payload to be wrapped as untrusted data" check_untrusted_envelope
+
+printf "\n%d passed, %d failed" "${pass}" "${fail}"
+[ "${fail}" -gt 0 ] && printf " (%s)" "${failed[*]}"
+printf "\n"
+[ "${fail}" -eq 0 ]
