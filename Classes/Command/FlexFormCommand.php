@@ -216,9 +216,13 @@ final class FlexFormCommand extends AbstractJsonCommand
     {
         try {
             $decoded = json_decode($identifier, true, 512, \JSON_THROW_ON_ERROR);
+            // @codeCoverageIgnoreStart
         } catch (JsonException) {
+            // Defensive: the identifier is what FlexFormTools just produced, so
+            // invalid JSON here would be an upstream defect, not an input.
             return $identifier;
         }
+        // @codeCoverageIgnoreEnd
 
         return is_array($decoded) ? Cast::string($decoded['dataStructureKey'] ?? '') : '';
     }

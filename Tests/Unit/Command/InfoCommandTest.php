@@ -25,7 +25,7 @@ use TYPO3\CMS\Core\Database\{Connection, ConnectionPool};
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Localization\{LanguageService, LanguageServiceFactory};
 use TYPO3\CMS\Core\Package\{Package, PackageManager};
-use TYPO3\CMS\Core\Schema\Field\{FieldCollection, StaticSelectFieldType};
+use TYPO3\CMS\Core\Schema\Field\{FieldCollection, InputFieldType, StaticSelectFieldType};
 use TYPO3\CMS\Core\Schema\Struct\SelectItem;
 use TYPO3\CMS\Core\Schema\{TcaSchema, TcaSchemaFactory};
 
@@ -233,6 +233,50 @@ final class InfoCommandTest extends TestCase
 
         self::assertArrayHasKey('cTypes', $described);
         self::assertArrayNotHasKey('listTypes', $described);
+    }
+
+    #[Test]
+    public function describeSelectFieldReturnsAnEmptyListForAFieldThatIsNotAStaticSelect(): void
+    {
+        // The column exists but carries no item list, so there is no catalogue to
+        // report. Returning [] beats reaching into a field type that has none.
+        $languageService = self::createStub(LanguageService::class);
+        $schema = new TcaSchema('tt_content', new FieldCollection(['CType' => new InputFieldType('CType', ['type' => 'input'])]), []);
+
+        self::assertSame([], $this->command()->describeSelectField($schema, 'CType', $languageService));
+    }
+
+    #[Test]
+    public function describeContentTypesAnswersAnEmptyCatalogueWithoutATtContentSchema(): void
+    {
+        $tcaSchemaFactory = self::createStub(TcaSchemaFactory::class);
+        $tcaSchemaFactory->method('has')->willReturn(false);
+
+        $described = $this->command(tcaSchemaFactory: $tcaSchemaFactory)->describeContentTypes(self::createStub(LanguageService::class));
+
+        self::assertSame(['cTypes' => []], $described);
+    }
+
+    #[Test]
+    public function describeContentTypesReportsListTypesWhileTheColumnStillExists(): void
+    {
+        // list_type is gone in v14, so this branch is only taken on v13. Driving
+        // it through a schema rather than the running core keeps the assertion
+        // available on both.
+        $schema = new TcaSchema('tt_content', new FieldCollection([
+            'CType' => new StaticSelectFieldType('CType', ['items' => [['label' => 'Header', 'value' => 'header']]]),
+            'list_type' => new StaticSelectFieldType('list_type', ['items' => [['label' => 'News', 'value' => 'news_pi1']]]),
+        ]), []);
+        $tcaSchemaFactory = self::createStub(TcaSchemaFactory::class);
+        $tcaSchemaFactory->method('has')->willReturn(true);
+        $tcaSchemaFactory->method('get')->willReturn($schema);
+
+        $languageService = self::createStub(LanguageService::class);
+        $languageService->method('sL')->willReturnArgument(0);
+
+        $described = $this->command(tcaSchemaFactory: $tcaSchemaFactory)->describeContentTypes($languageService);
+
+        self::assertSame(['news_pi1'], array_column($described['listTypes'] ?? [], 'value'));
     }
 
     #[Test]

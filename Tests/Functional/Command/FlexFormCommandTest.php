@@ -15,6 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Functional\Command;
 
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\Console\Tester\CommandTester;
+use Throwable;
 use TYPO3\CMS\Core\Console\CommandRegistry;
 use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -128,6 +129,25 @@ final class FlexFormCommandTest extends FunctionalTestCase
             </data>
         </T3FlexForms>
         XML;
+    /**
+     * A typed value: TYPO3's xml2array honours the `type` attribute, so this
+     * arrives as an int rather than a string and must survive presentation
+     * without being pushed through the string truncation path.
+     */
+    private const STORED_TYPED = <<<'XML'
+        <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+        <T3FlexForms>
+            <data>
+                <sheet index="sDEF">
+                    <language index="lDEF">
+                        <field index="settings.maxItems">
+                            <value index="vDEF" type="integer">7</value>
+                        </field>
+                    </language>
+                </sheet>
+            </data>
+        </T3FlexForms>
+        XML;
     protected array $coreExtensionsToLoad = [
         'install',
         'frontend',
@@ -156,6 +176,7 @@ final class FlexFormCommandTest extends FunctionalTestCase
         $connection->insert('tt_content', ['uid' => 2, 'pid' => 1, 'CType' => 'text', 'header' => 'Without FlexForm', 'pi_flexform' => '']);
         $connection->insert('tt_content', ['uid' => 3, 'pid' => 1, 'CType' => 'list', 'header' => 'With a section', 'pi_flexform' => self::STORED_SECTION]);
         $connection->insert('tt_content', ['uid' => 4, 'pid' => 1, 'CType' => 'list', 'header' => 'Nothing in common', 'pi_flexform' => self::STORED_FOREIGN]);
+        $connection->insert('tt_content', ['uid' => 5, 'pid' => 1, 'CType' => 'list', 'header' => 'Typed value', 'pi_flexform' => self::STORED_TYPED]);
     }
 
     #[Test]
@@ -253,6 +274,49 @@ final class FlexFormCommandTest extends FunctionalTestCase
         self::assertSame(0, $exitCode);
         self::assertSame([], $result['flexFields']);
         self::assertStringContainsString('no column of TCA type "flex"', (string) $result['_hint']);
+    }
+
+    #[Test]
+    public function keepsANonStringValueAsItsOwnType(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['table' => 'tt_content', 'uid' => '5']);
+
+        self::assertSame(0, $exitCode);
+        self::assertTrue($result['dataStructureResolved']);
+        // Declared by the data structure, so matched rather than orphaned, and
+        // still an int: presentation must not stringify what it did not truncate.
+        self::assertSame(['sDEF/settings.maxItems' => 7], $result['matched']);
+    }
+
+    #[Test]
+    public function reportsThatTheDataStructureCouldNotBeResolvedAtAll(): void
+    {
+        // A pointer field referencing a plugin nobody registered any more is the
+        // real-world cause; malformed XML is the shortest way to the same catch.
+        $config = &$GLOBALS['TCA']['tt_content']['columns']['pi_flexform']['config'];
+        $config['ds'] = is_array($config['ds'] ?? null) ? ['default' => '<T3DataStructure>'] : '<T3DataStructure>';
+        unset($config);
+
+        try {
+            $this->get(TcaSchemaFactory::class)->rebuild($GLOBALS['TCA']);
+        } catch (Throwable) {
+            // v13 resolves flex data structures while building the schema, so the
+            // rebuild itself rejects the broken one; v14 defers that and accepts
+            // it. Either way $GLOBALS['TCA'] now carries the broken structure,
+            // which is all the command below needs. What is under test is how the
+            // command answers, not where the core notices.
+        }
+
+        [$exitCode, $result] = $this->runCommand(['table' => 'tt_content', 'uid' => '1']);
+
+        // Not an error: the record does store a FlexForm, and saying so with a
+        // cause beats an empty diff that reads like "nothing is wrong".
+        self::assertSame(0, $exitCode);
+        self::assertTrue($result['hasFlexForm']);
+        self::assertFalse($result['dataStructureResolved']);
+        self::assertNotSame('', (string) $result['error']);
+        self::assertStringContainsString('could not be resolved', (string) $result['_hint']);
+        self::assertArrayNotHasKey('orphaned', $result);
     }
 
     #[Test]

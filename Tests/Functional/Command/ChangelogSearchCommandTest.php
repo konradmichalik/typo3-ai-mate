@@ -98,6 +98,34 @@ final class ChangelogSearchCommandTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function fallsBackToTheInstalledCoresOwnChangelogDirectory(): void
+    {
+        // Constructed without a path override, which is how the command runs in
+        // production: it has to find typo3/cms-core's Documentation/Changelog on
+        // its own rather than being told where it is.
+        $command = new ChangelogSearchCommand($this->get(Typo3Version::class));
+        $tester = new CommandTester($command);
+        $exitCode = $tester->execute(['query' => 'sys_file_reference', '--limit' => '1']);
+
+        self::assertSame(0, $exitCode);
+        $result = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($result);
+        self::assertArrayHasKey('results', $result);
+    }
+
+    #[Test]
+    public function skipsAChangelogFileThatDoesNotCarryEveryQueryWord(): void
+    {
+        // Every word has to appear in the same file. A query pairing a word from
+        // the fixture with one that appears nowhere must return nothing, rather
+        // than matching on the first word alone.
+        [$exitCode, $result] = $this->runCommand(['query' => 'FooBar wordthatappearsinnofixture'], 13);
+
+        self::assertSame(0, $exitCode);
+        self::assertSame([], $result['results']);
+    }
+
+    #[Test]
     public function failsWithAnActionableErrorWhenTheChangelogDirectoryIsMissing(): void
     {
         $command = new ChangelogSearchCommand($this->get(Typo3Version::class), __DIR__.'/../Fixtures/DoesNotExist');

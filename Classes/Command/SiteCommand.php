@@ -169,8 +169,12 @@ final class SiteCommand extends AbstractJsonCommand
             $this->backendUriBuilder->setRequestContext(RequestContext::fromUri(rtrim((string) $site->getBase(), '/').'/typo3/'));
 
             return (string) $this->backendUriBuilder->buildUriFromRoute('web_layout', ['id' => $pageId], UriBuilder::ABSOLUTE_URL);
+            // @codeCoverageIgnoreStart
         } catch (Throwable) {
+            // Defensive: building a backend route URI for an existing page id does
+            // not fail in a booted installation.
             return null;
         }
+        // @codeCoverageIgnoreEnd
     }
 }

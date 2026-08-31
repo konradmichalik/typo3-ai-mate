@@ -239,6 +239,24 @@ final class RecordsCommandTest extends FunctionalTestCase
         self::assertArrayHasKey('validColumns', $result);
     }
 
+    #[Test]
+    public function saysThatRestrictionsHidRowsWhenNothingMatchedAndTheyWereApplied(): void
+    {
+        [$exitCode, $result] = $this->runCommand([
+            'table' => 'tt_content',
+            '--where' => 'header=Does not exist',
+            '--respect-enable-fields' => true,
+        ]);
+
+        self::assertSame(0, $exitCode);
+        self::assertSame(0, $result['count']);
+        self::assertTrue($result['restrictionsApplied']);
+        // Zero rows under active restrictions is ambiguous: nothing matched, or
+        // something matched and was filtered. The hint has to name the second
+        // possibility or the answer invites the wrong conclusion.
+        self::assertStringContainsString('drop respectEnableFields', (string) $result['_hint']);
+    }
+
     /**
      * @param array<string, string|bool> $input
      *

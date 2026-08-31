@@ -139,9 +139,13 @@ final class TcaCommand extends AbstractJsonCommand
 
         $recordTypes = [];
         foreach ($schema->getSubSchemata() as $typeValue => $subSchema) {
+            // Defensive: the core's sub-schemata are TcaSchema instances; the
+            // guard exists because getSubSchemata() is typed loosely.
+            // @codeCoverageIgnoreStart
             if (!$subSchema instanceof TcaSchema) {
                 continue;
             }
+            // @codeCoverageIgnoreEnd
             // FieldCollection::getNames() is a v14-only addition (undefined on
             // TYPO3 v13.4) - iterate instead, which both versions support.
             $fieldNames = [];

@@ -158,9 +158,13 @@ final class DbSchemaCommand extends AbstractJsonCommand
      */
     private function describeTable(string $table): ?array
     {
+        // Unreachable: execute() branches to listTables() for an empty table
+        // name before reaching here. Kept so the contract holds if that changes.
+        // @codeCoverageIgnoreStart
         if ('' === $table) {
             return null;
         }
+        // @codeCoverageIgnoreEnd
 
         // Only a genuinely missing table maps to "unknown table"; connection,
         // permission or driver failures must surface with their real cause.

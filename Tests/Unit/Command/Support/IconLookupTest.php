@@ -87,6 +87,20 @@ final class IconLookupTest extends TestCase
     }
 
     #[Test]
+    public function suggestCapsSubstringMatchesAndSkipsTheEditDistancePass(): void
+    {
+        // Six substring matches against a limit of five: the cap has to apply,
+        // and a sixth match must not be pushed out by a merely-similar name the
+        // edit-distance pass would otherwise add.
+        $registered = ['a-content', 'b-content', 'c-content', 'd-content', 'e-content', 'f-content', 'contant'];
+
+        $suggestions = IconLookup::suggest('content', $registered);
+
+        self::assertCount(5, $suggestions);
+        self::assertNotContains('contant', $suggestions);
+    }
+
+    #[Test]
     public function suggestIsEmptyWhenNothingIsClose(): void
     {
         self::assertSame([], IconLookup::suggest('completely-unrelated-identifier', self::REGISTERED));

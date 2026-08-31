@@ -175,7 +175,11 @@ final class TypoScriptTree
             $resolved[] = $segment;
         }
 
+        // Unreachable: on the last iteration $remainder equals $segment, so the
+        // lookup above has already returned. PHP still requires the return.
+        // @codeCoverageIgnoreStart
         return ['node' => $node, 'resolved' => implode('.', $resolved), 'complete' => true];
+        // @codeCoverageIgnoreEnd
     }
 
     /**
