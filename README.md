@@ -5,7 +5,6 @@
 # TYPO3 extension `typo3_ai_mate`
 
 [![Packagist](https://img.shields.io/packagist/v/konradmichalik/typo3-ai-mate?label=version&logo=packagist)](https://packagist.org/packages/konradmichalik/typo3-ai-mate)
-[![Packagist Downloads](https://img.shields.io/packagist/dt/konradmichalik/typo3-ai-mate?color=brightgreen)](https://packagist.org/packages/konradmichalik/typo3-ai-mate)
 ![TYPO3](https://img.shields.io/badge/TYPO3-13.4%20%7C%2014.3-orange.svg)
 [![Supported PHP Versions](https://img.shields.io/packagist/dependency-v/konradmichalik/typo3-ai-mate/php?logo=php)](https://packagist.org/packages/konradmichalik/typo3-ai-mate)
 [![CGL](https://img.shields.io/github/actions/workflow/status/konradmichalik/typo3-ai-mate/cgl.yml?label=cgl&logo=github)](https://github.com/konradmichalik/typo3-ai-mate/actions/workflows/cgl.yml)
@@ -95,7 +94,9 @@ Full guard list and the trust boundary: [Security](docs/security.md).
 
 ## 🔗 Related
 
-[`hauptsacheNet/typo3-mcp-server`](https://github.com/hauptsacheNet/typo3-mcp-server) is a complementary project with a different goal: it gives assistants a native MCP server to **create, edit and translate TYPO3 content**, safely gated behind workspaces. `typo3-ai-mate` deliberately writes **no content**, it is a dev-only **diagnostics** bridge for the resolved runtime state. Use the former to edit content, the latter to debug it; they sit happily side by side.
+Other projects connect assistants to TYPO3 and answer different questions: [`TYPO3/dev-companion`](https://github.com/TYPO3/dev-companion) supplies version-bound TYPO3 knowledge, while [`hauptsacheNet/typo3-mcp-server`](https://github.com/hauptsacheNet/typo3-mcp-server) and [`marekskopal/typo3-mcp-server`](https://github.com/marekskopal/typo3-mcp-server) write content. This extension writes none and reports what one installation actually computed, so it sits next to them rather than against them.
+
+Which one you want, and why more than one is often the answer: [Related projects](docs/related.md).
 
 ## 📚 Documentation
 
@@ -108,6 +109,7 @@ Full guard list and the trust boundary: [Security](docs/security.md).
 | [Use cases](docs/use-cases.md) | Slow page, error page, major upgrade, and the `request_id` anchor |
 | [Extending](docs/extending.md) | Writing your own `typo3-*` tool against `Typo3CliRunner` |
 | [Tool surface](docs/tool-surface.md) | What the tool count costs a session, measured rather than argued |
+| [Related projects](docs/related.md) | How this compares to dev-companion and the two typo3-mcp-server projects |
 
 ## 🧑‍💻 Contributing
 
