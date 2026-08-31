@@ -86,12 +86,6 @@ flowchart LR
 
 Details, including why tool descriptions cannot carry runtime state, are in [how it works](docs/how-it-works.md).
 
-## 🔒 Security
-
-Read-only by default: only `typo3-profiler-start`, `-stop` and `typo3-render-page` mutate anything, and every command refuses to run outside a Development context. PII and secrets are redacted, `typo3-render-page` is restricted to configured site hosts, and application-derived output is flagged as untrusted data.
-
-Full guard list and the trust boundary: [Security](docs/security.md).
-
 ## 📚 Documentation
 
 | Page | What is inside |
