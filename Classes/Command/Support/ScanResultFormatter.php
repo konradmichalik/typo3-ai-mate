@@ -71,9 +71,7 @@ final readonly class ScanResultFormatter
             $message = Cast::string($match['message'] ?? '');
             $file = Cast::string($match['file'] ?? '');
             $key = $indicator.'|'.$message;
-            if (!isset($grouped[$key])) {
-                $grouped[$key] = ['message' => $message, 'indicator' => $indicator, 'count' => 0, 'files' => []];
-            }
+            $grouped[$key] ??= ['message' => $message, 'indicator' => $indicator, 'count' => 0, 'files' => []];
             ++$grouped[$key]['count'];
             if ('' !== $file && !in_array($file, $grouped[$key]['files'], true)) {
                 $grouped[$key]['files'][] = $file;
