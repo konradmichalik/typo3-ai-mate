@@ -8,8 +8,8 @@ set -euo pipefail
 
 # The multi-version add-on regenerates its install scripts, so the project-specific
 # Mate wiring lives here instead: allow the ai-mate composer plugin, then scaffold
-# the workspace and discover the tools — without this `mate serve` finds no tools
-# ("No valid discovery directories"). Run once after `ddev install`.
+# the workspace and discover the tools — without this `mate tools:list` finds no
+# tools ("No valid discovery directories"). Run once after `ddev install`.
 setup_one() {
   local version="$1"
   local instance="/var/www/html/.Build/${version}"
@@ -21,7 +21,7 @@ setup_one() {
 
   # `composer install` re-runs the ai-mate composer plugin (deps already resolved
   # from the lock file, so this is fast); `mate init`/`discover` then register the
-  # typo3-* tools for `mate serve`.
+  # typo3-* tools and materialize the agent instructions.
   ddev exec bash -c "cd ${instance} \
     && composer config --no-interaction allow-plugins.symfony/ai-mate-composer-plugin true \
     && composer install -n \

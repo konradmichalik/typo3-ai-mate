@@ -115,3 +115,26 @@ composer cgl migration
 2. Add tests for your change and keep the existing suite green.
 3. Run the CGL checks (`composer cgl lint` / `composer cgl sca`).
 4. Open a pull request with a clear description.
+
+## Releasing
+
+A release is its own pull request, cut from `main` after the feature pull requests it contains have been merged.
+
+```bash
+# 1. Bump the version in composer.json, composer.lock and ext_emconf.php
+composer bump-version 0.5.0
+```
+
+`composer bump-version` covers only those three files, so two `CHANGELOG.md` edits stay manual:
+
+2. Rename the `## [Unreleased]` heading to `## [0.5.0] - YYYY-MM-DD`.
+3. At the bottom, point `[Unreleased]` at the new tag and add a `[0.5.0]` compare link:
+
+```markdown
+[Unreleased]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.5.0...HEAD
+[0.5.0]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.4.0...0.5.0
+```
+
+The heading cannot be automated through `version-bumper.yaml`: a `filesToModify` pattern replaces text that already contains a version, and the literal word `Unreleased` is not version-shaped.
+
+4. Commit as `release: version 0.5.0`, open the pull request, merge it, then tag and release from the merge commit.
