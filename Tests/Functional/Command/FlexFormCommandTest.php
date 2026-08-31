@@ -15,6 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Functional\Command;
 
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\Console\Tester\CommandTester;
+use Throwable;
 use TYPO3\CMS\Core\Console\CommandRegistry;
 use TYPO3\CMS\Core\Schema\TcaSchemaFactory;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -291,12 +292,20 @@ final class FlexFormCommandTest extends FunctionalTestCase
     public function reportsThatTheDataStructureCouldNotBeResolvedAtAll(): void
     {
         // A pointer field referencing a plugin nobody registered any more is the
-        // real-world cause; malformed XML reaches the same catch on both cores
-        // without depending on the v13/v14 difference in how `ds` is keyed.
+        // real-world cause; malformed XML is the shortest way to the same catch.
         $config = &$GLOBALS['TCA']['tt_content']['columns']['pi_flexform']['config'];
         $config['ds'] = is_array($config['ds'] ?? null) ? ['default' => '<T3DataStructure>'] : '<T3DataStructure>';
         unset($config);
-        $this->get(TcaSchemaFactory::class)->rebuild($GLOBALS['TCA']);
+
+        try {
+            $this->get(TcaSchemaFactory::class)->rebuild($GLOBALS['TCA']);
+        } catch (Throwable) {
+            // v13 resolves flex data structures while building the schema, so the
+            // rebuild itself rejects the broken one; v14 defers that and accepts
+            // it. Either way $GLOBALS['TCA'] now carries the broken structure,
+            // which is all the command below needs. What is under test is how the
+            // command answers, not where the core notices.
+        }
 
         [$exitCode, $result] = $this->runCommand(['table' => 'tt_content', 'uid' => '1']);
 
