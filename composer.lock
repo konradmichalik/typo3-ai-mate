@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6aa1095d4408772ba1937cad118227ae",
+    "content-hash": "ee5b267f4d2a196f074ed8af1f501833",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -2672,28 +2672,29 @@
         },
         {
             "name": "symfony/ai-mate",
-            "version": "v0.12.0",
+            "version": "v0.13.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/ai-mate.git",
-                "reference": "9856153059f5ba4485d71cb8f50fd84c917b2f37"
+                "reference": "b67c4fe1a4f27452d1a8cb6df4ffceeff1bbfe09"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/ai-mate/zipball/9856153059f5ba4485d71cb8f50fd84c917b2f37",
-                "reference": "9856153059f5ba4485d71cb8f50fd84c917b2f37",
+                "url": "https://api.github.com/repos/symfony/ai-mate/zipball/b67c4fe1a4f27452d1a8cb6df4ffceeff1bbfe09",
+                "reference": "b67c4fe1a4f27452d1a8cb6df4ffceeff1bbfe09",
                 "shasum": ""
             },
             "require": {
-                "mcp/sdk": "^0.6|^0.7",
                 "php": ">=8.2",
+                "psr/container": "^1.1|^2.0",
                 "psr/log": "^2.0|^3.0",
-                "symfony/ai-mate-composer-plugin": "^0.12",
+                "symfony/ai-mate-composer-plugin": "^0.13",
                 "symfony/config": "^5.4|^6.4|^7.3|^8.0",
                 "symfony/console": "^5.4|^6.4|^7.3|^8.0",
                 "symfony/dependency-injection": "^5.4|^6.4|^7.3|^8.0",
                 "symfony/filesystem": "^5.4|^6.4|^7.3|^8.0",
-                "symfony/finder": "^5.4|^6.4|^7.3|^8.0"
+                "symfony/finder": "^5.4|^6.4|^7.3|^8.0",
+                "symfony/process": "^5.4|^6.4|^7.3|^8.0"
             },
             "require-dev": {
                 "ext-simplexml": "*",
@@ -2746,18 +2747,17 @@
                     "homepage": "https://symfony.com/contributors"
                 }
             ],
-            "description": "AI development assistant MCP server for Symfony projects",
+            "description": "AI development assistant CLI for Symfony projects",
             "keywords": [
                 "ai",
+                "cli",
                 "debug",
                 "dev",
                 "development",
-                "mcp",
-                "model-context-protocol",
                 "symfony"
             ],
             "support": {
-                "source": "https://github.com/symfony/ai-mate/tree/v0.12.0"
+                "source": "https://github.com/symfony/ai-mate/tree/v0.13.0"
             },
             "funding": [
                 {
@@ -2777,20 +2777,20 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-07-21T23:38:06+00:00"
+            "time": "2026-08-30T01:03:45+00:00"
         },
         {
             "name": "symfony/ai-mate-composer-plugin",
-            "version": "v0.12.0",
+            "version": "v0.13.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/ai-mate-composer-plugin.git",
-                "reference": "787f6ef52f808ee36e9b54cc20a26e8bdc347274"
+                "reference": "f60efa2657bad3482a036a9081386fe5e5fc22fc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/ai-mate-composer-plugin/zipball/787f6ef52f808ee36e9b54cc20a26e8bdc347274",
-                "reference": "787f6ef52f808ee36e9b54cc20a26e8bdc347274",
+                "url": "https://api.github.com/repos/symfony/ai-mate-composer-plugin/zipball/f60efa2657bad3482a036a9081386fe5e5fc22fc",
+                "reference": "f60efa2657bad3482a036a9081386fe5e5fc22fc",
                 "shasum": ""
             },
             "require": {
@@ -2803,7 +2803,7 @@
                 "phpstan/phpstan-phpunit": "^2.0",
                 "phpstan/phpstan-strict-rules": "^2.0",
                 "phpunit/phpunit": "^11.5.53",
-                "symfony/ai-mate": "^0.12"
+                "symfony/ai-mate": "^0.13"
             },
             "type": "composer-plugin",
             "extra": {
@@ -2842,11 +2842,10 @@
                 "ai",
                 "auto-discovery",
                 "composer-plugin",
-                "mate",
-                "mcp"
+                "mate"
             ],
             "support": {
-                "source": "https://github.com/symfony/ai-mate-composer-plugin/tree/v0.12.0"
+                "source": "https://github.com/symfony/ai-mate-composer-plugin/tree/v0.13.0"
             },
             "funding": [
                 {
@@ -2866,7 +2865,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-07-21T23:38:06+00:00"
+            "time": "2026-08-30T01:03:45+00:00"
         },
         {
             "name": "symfony/cache",
