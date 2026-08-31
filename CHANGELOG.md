@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). While the version is below 1.0.0 a minor bump may contain breaking changes, and this file marks them explicitly.
 
-## [Unreleased]
+## [0.5.0] - 2026-08-31
 
 ### Changed
 
@@ -12,6 +12,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Whi
 - **Breaking:** `typo3-ai-mate:install` no longer writes an MCP server entry to `.mcp.json` or `opencode.json`, because the `mate serve` command it pointed at no longer exists. The options `--agent` and `--skip-mcp-json` are gone with it. The command is now a wrapper around `mate init` and `mate discover`, which write the agent instructions themselves.
 - **Breaking:** tool responses that carry data captured from the inspected installation are now nested under an `untrusted_data` key alongside a `_security_notice`. This covers records, logs, TCA, profiler data, rendered pages, site and icon identifiers, extension keys and everything else read from installed code. Only `typo3-profiler-start`, `-stop` and `-status` answer unwrapped, since profiler activation state is the one thing this package computes entirely by itself. Anything parsing tool output has to unwrap one level.
 - Tool descriptions are static again. `symfony/ai-mate` 0.13 offers no seam to rewrite them at discovery time, so the profiler and logs clusters are no longer suppressed when they have nothing to report. Every tool is always registered and always callable, and a cluster with nothing behind it answers `{"unsupported": true, "reason": "..."}` instead. `typo3-info` reports the current state under `toolClusters`.
+- Widened `konradmichalik/typo3-request-profiler` to `^0.5 || ^0.6`, so an installation already on the profiler's 0.6 line can take this release.
 
 ### Removed
 
@@ -90,7 +91,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Whi
 
 Initial release.
 
-[Unreleased]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.4.0...HEAD
+[Unreleased]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.5.0...HEAD
+[0.5.0]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.1.0...0.2.0
