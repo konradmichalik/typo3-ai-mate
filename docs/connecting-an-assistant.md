@@ -5,8 +5,10 @@
 There is no server process. An assistant calls a tool by running a shell command:
 
 ```bash
-vendor/bin/mate tools:call typo3-tca --table=tt_content
+vendor/bin/mate tools:call typo3-tca --table=tt_content --format=toon
 ```
+
+Always pass `--format=toon`. The default `pretty` format echoes the tool's whole description back and pads the result into an ASCII table, which costs roughly four times the tokens for the same answer; see [tool surface](tool-surface.md). The exception is `tools:list`, whose default table is the compact one.
 
 ## What gets written
 

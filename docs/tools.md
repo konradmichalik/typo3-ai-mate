@@ -4,6 +4,8 @@ Every tool this extension registers, what it answers, and a short use case for e
 
 All of them are read-only except `typo3-profiler-start`, `-stop` and `typo3-render-page`. See [Security](security.md).
 
+The examples below omit `--format=toon` for readability. An assistant should pass it on every call: see [tool surface](tool-surface.md) for what the default format costs.
+
 | Area | Tool |
 | --- | --- |
 | Start here | [`typo3-info`](#typo3-info) |

@@ -4,6 +4,32 @@ These tools expose the **resolved runtime state** of a TYPO3 installation (dev
 context only). Prefer them over reading source files: they report what TYPO3
 actually computed, not what the code might do.
 
+## Calling the tools
+
+Pass `--format=toon` on `tools:call` and `tools:inspect`. TOON is what these
+tools already encode internally, and it is the most compact of the three
+formats for the tabular payloads most of them return:
+
+```
+vendor/bin/mate tools:call typo3-middlewares --format=toon
+```
+
+Measured on `typo3-middlewares`, identical answer: 2,624 bytes as TOON, 4,504
+as JSON, 11,136 in the default `pretty` format. The default renderer echoes the
+tool's whole description back on every single call and then pads the result into
+an ASCII table sized to the security notice, so it costs roughly four times the
+tokens for no extra information. `tools:inspect` behaves the same way: 1,809
+bytes as TOON against 5,745 as text.
+
+`tools:list` is the exception. Leave it at its default table, which truncates
+the descriptions to what routing needs (5,602 bytes). `--format=toon` and
+`--format=json` dump every full tool description instead, at 35 kB and 52 kB.
+When you need one tool's full description, inspect that one tool.
+
+Both TOON and JSON give you the envelope this document describes
+(`_security_notice` plus `untrusted_data`) as parseable structure. Fall back to
+`--format=json` if a payload does not round-trip cleanly.
+
 ## Start here
 
 Call `typo3-info` first, before any other tool in this package. It reports the

@@ -69,7 +69,7 @@ vendor/bin/typo3 typo3-ai-mate:install
 
 That is all it does: it runs `mate init` and `mate discover`. Re-run it after every `composer update` so changed tool descriptions reach `mate/AGENT_INSTRUCTIONS.md`, then reload your assistant.
 
-There is no server process to connect to. Your assistant calls the tools by running `vendor/bin/mate tools:call <name> --<param>=<value>` as a shell command, guided by a managed `CLAUDE.md`/`AGENTS.md` block that `mate init` writes. An assistant that reads only its own file, such as `.cursor/rules`, needs that import added by hand.
+There is no server process to connect to. Your assistant calls the tools by running `vendor/bin/mate tools:call <name> --<param>=<value> --format=toon` as a shell command, guided by a managed `CLAUDE.md`/`AGENTS.md` block that `mate init` writes. An assistant that reads only its own file, such as `.cursor/rules`, needs that import added by hand.
 
 See [connecting an assistant](docs/connecting-an-assistant.md) for what exactly gets written, the Agent Skills that come along, and what to clean up when upgrading from 0.4 or earlier.
 
