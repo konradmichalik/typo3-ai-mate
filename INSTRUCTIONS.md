@@ -6,25 +6,28 @@ actually computed, not what the code might do.
 
 ## Calling the tools
 
-Pass `--format=toon` on `tools:call` and `tools:inspect`. TOON is what these
-tools already encode internally, and it is the most compact of the three
-formats for the tabular payloads most of them return:
+Pass `--format=toon` on `tools:call`, `tools:inspect` and `tools:list`. TOON is
+what these tools already encode internally, and it is the most compact of the
+three formats across all of them:
 
 ```
 vendor/bin/mate tools:call typo3-middlewares --format=toon
 ```
 
 Measured on `typo3-middlewares`, identical answer: 2,624 bytes as TOON, 4,504
-as JSON, 11,136 in the default `pretty` format. The default renderer echoes the
-tool's whole description back on every single call and then pads the result into
-an ASCII table sized to the security notice, so it costs roughly four times the
-tokens for no extra information. `tools:inspect` behaves the same way: 1,809
-bytes as TOON against 5,745 as text.
+as JSON, 3,238 in the default `pretty` format. `tools:inspect` shows a wider
+gap: 1,830 bytes as TOON against 5,745 as text. For a tool whose result is
+large enough to trip `tools:call`'s automatic JSON fallback (`typo3-tca
+--table=tt_content` is one), the default format is the indented JSON dump,
+13,522 bytes as TOON against 28,766 unformatted, over twice the cost.
 
-`tools:list` is the exception. Leave it at its default table, which truncates
-the descriptions to what routing needs (5,602 bytes). `--format=toon` and
-`--format=json` dump every full tool description instead, at 35 kB and 52 kB.
-When you need one tool's full description, inspect that one tool.
+`tools:list` is no longer the exception it used to be. Its default table now
+includes every tool's arguments and is not un-padded the way `tools:call` was,
+so it is the single most expensive way to see the tool catalogue: 57 kB
+default, 53 kB as `--format=json`, 36 kB as `--format=toon`. All three are
+expensive, which is why the table below exists: pick a tool by name instead of
+listing them. When you do need one tool's full description, `tools:inspect`
+that one tool rather than `tools:list`.
 
 Both TOON and JSON give you the envelope this document describes
 (`_security_notice` plus `untrusted_data`) as parseable structure. Fall back to
