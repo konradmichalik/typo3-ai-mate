@@ -27,16 +27,16 @@ final readonly class EventsTool
     public function __construct(private Typo3CliRunner $typo3) {}
 
     /**
-     * @param string|null $event substring matched against the event class name to filter the registry; omit to list all events
+     * @param string|null $pattern substring matched against the event class name to filter the registry; omit to list all events
      */
     #[MateTool(
         name: 'typo3-events',
         title: 'TYPO3 Event Listeners',
         description: 'Resolved PSR-14 event listener registry (which listeners fire for which event), optionally filtered by event class substring.',
     )]
-    public function list(?string $event = null): string
+    public function list(?string $pattern = null): string
     {
-        $options = null !== $event && '' !== $event ? ['event' => $event] : [];
+        $options = null !== $pattern && '' !== $pattern ? ['event' => $pattern] : [];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:events:list', [], $options));
     }

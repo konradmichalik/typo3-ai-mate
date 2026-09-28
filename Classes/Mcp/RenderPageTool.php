@@ -27,8 +27,8 @@ final readonly class RenderPageTool
     public function __construct(private Typo3CliRunner $typo3) {}
 
     /**
-     * @param int|null    $pageId   Page UID to render; resolved to its speaking URL via the site config. Provide exactly one of pageId or url.
-     * @param string|null $url      Explicit URL to render instead of a UID. Provide exactly one of pageId or url.
+     * @param int|null    $pageId   Page UID to render; resolved to its speaking URL via the site config. Exactly one of pageId or url is required; if both are given, pageId takes precedence and url is ignored.
+     * @param string|null $url      Explicit URL to render instead of a UID. Exactly one of pageId or url is required; if both are given, pageId takes precedence and url is ignored.
      * @param int         $language site language id to render in (0 = default language)
      */
     // Unlike every other tool here, this issues a real HTTP request (performRequest()

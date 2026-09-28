@@ -31,7 +31,7 @@ final readonly class ChangelogSearchTool
      * @param string             $query   search terms, e.g. a class name, method name or hook name; every word must match, in the filename or the content
      * @param ChangelogType|null $type    Breaking | Deprecation | Feature | Important; omit to search all types
      * @param string|null        $version version directory prefix, e.g. "13" or "13.4"; omit to default to the installed TYPO3 major (the core ships every historical version, so this keeps results relevant)
-     * @param int                $limit   maximum results (capped at 30)
+     * @param int                $limit   maximum results (default 10, capped at 30)
      */
     #[MateTool(
         name: 'typo3-changelog-search',

@@ -42,7 +42,7 @@ final readonly class PerformanceTool
     }
 
     /**
-     * @param int $limit maximum number of recent profiles to list
+     * @param int $limit maximum number of recent profiles to list; defaults to 20
      */
     #[MateTool(
         name: 'typo3-profiler-list',
@@ -56,19 +56,19 @@ final readonly class PerformanceTool
     }
 
     /**
-     * @param string|null $url    substring matched against the request URL; omit to match any URL
-     * @param int|null    $status HTTP status code to match (e.g. 500); omit to match any status.
-     * @param int         $limit  maximum number of matching profiles to return
+     * @param string|null $urlContains substring matched against the request URL; omit to match any URL
+     * @param int|null    $status      HTTP status code to match (e.g. 500); omit to match any status.
+     * @param int         $limit       maximum number of matching profiles to return; defaults to 20
      */
     #[MateTool(
         name: 'typo3-profiler-search',
         title: 'TYPO3 Profiler: Search',
         description: 'Search request profiles by url substring and/or HTTP status; returns matching summaries (with resource_uri), newest first. Use this when you know a URL substring or status code to filter by (e.g. "the 500 on /checkout") — otherwise use typo3-profiler-list to browse or typo3-profiler-latest for the most recent request.',
     )]
-    public function search(?string $url = null, ?int $status = null, int $limit = 20): string
+    public function search(?string $urlContains = null, ?int $status = null, int $limit = 20): string
     {
         // Label the list so the AI gets a named field instead of a bare top-level array.
-        return ToolResult::untrusted(['profiles' => $this->profiles->search($url, $status, $limit)]);
+        return ToolResult::untrusted(['profiles' => $this->profiles->search($urlContains, $status, $limit)]);
     }
 
     /**
