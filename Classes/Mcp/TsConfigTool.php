@@ -29,7 +29,7 @@ final readonly class TsConfigTool
     /**
      * @param int          $pageId page UID whose rootline-merged Page TSconfig should be dumped
      * @param TsConfigType $type   page (default; mod.*, TCEFORM, TCEMAIN, RTE) | user (per backend user)
-     * @param int|null     $user   BE user UID — required when type=user
+     * @param int|null     $user   BE user UID; required when type=user (omitting it in that case fails), ignored for type=page
      * @param string|null  $path   Dotted scope to limit large output to one branch, e.g. mod.web_layout. Omitted returns a top-level overview.
      * @param bool         $full   return the entire resolved tree instead of the top-level overview (can be very large)
      */

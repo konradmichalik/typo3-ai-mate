@@ -24,7 +24,7 @@ large enough to trip `tools:call`'s automatic JSON fallback (`typo3-tca
 `tools:list` is no longer the exception it used to be. Its default table now
 includes every tool's arguments and is not un-padded the way `tools:call` was,
 so it is the single most expensive way to see the tool catalogue: 57 kB
-default, 53 kB as `--format=json`, 36 kB as `--format=toon`. All three are
+default, 54 kB as `--format=json`, 37 kB as `--format=toon`. All three are
 expensive, which is why the table below exists: pick a tool by name instead of
 listing them. When you do need one tool's full description, `tools:inspect`
 that one tool rather than `tools:list`.

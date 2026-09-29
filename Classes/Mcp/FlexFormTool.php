@@ -27,8 +27,8 @@ final readonly class FlexFormTool
     public function __construct(private Typo3CliRunner $typo3) {}
 
     /**
-     * @param string      $table table of the record, e.g. tt_content
-     * @param int         $uid   record uid
+     * @param string      $table table that holds the record identified by $uid, e.g. tt_content
+     * @param int         $uid   uid of the record in $table to check
      * @param string|null $field FlexForm column; omit when the table has exactly one, otherwise the answer lists them
      */
     #[MateTool(

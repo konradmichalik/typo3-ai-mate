@@ -59,7 +59,7 @@ Inspect recorded per-request profiles as compact summaries (timing, N+1, cache, 
 
 ```bash
 vendor/bin/mate tools:call typo3-profiler-latest
-vendor/bin/mate tools:call typo3-profiler-search --url=/checkout --status=500
+vendor/bin/mate tools:call typo3-profiler-search --urlContains=/checkout --status=500
 vendor/bin/mate tools:call typo3-profiler-get --token=<token>
 ```
 
@@ -103,7 +103,7 @@ vendor/bin/mate tools:call typo3-page --url=/products/widget
 
 ## `typo3-records`
 
-Read-only record query for any table (structured, parameterised — equality filters via `uid`/`pid`/`where`, never raw SQL). Returns compact rows (uid, pid, label/type, enable columns, timestamps; long text truncated) each with a `_flags` list (hidden/deleted/timed/fe_group). No restrictions by default so hidden/deleted rows are visible — the answer to "why is this record not showing?". Pass `fields` for specific columns, `mode=full` for all columns, `respectEnableFields=true` for the frontend view. Sensitive columns (passwords and `password`-type TCA fields) are always redacted, and any embedded emails, IPv4 addresses or secrets in text values are redacted too.
+Read-only record query for any table (structured, parameterised — equality filters via `uid`/`pid`/`filter`, never raw SQL). Returns compact rows (uid, pid, label/type, enable columns, timestamps; long text truncated) each with a `_flags` list (hidden/deleted/timed/fe_group). No restrictions by default so hidden/deleted rows are visible — the answer to "why is this record not showing?". Pass `fields` for specific columns, `mode=full` for all columns, `respectEnableFields=true` for the frontend view. Sensitive columns (passwords and `password`-type TCA fields) are always redacted, and any embedded emails, IPv4 addresses or secrets in text values are redacted too.
 
 <details>
 <summary>Answer "why is this record not showing?"</summary>
@@ -111,7 +111,7 @@ Read-only record query for any table (structured, parameterised — equality fil
 ```bash
 vendor/bin/mate tools:call typo3-records --table=tt_content --pid=42
 vendor/bin/mate tools:call typo3-records --table=pages --uid=42 --mode=full
-vendor/bin/mate tools:call typo3-records --table=tt_content --where=CType=text,colPos=0 --limit=10
+vendor/bin/mate tools:call typo3-records --table=tt_content --filter=CType=text,colPos=0 --limit=10
 ```
 
 No restrictions apply by default, so hidden and deleted rows are visible with a `_flags` list explaining why. Pass `--respectEnableFields=true` for the frontend view instead.
@@ -126,7 +126,7 @@ Search, tail or filter the TYPO3 logs. Returns a compact summary (distinct messa
 <summary>Find an exception and tie it to its request</summary>
 
 ```bash
-vendor/bin/mate tools:call typo3-logs-by-level --level=error --since=1h
+vendor/bin/mate tools:call typo3-logs-by-level --minLevel=error --since=1h
 vendor/bin/mate tools:call typo3-logs-search --query="Call to a member function" --mode=full
 vendor/bin/mate tools:call typo3-logs-tail --limit=20
 ```
@@ -300,7 +300,7 @@ List the resolved PSR-14 event listener registry.
 <summary>See who already listens to an event</summary>
 
 ```bash
-vendor/bin/mate tools:call typo3-events --event=ModifyRecordListRecordActions
+vendor/bin/mate tools:call typo3-events --pattern=ModifyRecordListRecordActions
 ```
 
 Reads the PSR-14 registry only. It says nothing about legacy `SC_OPTIONS` hook arrays.
@@ -372,14 +372,14 @@ Read-only. Never run wizards autonomously on someone's installation.
 
 ## `typo3-extension-scanner`
 
-Statically scan an extension — or all non-core extensions — against the core breaking/deprecation matchers. Returns a compact summary by default (matches grouped by message with strong/weak counts and the affected files, plus a per-origin rollup when scanning all); pass `mode=full` for individual matches with line content, and `ownCode=true` to skip third-party (vendor) packages.
+Statically scan an extension — or all non-core extensions — against the core breaking/deprecation matchers. Returns a compact summary by default (matches grouped by message with strong/weak counts and the affected files, plus a per-origin rollup when scanning all); pass `mode=full` for individual matches with line content, and `ownOnly=true` to skip third-party (vendor) packages.
 
 <details>
 <summary>Start an LTS jump here</summary>
 
 ```bash
 vendor/bin/mate tools:call typo3-extension-scanner --extension=my_ext
-vendor/bin/mate tools:call typo3-extension-scanner --ownCode=true --mode=full
+vendor/bin/mate tools:call typo3-extension-scanner --ownOnly=true --mode=full
 ```
 
 Omit `--extension` to sweep every non-core extension. Feed a hit into `typo3-changelog-search` for the migration path.

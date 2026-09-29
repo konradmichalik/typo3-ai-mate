@@ -31,7 +31,7 @@ final readonly class LogsTool
      * @param LogLevel|null $level     restrict to a single severity; omit for all levels
      * @param string|null   $component Restrict to a log component/channel, dotted (e.g. TYPO3.CMS.Frontend); omit for all.
      * @param string|null   $requestId correlate with a profiler token (= request_id) to tie an error back to its request; omit for all
-     * @param int           $limit     maximum number of results to return
+     * @param int           $limit     maximum number of results to return (default 50)
      * @param OutputMode    $mode      summary (default, distinct messages grouped with counts) | full (individual entries with truncated traces)
      * @param string|null   $since     Relative time window, e.g. 1h, 2d; omit for all entries regardless of age.
      */
@@ -57,7 +57,7 @@ final readonly class LogsTool
     }
 
     /**
-     * @param int         $limit number of most recent entries to return
+     * @param int         $limit number of most recent entries to return (default 50)
      * @param OutputMode  $mode  summary (default, distinct messages grouped with counts) | full (individual entries with truncated traces)
      * @param string|null $since Relative time window, e.g. 1h, 2d; omit for all entries regardless of age.
      */
@@ -72,17 +72,17 @@ final readonly class LogsTool
     }
 
     /**
-     * @param LogLevel    $level     Minimum severity; entries at or above this level are returned (e.g. error also yields critical, alert, emergency).
+     * @param LogLevel    $minLevel  Minimum severity; entries at or above this level are returned (e.g. error also yields critical, alert, emergency).
      * @param string|null $requestId correlate with a profiler token (= request_id) to tie an error back to its request; omit for all
-     * @param int         $limit     maximum number of results to return
+     * @param int         $limit     maximum number of results to return (default 50)
      * @param OutputMode  $mode      summary (default, distinct messages grouped with counts) | full (individual entries with truncated traces)
      * @param string|null $since     Relative time window, e.g. 1h, 2d; omit for all entries regardless of age.
      */
     #[MateTool(name: 'typo3-logs-by-level', title: 'TYPO3 Logs by Level', description: 'Return TYPO3 log entries at or above a minimum severity (e.g. error), optionally filtered by request-id. Defaults to a compact summary (distinct messages with counts and lastSeen, no stack traces). Use this when you want every entry from a severity upwards regardless of message text.')]
-    public function byLevel(LogLevel $level, ?string $requestId = null, int $limit = 50, OutputMode $mode = OutputMode::Summary, ?string $since = null): string
+    public function byLevel(LogLevel $minLevel, ?string $requestId = null, int $limit = 50, OutputMode $mode = OutputMode::Summary, ?string $since = null): string
     {
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], $this->options([
-            'level' => $level->value,
+            'level' => $minLevel->value,
             'request-id' => $requestId,
             'limit' => $limit,
             'format' => $mode->value,

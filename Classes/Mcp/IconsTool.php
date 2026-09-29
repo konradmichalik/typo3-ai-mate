@@ -27,7 +27,7 @@ final readonly class IconsTool
     public function __construct(private Typo3CliRunner $typo3) {}
 
     /**
-     * @param string|null $identifiers Comma-separated icon identifiers to check in one call, e.g. actions-add,tx-myext-plugin. A miss carries the closest registered identifiers as suggestions.
+     * @param string|null $identifiers Comma-separated icon identifiers to check in one call, e.g. actions-add,tx-myext-plugin. A miss carries the closest registered identifiers as suggestions. Omit to get the identifier count grouped by leading segment instead of a lookup.
      */
     #[MateTool(
         name: 'typo3-icons',

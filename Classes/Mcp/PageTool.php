@@ -26,8 +26,8 @@ final readonly class PageTool
     public function __construct(private Typo3CliRunner $typo3) {}
 
     /**
-     * @param int|null    $pageId Page UID to inspect — typically the page.id reported by a profiler summary. Provide exactly one of pageId or url.
-     * @param string|null $url    Speaking URL to resolve to a page instead of a UID. Provide exactly one of pageId or url.
+     * @param int|null    $pageId Page UID to inspect — typically the page.id reported by a profiler summary. Exactly one of pageId or url is required; if both are given, pageId takes precedence and url is ignored.
+     * @param string|null $url    Speaking URL to resolve to a page instead of a UID. Exactly one of pageId or url is required; if both are given, pageId takes precedence and url is ignored.
      */
     #[MateTool(
         name: 'typo3-page',

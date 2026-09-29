@@ -30,9 +30,9 @@ final readonly class RecordsTool
      * @param string      $table               database table to query, e.g. tt_content or pages
      * @param int|null    $uid                 return a single record by uid
      * @param int|null    $pid                 filter by parent page id
-     * @param string|null $where               simple field=value pairs, comma-separated and AND-combined (equality only), e.g. CType=text,colPos=0
+     * @param string|null $filter              simple field=value pairs, comma-separated and AND-combined (equality only), e.g. CType=text,colPos=0
      * @param string|null $fields              Comma-separated explicit column selection; omit for a compact default set. A column named here is always reported, even when its value is empty.
-     * @param int         $limit               maximum rows to return (capped at 100)
+     * @param int         $limit               maximum rows to return (default 25, capped at 100)
      * @param string|null $orderBy             order by a column, optionally with direction: field or field:desc
      * @param OutputMode  $mode                summary (default, compact core fields with long text truncated) | full (every column but the bookkeeping ones, untruncated)
      * @param bool        $respectEnableFields apply Deleted/Hidden/StartEnd restrictions (frontend view); default false shows every row with _flags
@@ -46,7 +46,7 @@ final readonly class RecordsTool
         string $table,
         ?int $uid = null,
         ?int $pid = null,
-        ?string $where = null,
+        ?string $filter = null,
         ?string $fields = null,
         int $limit = 25,
         ?string $orderBy = null,
@@ -56,7 +56,7 @@ final readonly class RecordsTool
         $options = $this->options([
             'uid' => $uid,
             'pid' => $pid,
-            'where' => $where,
+            'where' => $filter,
             'fields' => $fields,
             'limit' => $limit,
             'order-by' => $orderBy,

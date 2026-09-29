@@ -11,11 +11,13 @@ The CLI model (introduced in v0.13) changed what the number even means. Under th
 | Loaded | What | Bytes | ~Tokens |
 | --- | --- | --- | --- |
 | Up front, always | `mate/AGENT_INSTRUCTIONS.md` (mate's header plus this package's `INSTRUCTIONS.md`) | 13,807 | 3,450 |
-| On demand | `tools:list`, default table | ~~5,602~~ 57,203 | ~~1,400~~ 14,300 |
-| On demand | `tools:list --format=toon` | 36,159 | 9,000 |
+| On demand | `tools:list`, default table | ~~5,602~~ 57,240 | ~~1,400~~ 14,300 |
+| On demand | `tools:list --format=toon` | 36,977 | 9,250 |
 | On demand | `tools:inspect <tool> --format=toon`, one tool | 1,830 | 460 |
 
-The session floor is still around 3,450 tokens. What changed is the cost of *not* picking a tool by name: `tools:list` (symfony/ai#2488) now embeds each tool's arguments in the same table, and that table is not the one v0.14 un-padded (see below), so its default rendering grew roughly tenfold. It is the single most expensive way to see the tool catalogue, more expensive even than `--format=json` (53,265 B). `INSTRUCTIONS.md`'s own "Which tool for which question" table exists precisely so an agent never has to pay this: read the tool surface once, and it does not need to be paid again this session.
+The session floor is still around 3,450 tokens. What changed is the cost of *not* picking a tool by name: `tools:list` (symfony/ai#2488) now embeds each tool's arguments in the same table, and that table is not the one v0.14 un-padded (see below), so its default rendering grew roughly tenfold. It is the single most expensive way to see the tool catalogue, more expensive even than `--format=json` (54,066 B). `INSTRUCTIONS.md`'s own "Which tool for which question" table exists precisely so an agent never has to pay this: read the tool surface once, and it does not need to be paid again this session.
+
+The `tools:list` figures above are after a documentation-only argument audit (#122): 22 parameter names/docblocks were corrected for clarity (unstated defaults, ambiguous names, cross-tool naming collisions), which added roughly 800 bytes across the whole catalogue. That is the expected direction: clarity was chosen over size here, consistent with this file's own conclusion below that description discipline, not tool or word count, is the actual lever.
 
 **The output format still matters, but the shape of the cost changed.** `tools:call`'s default `pretty` format no longer pads the whole answer into an ASCII table (symfony/ai#2585); large results now auto-fall back to indented JSON instead (symfony/ai#2584). Same tool, same answer:
 

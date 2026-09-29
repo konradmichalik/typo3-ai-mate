@@ -28,9 +28,9 @@ final readonly class FluidResolveTool
     /**
      * @param int         $pageId   page UID whose resolved TypoScript provides the root paths
      * @param string      $plugin   TypoScript path to the view config, e.g. plugin.tx_news_pi1 or page.10
-     * @param string|null $template template name to resolve to a file, e.g. News/List
-     * @param string|null $partial  partial name to resolve to a file
-     * @param string|null $layout   layout name to resolve to a file
+     * @param string|null $template template name to resolve to a file, e.g. News/List; omit to skip resolving this one (its candidate root paths are still returned)
+     * @param string|null $partial  partial name to resolve to a file; omit to skip resolving this one (its candidate root paths are still returned)
+     * @param string|null $layout   layout name to resolve to a file; omit to skip resolving this one (its candidate root paths are still returned)
      * @param string      $format   file format (default html)
      */
     #[MateTool(
