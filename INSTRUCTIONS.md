@@ -23,8 +23,8 @@ large enough to trip `tools:call`'s automatic JSON fallback (`typo3-tca
 
 `tools:list` is no longer the exception it used to be. Its default table now
 includes every tool's arguments and is not un-padded the way `tools:call` was,
-so it is the single most expensive way to see the tool catalogue: 57 kB
-default, 54 kB as `--format=json`, 37 kB as `--format=toon`. All three are
+so it is the single most expensive way to see the tool catalogue: 59 kB
+default, 56 kB as `--format=json`, 38 kB as `--format=toon`. All three are
 expensive, which is why the table below exists: pick a tool by name instead of
 listing them. When you do need one tool's full description, `tools:inspect`
 that one tool rather than `tools:list`.
@@ -67,6 +67,7 @@ Exact tool names, so you can select one directly instead of searching for it.
 | What runs in the PSR-15 / PSR-14 chain? | `typo3-middlewares`, `typo3-events` |
 | Which console commands exist? | `typo3-commands` |
 | What is in `TYPO3_CONF_VARS` or an extension's configuration? | `typo3-config` |
+| Why is this implementation injected? Is this service shared? | `typo3-service` |
 | Which sites exist? What is page N's URL? | `typo3-site` |
 | What breaks when I upgrade my code? | `typo3-extension-scanner`, then `typo3-changelog-search` |
 | Which DB/config migrations are outstanding? | `typo3-upgrade-wizards` |

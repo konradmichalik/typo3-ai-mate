@@ -26,7 +26,7 @@ This _dev-only_ extension hands the assistant that already-resolved state instea
 
 ## ✨ Features
 
-- **32 read-only diagnostic tools** over the resolved runtime state: TCA, page composition, records, TypoScript, TSconfig, Fluid resolution, PSR-15 and PSR-14 chains, logs, per-request profiles and more. See the [tool reference](docs/tools.md).
+- **33 read-only diagnostic tools** over the resolved runtime state: TCA, page composition, records, TypoScript, TSconfig, Fluid resolution, PSR-15 and PSR-14 chains, logs, per-request profiles, DI services and more. See the [tool reference](docs/tools.md).
 - **Answers, not empty structures.** A miss reports `registered: false` or `unsupported` with a reason, so an assistant stops instead of retrying with different arguments.
 - **Prompt-injection aware.** Output captured from the installation arrives wrapped as [untrusted data](docs/security.md#untrusted-data), never as instructions.
 - **Diagnose without booting TYPO3 twice.** The tools shell out to the installation's own console, so they report what it actually computed. See [how it works](docs/how-it-works.md).

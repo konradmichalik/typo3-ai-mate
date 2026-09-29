@@ -28,6 +28,7 @@ The examples below omit `--format=toon` for readability. An assistant should pas
 | Sites | [`typo3-site`](#typo3-site) |
 | Console | [`typo3-commands`](#typo3-commands) |
 | Configuration | [`typo3-config`](#typo3-config) |
+| Services | [`typo3-service`](#typo3-service) |
 | Upgrade | [`typo3-upgrade-wizards`](#typo3-upgrade-wizards) |
 | Upgrade | [`typo3-extension-scanner`](#typo3-extension-scanner) |
 | Upgrade | [`typo3-changelog-search`](#typo3-changelog-search) |
@@ -352,6 +353,34 @@ vendor/bin/mate tools:call typo3-config --section=extensions --path=news
 ```
 
 Omit `--path` for a compact overview, then drill in.
+
+</details>
+
+## `typo3-service`
+
+Class, constructor argument types, and public/shared flags of one DI service — why is this implementation injected, is it shared or a fresh instance per use. Public services only: TYPO3 makes most services private by default (`_defaults: public: false` in `Configuration/Services.yaml`), and this tool can only reach what the container itself exposes. Constructor arguments are the *types* PHP declares, not the *values* TYPO3 resolved: a constructor-injected service and a scalar parameter both show only their declared type. No tags and no lazy/autowired/autoconfigured flags either — both are compiler-only metadata that no longer exists once the container has compiled, and getting them back would mean rebuilding a `ContainerBuilder` the way TYPO3's own cache warmup does, which needs several `@internal` core classes and nine synthetic bootstrap instances (`ClassLoader`, `ApplicationContext`, `cache.core`, …) this tool does not reconstruct.
+
+Unlike every other tool on this page, this one is not read-only in the strictest sense: the shared/not-shared check resolves the service (twice for a non-shared one), which really constructs it. See [Security](security.md#read-only-by-default).
+
+<details>
+<summary>Why is this implementation injected, and is it shared?</summary>
+
+```bash
+vendor/bin/mate tools:call typo3-service --id="GuzzleHttp\ClientInterface"
+```
+
+```json
+{
+  "id": "GuzzleHttp\\ClientInterface",
+  "class": "GuzzleHttp\\Client",
+  "shared": true,
+  "constructorArguments": [
+    {"position": 0, "name": "config", "type": "array"}
+  ]
+}
+```
+
+Pass a class/interface name for an autowired service, or a string service id. A service that is not registered, or that TYPO3 keeps private (the default), answers `unsupported` — console commands are the one common exception: `#[AsCommand]`'s autoconfiguration makes them public so `CommandRegistry` can fetch them by id, so this tool can also inspect this package's own commands.
 
 </details>
 
