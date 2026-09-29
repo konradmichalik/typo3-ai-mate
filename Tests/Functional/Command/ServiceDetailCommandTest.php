@@ -35,15 +35,19 @@ final class ServiceDetailCommandTest extends FunctionalTestCase
     ];
 
     #[Test]
-    public function resolvesAPubliclyAliasedCoreInterfaceToItsRealImplementation(): void
+    public function resolvesAPubliclyAliasedInterfaceToItsRealImplementation(): void
     {
-        [$exitCode, $result] = $this->runCommand(['id' => 'Psr\Clock\ClockInterface']);
+        // Guzzle, not a TYPO3\CMS\Core\Clock\* interface: the latter is public only from TYPO3 14,
+        // and this package targets 13.4 and 14.3 alike (verified against both locally).
+        [$exitCode, $result] = $this->runCommand(['id' => 'GuzzleHttp\ClientInterface']);
 
         self::assertSame(0, $exitCode);
-        self::assertSame('Psr\Clock\ClockInterface', $result['id']);
-        self::assertSame('TYPO3\CMS\Core\Clock\SystemClock', $result['class']);
+        self::assertSame('GuzzleHttp\ClientInterface', $result['id']);
+        self::assertSame('GuzzleHttp\Client', $result['class']);
         self::assertTrue($result['shared']);
-        self::assertSame([], $result['constructorArguments']);
+        self::assertSame([
+            ['position' => 0, 'name' => 'config', 'type' => 'array'],
+        ], $result['constructorArguments']);
     }
 
     #[Test]

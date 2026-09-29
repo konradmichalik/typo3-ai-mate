@@ -366,15 +366,17 @@ Unlike every other tool on this page, this one is not read-only in the strictest
 <summary>Why is this implementation injected, and is it shared?</summary>
 
 ```bash
-vendor/bin/mate tools:call typo3-service --id="Psr\Clock\ClockInterface"
+vendor/bin/mate tools:call typo3-service --id="GuzzleHttp\ClientInterface"
 ```
 
 ```json
 {
-  "id": "Psr\\Clock\\ClockInterface",
-  "class": "TYPO3\\CMS\\Core\\Clock\\SystemClock",
+  "id": "GuzzleHttp\\ClientInterface",
+  "class": "GuzzleHttp\\Client",
   "shared": true,
-  "constructorArguments": []
+  "constructorArguments": [
+    {"position": 0, "name": "config", "type": "array"}
+  ]
 }
 ```
 
