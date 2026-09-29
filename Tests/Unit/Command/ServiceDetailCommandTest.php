@@ -96,7 +96,7 @@ final class ServiceDetailCommandTest extends TestCase
     public function aServiceThatFailsToInstantiateFailsWithItsExceptionMessageRatherThanCrashing(): void
     {
         $container = new InMemoryContainer(['acme.broken' => static function (): never {
-            throw new RuntimeException('missing runtime dependency');
+            throw new RuntimeException('missing runtime dependency', 5241347027);
         }]);
 
         $result = $this->runCommand($container, 'acme.broken');
@@ -127,7 +127,7 @@ final class ServiceDetailCommandTest extends TestCase
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
  */
-final class WithTypedConstructor
+final readonly class WithTypedConstructor
 {
     public function __construct(stdClass $dependency, string $label = 'x', ?stdClass $nullable = null)
     {
