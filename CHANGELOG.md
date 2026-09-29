@@ -4,6 +4,27 @@ All notable changes to this project are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). While the version is below 1.0.0 a minor bump may contain breaking changes, and this file marks them explicitly.
 
+## [0.6.0] - 2026-09-29
+
+### Added
+
+- `typo3-config` reports, for any `--path`, which layer set the effective value (`default`, `settings.php`, or `beyond-settings-php` for anything that changed it after that: `additional.php`, an extension, or other runtime code) and the full override chain.
+- New tool `typo3-service`: class, constructor argument types, and public/shared flags for one DI service, read from the already-running container rather than a rebuilt one. Public services only, and determining `shared` resolves the service (twice for a non-shared one), which really constructs it.
+
+### Changed
+
+- **Breaking:** bumped `symfony/ai-mate` to `^0.14`. `tools:list`'s default table now embeds every tool's argument list and is the single most expensive way to see the catalogue, the opposite of the previous recommendation to leave it at its default. Pass `--format=toon` there too, not only on `tools:call`. `tools:call`'s default `pretty` format no longer pads to an ASCII table and instead auto-falls back to indented JSON for large results.
+- **Breaking:** renamed five tool arguments for consistency across the surface: `typo3-events`' `event` to `pattern`, `typo3-extension-scanner`'s `ownCode` to `ownOnly`, `typo3-records`' `where` to `filter`, `typo3-profiler-search`'s `url` to `urlContains`, `typo3-logs-by-level`'s `level` to `minLevel`.
+- `symfony/dotenv` is now a hard dependency, pulled in by `symfony/ai-mate` itself.
+- Widened `konradmichalik/typo3-request-profiler` to also allow `^1.0`.
+- Corrected several tool argument docblocks that never stated a default value, or what omitting an argument does.
+
+### Upgrading from 0.5.0
+
+1. Run `composer update`, then `vendor/bin/mate init`/`discover` again to refresh the materialized agent instructions.
+2. If anything scripts a tool call directly rather than through an assistant, rename the five arguments listed above.
+3. Nothing else changes shape: existing `--format=toon` usage keeps working exactly as documented.
+
 ## [0.5.0] - 2026-08-31
 
 ### Changed
@@ -91,7 +112,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Whi
 
 Initial release.
 
-[Unreleased]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.5.0...HEAD
+[Unreleased]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.6.0...HEAD
+[0.6.0]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.3.0...0.4.0
 [0.3.0]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.2.0...0.3.0
