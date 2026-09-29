@@ -40,7 +40,7 @@ use function trim;
  * @author Konrad Michalik <hej@konradmichalik.dev>
  * @license GPL-2.0-or-later
  */
-final class ConfigLayerResolver
+final readonly class ConfigLayerResolver
 {
     private const LAYER_DEFAULT = 'default';
     private const LAYER_SETTINGS = 'settings.php';
@@ -52,8 +52,8 @@ final class ConfigLayerResolver
      *                                            installation has no composer-mode settings file
      */
     public function __construct(
-        private readonly array $default,
-        private readonly ?array $settings,
+        private array $default,
+        private ?array $settings,
     ) {}
 
     /**
