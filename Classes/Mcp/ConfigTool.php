@@ -34,7 +34,7 @@ final readonly class ConfigTool
     #[MateTool(
         name: 'typo3-config',
         title: 'TYPO3 Configuration',
-        description: 'TYPO3_CONF_VARS, feature toggles, or one extension\'s configuration — settings.php/additional.php/env vars only produce the effective value at runtime, so read this instead of guessing. Secrets are masked recursively by key (password, secret, token, credential, encryptionKey, apiKey, …) and remaining string values are scanned for embedded credentials (DSNs, connection strings); masking cannot be disabled. Omit path for a compact overview; pass a path to drill in.',
+        description: 'TYPO3_CONF_VARS, feature toggles, or one extension\'s configuration — settings.php/additional.php/env vars only produce the effective value at runtime, so read this instead of guessing. Secrets are masked recursively by key (password, secret, token, credential, encryptionKey, apiKey, …) and remaining string values are scanned for embedded credentials (DSNs, connection strings); masking cannot be disabled. Omit path for a compact overview; pass a path to drill in — a path answer also carries source (default | settings.php | beyond-settings-php) and overrideChain, which layer set the effective value and what changed it since. beyond-settings-php covers additional.php, an extension, or any other runtime code: those cannot be told apart without re-executing the installation\'s own PHP, which this read-only tool does not do.',
     )]
     public function dump(?string $path = null, ConfigSection $section = ConfigSection::Confvars): string
     {

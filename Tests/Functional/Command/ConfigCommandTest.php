@@ -105,6 +105,63 @@ final class ConfigCommandTest extends FunctionalTestCase
         self::assertSame('Unknown configuration path "GHOST/does/not/exist".', $result['error']);
     }
 
+    #[Test]
+    public function sourceAttributionReportsDefaultForAValueTheFixtureSettingsPhpNeverTouches(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['--path' => 'HTTP/allow_redirects/max']);
+
+        self::assertSame(0, $exitCode);
+        self::assertSame('default', $result['source']);
+        self::assertSame(['default'], $result['overrideChain']);
+    }
+
+    #[Test]
+    public function sourceAttributionReportsSettingsPhpForAValueTheFixtureSetsThere(): void
+    {
+        // FE/disableNoCacheParameter: false in TYPO3 core's own DefaultConfiguration.php, true in
+        // every generated settings.php (this fixture's and the testing-framework's own). Unlike a
+        // DB credential, its value is a boolean, so it is stable across environments and never
+        // redacted, and the DB.Connections tree core ships no default for at all.
+        [$exitCode, $result] = $this->runCommand(['--path' => 'FE/disableNoCacheParameter']);
+
+        self::assertSame(0, $exitCode);
+        self::assertTrue($result['value']);
+        self::assertSame('settings.php', $result['source']);
+        self::assertSame(['default', 'settings.php'], $result['overrideChain']);
+    }
+
+    #[Test]
+    public function sourceAttributionReportsBeyondSettingsPhpWhenTheLiveValueDivergesFromTheFileOnDisk(): void
+    {
+        $originalPassword = $GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['password'] ?? null;
+        // The fixture's settings.php on disk sets this; diverging the live value here simulates
+        // additional.php (or any later runtime code) having changed it since boot. DB.Connections
+        // has no entry in DefaultConfiguration.php at all, so the chain never includes "default"
+        // for this path, only for a path core actually ships a default value for.
+        $GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['password'] = 'changed-after-boot';
+
+        try {
+            [$exitCode, $result] = $this->runCommand(['--path' => 'DB/Connections/Default/password']);
+
+            self::assertSame(0, $exitCode);
+            self::assertSame('beyond-settings-php', $result['source']);
+            self::assertSame(['settings.php', 'beyond-settings-php'], $result['overrideChain']);
+        } finally {
+            $GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['password'] = $originalPassword;
+        }
+    }
+
+    #[Test]
+    public function sourceAttributionResolvesTheAbsolutePathForAFeatureToggle(): void
+    {
+        $GLOBALS['TYPO3_CONF_VARS']['SYS']['features']['typo3AiMate.testToggle'] = true;
+
+        [$exitCode, $result] = $this->runCommand(['--section' => 'features', '--path' => 'typo3AiMate.testToggle']);
+
+        self::assertSame(0, $exitCode);
+        self::assertSame('beyond-settings-php', $result['source']);
+    }
+
     /**
      * @param array<string, string> $input
      *

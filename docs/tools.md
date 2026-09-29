@@ -348,11 +348,33 @@ vendor/bin/mate tools:call typo3-commands --ownOnly=true
 <summary>Read an effective setting rather than guessing</summary>
 
 ```bash
-vendor/bin/mate tools:call typo3-config --path=SYS.features
-vendor/bin/mate tools:call typo3-config --section=extensions --path=news
+vendor/bin/mate tools:call typo3-config --path=SYS/features
+vendor/bin/mate tools:call typo3-config --section=extension --path=news
 ```
 
 Omit `--path` for a compact overview, then drill in.
+
+</details>
+
+<details>
+<summary>Find out where a value comes from</summary>
+
+Passing `--path` also answers *where* the value comes from: `source` names the layer that set the effective value, `overrideChain` lists every layer that changed it, in order.
+
+```bash
+vendor/bin/mate tools:call typo3-config --path=FE/disableNoCacheParameter
+```
+
+```json
+{
+  "path": "FE/disableNoCacheParameter",
+  "value": true,
+  "source": "settings.php",
+  "overrideChain": ["default", "settings.php"]
+}
+```
+
+Three layers: `default` (TYPO3 core's own defaults), `settings.php` (`config/system/settings.php`), and `beyond-settings-php` for anything that changed the value after that: `additional.php`, an extension's `ext_localconf.php`, or other runtime code. Those three cannot be told apart without executing the installation's own PHP a second time outside TYPO3's normal boot, which this read-only tool does not do — `beyond-settings-php` says something changed it there, not which of those changed it. A value that came from an environment variable read inside `additional.php` falls into that same bucket.
 
 </details>
 
