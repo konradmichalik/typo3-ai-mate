@@ -7,10 +7,12 @@ Every command runs only in a Development context (`Environment::getContext()->is
 
 ## Read-only by default
 
-Only 3 of the 32 tools mutate anything:
+Only 3 of the 33 tools mutate anything:
 
 - `typo3-profiler-start` / `-stop` change profiler control state, and only as a time-boxed dev switch. They touch no records.
 - `typo3-render-page` issues a real internal HTTP request, so it has side effects in caches and logs.
+
+`typo3-service` mutates nothing persisted either, but is worth naming separately: determining whether a service is shared resolves it through the container, twice for a non-shared one, which really constructs the object. A well-behaved service's constructor does no I/O, but this tool has no way to confirm that in advance, unlike the read-only guarantee every other tool here can make from static inspection alone.
 
 ## Guards
 
