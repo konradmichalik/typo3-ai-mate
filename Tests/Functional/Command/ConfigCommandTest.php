@@ -118,10 +118,14 @@ final class ConfigCommandTest extends FunctionalTestCase
     #[Test]
     public function sourceAttributionReportsSettingsPhpForAValueTheFixtureSetsThere(): void
     {
-        [$exitCode, $result] = $this->runCommand(['--path' => 'DB/Connections/Default/host']);
+        // FE/disableNoCacheParameter: false in TYPO3 core's own DefaultConfiguration.php, true in
+        // every generated settings.php (this fixture's and the testing-framework's own). Unlike a
+        // DB credential, its value is a boolean, so it is stable across environments and never
+        // redacted, and the DB.Connections tree core ships no default for at all.
+        [$exitCode, $result] = $this->runCommand(['--path' => 'FE/disableNoCacheParameter']);
 
         self::assertSame(0, $exitCode);
-        self::assertSame('db', $result['value']);
+        self::assertTrue($result['value']);
         self::assertSame('settings.php', $result['source']);
         self::assertSame(['default', 'settings.php'], $result['overrideChain']);
     }
@@ -130,8 +134,10 @@ final class ConfigCommandTest extends FunctionalTestCase
     public function sourceAttributionReportsBeyondSettingsPhpWhenTheLiveValueDivergesFromTheFileOnDisk(): void
     {
         $originalPassword = $GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['password'] ?? null;
-        // The fixture's settings.php on disk sets this to "root"; diverging the live value here
-        // simulates additional.php (or any later runtime code) having changed it since boot.
+        // The fixture's settings.php on disk sets this; diverging the live value here simulates
+        // additional.php (or any later runtime code) having changed it since boot. DB.Connections
+        // has no entry in DefaultConfiguration.php at all, so the chain never includes "default"
+        // for this path, only for a path core actually ships a default value for.
         $GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['password'] = 'changed-after-boot';
 
         try {
@@ -139,7 +145,7 @@ final class ConfigCommandTest extends FunctionalTestCase
 
             self::assertSame(0, $exitCode);
             self::assertSame('beyond-settings-php', $result['source']);
-            self::assertSame(['default', 'settings.php', 'beyond-settings-php'], $result['overrideChain']);
+            self::assertSame(['settings.php', 'beyond-settings-php'], $result['overrideChain']);
         } finally {
             $GLOBALS['TYPO3_CONF_VARS']['DB']['Connections']['Default']['password'] = $originalPassword;
         }
