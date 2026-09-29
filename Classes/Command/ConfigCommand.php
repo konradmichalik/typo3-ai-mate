@@ -13,17 +13,21 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Command;
 
-use KonradMichalik\Typo3AiMate\Command\Support\ConfigRedactor;
+use KonradMichalik\Typo3AiMate\Command\Support\{ConfigLayerResolver, ConfigRedactor};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\ConfigSection;
 use KonradMichalik\Typo3AiMate\Support\Cast;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\{InputInterface, InputOption};
 use Symfony\Component\Console\Output\OutputInterface;
+use Throwable;
+use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 use function array_key_exists;
 use function explode;
 use function is_array;
+use function is_file;
 use function sort;
 use function sprintf;
 use function strtolower;
@@ -82,7 +86,7 @@ final class ConfigCommand extends AbstractJsonCommand
         if (ConfigSection::Features === $section) {
             return null === $path
                 ? $this->emit($output, ['features' => ConfigRedactor::redact($features)])
-                : $this->emitScoped($output, $features, $path, 'Unknown feature toggle path "%s".');
+                : $this->emitScoped($output, $features, $path, 'Unknown feature toggle path "%s".', $confVars, 'SYS/features/'.$path);
         }
 
         if (ConfigSection::Extension === $section) {
@@ -95,7 +99,7 @@ final class ConfigCommand extends AbstractJsonCommand
                 return $this->emit($output, ['extensions' => $keys]);
             }
 
-            return $this->emitScoped($output, $extensions, $path, 'Unknown extension configuration path "%s".');
+            return $this->emitScoped($output, $extensions, $path, 'Unknown extension configuration path "%s".', $confVars, 'EXTENSIONS/'.$path);
         }
 
         if (null === $path) {
@@ -105,13 +109,16 @@ final class ConfigCommand extends AbstractJsonCommand
             ]);
         }
 
-        return $this->emitScoped($output, $confVars, $path, 'Unknown configuration path "%s".');
+        return $this->emitScoped($output, $confVars, $path, 'Unknown configuration path "%s".', $confVars, $path);
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param array<string, mixed> $data         the subtree --path is resolved against for the displayed value
+     * @param array<string, mixed> $confVars     the full live $GLOBALS['TYPO3_CONF_VARS'], for source attribution
+     * @param string               $absolutePath the same value rooted at $confVars, since --section can scope
+     *                                           $data/$path to a subtree (SYS/features/…, EXTENSIONS/…)
      */
-    private function emitScoped(OutputInterface $output, array $data, string $path, string $errorFormat): int
+    private function emitScoped(OutputInterface $output, array $data, string $path, string $errorFormat, array $confVars, string $absolutePath): int
     {
         [$found, $value] = $this->traverse($data, $path);
         if (!$found) {
@@ -128,6 +135,39 @@ final class ConfigCommand extends AbstractJsonCommand
         /** @var array<string, mixed> $masked */
         $masked = ConfigRedactor::redact([$requestedKey => $value]);
 
-        return $this->emit($output, ['path' => $path, 'value' => $masked[$requestedKey]]);
+        $result = ['path' => $path, 'value' => $masked[$requestedKey]];
+        $attribution = $this->resolveSource($absolutePath, $confVars);
+        if (null !== $attribution) {
+            $result += $attribution;
+        }
+
+        return $this->emit($output, $result);
+    }
+
+    /**
+     * Best-effort: resolving EXT:core/… and the project's config path both need a booted TYPO3
+     * (package manager, Environment::initialize()). A unit test that constructs this command
+     * directly, without that boot, must still get the core path/value answer, so a failure here
+     * degrades to no attribution rather than failing the whole command.
+     *
+     * @param array<string, mixed> $confVars
+     *
+     * @return array{source: string, overrideChain: list<string>}|null
+     */
+    private function resolveSource(string $absolutePath, array $confVars): ?array
+    {
+        try {
+            $defaultFile = GeneralUtility::getFileAbsFileName('EXT:core/Configuration/DefaultConfiguration.php');
+            /** @var array<string, mixed> $default */
+            $default = '' !== $defaultFile && is_file($defaultFile) ? require $defaultFile : [];
+
+            $settingsFile = Environment::getConfigPath().'/system/settings.php';
+            /** @var array<string, mixed>|null $settings */
+            $settings = is_file($settingsFile) ? require $settingsFile : null;
+        } catch (Throwable) {
+            return null;
+        }
+
+        return (new ConfigLayerResolver($default, $settings))->resolve($absolutePath, $confVars);
     }
 }
