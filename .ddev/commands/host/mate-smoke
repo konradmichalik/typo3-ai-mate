@@ -22,19 +22,27 @@ TESTS=(
   "typo3-events|"
   "typo3-logs-search|--query=intentional"
   "typo3-logs-tail|--limit=5"
-  "typo3-logs-by-level|--level=error"
+  "typo3-logs-by-level|--minLevel=error"
   "typo3-upgrade-wizards|"
   "typo3-deprecations|"
   "typo3-extension-scanner|--extension=typo3_ai_mate"
-  "typo3-profiler-latest|"
   "typo3-profiler-list|--limit=5"
-  "typo3-profiler-search|--url=/"
   # Ordered so the run ends with profiling switched back off.
   "typo3-profiler-status|"
   "typo3-profiler-start|--duration=1m"
   "typo3-profiler-stop|"
 )
-[ -n "${TOKEN}" ] && TESTS+=("typo3-profiler-get|--token=${TOKEN}")
+# latest, search and get answer "no profiles found" as unsupported until a
+# request has been recorded, so they only run once one exists.
+if [ -n "${TOKEN}" ]; then
+  TESTS+=(
+    "typo3-profiler-latest|"
+    "typo3-profiler-search|--urlContains=/"
+    "typo3-profiler-get|--token=${TOKEN}"
+  )
+else
+  printf "Skipping typo3-profiler-latest/-search/-get: no profile recorded yet (see CONTRIBUTING).\n"
+fi
 
 # Call one tool through the mate CLI. Returns its output on stdout and the CLI's
 # own exit code, which is non-zero when the tool could not be invoked at all
