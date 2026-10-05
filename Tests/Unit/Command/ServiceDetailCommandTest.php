@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 
+use KonradMichalik\Ttt\Attribute\WithEnvironment;
 use KonradMichalik\Typo3AiMate\Command\ServiceDetailCommand;
 use KonradMichalik\Typo3AiMate\Tests\Unit\Command\Fixtures\InMemoryContainer;
 use PHPUnit\Framework\Attributes\Test;
@@ -27,6 +28,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  * @author Konrad Michalik <hej@konradmichalik.dev>
  * @license GPL-2.0-or-later
  */
+#[WithEnvironment]
 final class ServiceDetailCommandTest extends TestCase
 {
     #[Test]
