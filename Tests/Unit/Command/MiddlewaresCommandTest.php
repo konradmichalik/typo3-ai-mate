@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 
 use ArrayObject;
+use KonradMichalik\Ttt\Attribute\WithEnvironment;
 use KonradMichalik\Typo3AiMate\Command\MiddlewaresCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -28,6 +29,7 @@ use TYPO3\CMS\Core\Http\MiddlewareStackResolver;
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
  */
+#[WithEnvironment]
 final class MiddlewaresCommandTest extends TestCase
 {
     #[Test]

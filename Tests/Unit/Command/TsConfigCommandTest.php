@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 
+use KonradMichalik\Ttt\Attribute\WithEnvironment;
 use KonradMichalik\Typo3AiMate\Command\TsConfigCommand;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -23,6 +24,7 @@ use Symfony\Component\Console\Tester\CommandTester;
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
  */
+#[WithEnvironment]
 final class TsConfigCommandTest extends TestCase
 {
     #[Test]
