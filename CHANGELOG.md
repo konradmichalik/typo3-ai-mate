@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). While the version is below 1.0.0 a minor bump may contain breaking changes, and this file marks them explicitly.
 
-## [Unreleased]
+## [0.7.0] - 2026-10-05
 
 ### Added
 
@@ -119,6 +119,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Whi
 Initial release.
 
 [Unreleased]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.6.0...HEAD
+[Unreleased]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.7.0...HEAD
+[0.7.0]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.4.0...0.5.0
 [0.4.0]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.3.0...0.4.0
