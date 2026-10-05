@@ -11,6 +11,12 @@ services:
   KonradMichalik\Typo3AiMate\Service\:
     resource: '../Classes/Service/*'
 
+  # TranslationDomainMapper exists since v14 only; "@?" injects null on v13
+  # instead of failing the container build.
+  KonradMichalik\Typo3AiMate\Command\LabelsCommand:
+    arguments:
+      $translationDomainMapper: '@?TYPO3\CMS\Core\Localization\TranslationDomainMapper'
+
   # Console commands are auto-tagged from the #[AsCommand] attribute via
   # autoconfigure (TYPO3 v12+). The MCP tool classes in Classes/Mcp/* are NOT
   # registered here: they run in the separate Symfony DI container of the Mate

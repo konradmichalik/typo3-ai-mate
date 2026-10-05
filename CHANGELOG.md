@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). While the version is below 1.0.0 a minor bump may contain breaking changes, and this file marks them explicitly.
 
+## [Unreleased]
+
+### Added
+
+- New tool `typo3-labels`: whether `LLL:` label references resolve to a defined key, with the default text and, given a `locale`, whether the label is translated. A missing key carries the closest keys of the same file as suggestions, a missing file the label files the extension has. On v14 translation domain references (`core.common:cancel`) are resolved too. With `extension` it lists an extension's label files with key count, translation locales and v14 domain.
+
 ## [0.6.0] - 2026-09-29
 
 ### Added

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff version="1.2" xmlns="urn:oasis:names:tc:xliff:document:1.2">
+    <file source-language="en" datatype="plaintext" original="EXT:labels_fixture/Resources/Private/Language/Plugins/Calendar/locallang_calendar.xlf" date="2026-10-05T00:00:00Z" product-name="labels_fixture">
+        <header/>
+        <body>
+            <trans-unit id="calendar.title" resname="calendar.title">
+                <source>Calendar</source>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

@@ -60,6 +60,7 @@ Exact tool names, so you can select one directly instead of searching for it.
 | Does this record's stored FlexForm still match its data structure? | `typo3-flexform` |
 | Which Fluid namespaces may a template use without declaring them? | `typo3-fluid-namespaces` |
 | Is this icon identifier registered, and which extension provides it? | `typo3-icons` |
+| Does this `LLL:` label key exist? Is it translated? | `typo3-labels` |
 | Which backend modules exist, and what do they inherit? | `typo3-backend-modules` |
 | What is this page composed of, and what is uncached? | `typo3-page` |
 | What errored? What is in the log? | `typo3-logs-search`, `typo3-logs-tail`, `typo3-logs-by-level` |

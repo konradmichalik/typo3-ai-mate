@@ -22,6 +22,7 @@ The examples below omit `--format=toon` for readability. An assistant should pas
 | Fluid | [`typo3-fluid-resolve`](#typo3-fluid-resolve) |
 | Fluid | [`typo3-fluid-namespaces`](#typo3-fluid-namespaces) |
 | Icons | [`typo3-icons`](#typo3-icons) |
+| Labels | [`typo3-labels`](#typo3-labels) |
 | Backend modules | [`typo3-backend-modules`](#typo3-backend-modules) |
 | Middlewares | [`typo3-middlewares`](#typo3-middlewares) |
 | Events | [`typo3-events`](#typo3-events) |
@@ -259,6 +260,22 @@ vendor/bin/mate tools:call typo3-icons
 ```
 
 `registered: false` is the answer, not an empty result: an unregistered identifier renders no icon at all. A miss carries the closest registered identifiers as suggestions.
+
+</details>
+
+## `typo3-labels`
+
+Whether label references resolve to a defined key, with the default text. `exists: false` is the answer, not an empty result: an `LLL:` reference to an undefined key renders as an empty string. A missing key carries the closest keys of the same file as suggestions, a missing file the label files the extension actually has. Labels are read through the `LocalizationFactory`, so `locallangXMLOverride` overrides apply. On v14 a translation domain reference such as `core.common:cancel` works too; on v13 it is answered with a hint.
+
+<details>
+<summary>Verify label keys and their translation</summary>
+
+```bash
+vendor/bin/mate tools:call typo3-labels --references=LLL:EXT:my_ext/Resources/Private/Language/locallang.xlf:plugin.title --locale=de
+vendor/bin/mate tools:call typo3-labels --extension=my_ext
+```
+
+With `locale`, each label reports `translated` and the text the locale yields. A label counts as translated when that text differs from the default one, so a translation identical to the source reads as `translated: false`. With `extension` instead of `references` you get the extension's label files with their key count, translation locales and, on v14, their domain.
 
 </details>
 
