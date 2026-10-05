@@ -13,10 +13,8 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Command;
 
-use KonradMichalik\Typo3AiMate\Command\Support\ScanResultFormatter;
+use KonradMichalik\Typo3AiMate\Command\Support\{PhpFileScanner, ScanResultFormatter};
 use KonradMichalik\Typo3AiMate\Support\{Cast, OwnPackages};
-use PhpParser\{NodeTraverser, NodeVisitor, ParserFactory, PhpVersion};
-use PhpParser\NodeVisitor\NameResolver;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\{InputArgument, InputInterface, InputOption};
@@ -26,10 +24,8 @@ use Throwable;
 use TYPO3\CMS\Core\Package\PackageManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Install\ExtensionScanner\CodeScannerInterface;
-use TYPO3\CMS\Install\ExtensionScanner\Php\{CodeStatistics, GeneratorClassesResolver, MatcherFactory};
 
 use function count;
-use function explode;
 use function is_array;
 use function sprintf;
 
@@ -50,10 +46,13 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
 
     private readonly ScanResultFormatter $formatter;
 
+    private readonly PhpFileScanner $fileScanner;
+
     public function __construct(private readonly PackageManager $packageManager)
     {
         parent::__construct();
         $this->formatter = new ScanResultFormatter();
+        $this->fileScanner = new PhpFileScanner();
     }
 
     /**
@@ -169,7 +168,7 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
         $filesSkipped = 0;
 
         foreach ($this->phpFiles($basePath) as $relativeName => $absolutePath) {
-            $result = $this->scanFile($absolutePath, $relativeName, $matcherConfigurations);
+            $result = $this->fileScanner->scan($absolutePath, $relativeName, $matcherConfigurations);
             if (null === $result) {
                 ++$filesSkipped;
                 continue;
@@ -282,90 +281,5 @@ final class ExtensionScannerCommand extends AbstractJsonCommand
         }
 
         return $files;
-    }
-
-    /**
-     * @param list<array{class: class-string, configurationArray: array<mixed>}> $matcherConfigurations
-     *
-     * @return array{matches: list<array<string, mixed>>, effectiveCodeLines: int, ignoredLines: int}|null
-     */
-    private function scanFile(string $absolutePath, string $relativeName, array $matcherConfigurations): ?array
-    {
-        $code = @file_get_contents($absolutePath);
-        if (false === $code) {
-            return null;
-        }
-        $lines = explode("\n", $code);
-
-        // A single matcher can throw on an edge-case AST node (the backend
-        // module isolates this per file via separate AJAX calls). Wrap the whole
-        // pipeline so one unparseable/problematic file is skipped rather than
-        // aborting the entire scan.
-        try {
-            $statements = (new ParserFactory())->createForVersion(PhpVersion::fromComponents(8, 2))->parse($code);
-            if (null === $statements) {
-                // The throwing error handler never yields null.
-                // @codeCoverageIgnoreStart
-                return null;
-                // @codeCoverageIgnoreEnd
-            }
-
-            // First pass: resolve `use` aliases to fully qualified names so the
-            // matchers (and GeneratorClassesResolver) see reliable class names.
-            $traverser = new NodeTraverser();
-            $traverser->addVisitor(new NameResolver());
-            $statements = $traverser->traverse($statements);
-
-            // Second pass: run the resolvers, the statistics collector and all matchers.
-            $traverser = new NodeTraverser();
-            $traverser->addVisitor(new GeneratorClassesResolver());
-            $statistics = new CodeStatistics();
-            $traverser->addVisitor($statistics);
-
-            $matchers = (new MatcherFactory())->createAll($matcherConfigurations);
-            foreach ($matchers as $matcher) {
-                if ($matcher instanceof NodeVisitor) {
-                    $traverser->addVisitor($matcher);
-                }
-            }
-            $traverser->traverse($statements);
-
-            $matches = [];
-            foreach ($matchers as $matcher) {
-                if (!$matcher instanceof CodeScannerInterface) {
-                    // MatcherFactory::createAll() already rejects such matchers.
-                    // @codeCoverageIgnoreStart
-                    continue;
-                    // @codeCoverageIgnoreEnd
-                }
-                foreach ($matcher->getMatches() as $rawMatch) {
-                    $match = Cast::array($rawMatch);
-                    $line = Cast::int($match['line'] ?? 0);
-                    $matches[] = [
-                        'file' => $relativeName,
-                        'line' => $line,
-                        'indicator' => Cast::string($match['indicator'] ?? ''),
-                        'message' => Cast::string($match['message'] ?? ''),
-                        'lineContent' => $this->lineContent($lines, $line),
-                    ];
-                }
-            }
-        } catch (Throwable) {
-            return null;
-        }
-
-        return [
-            'matches' => $matches,
-            'effectiveCodeLines' => $statistics->getNumberOfEffectiveCodeLines(),
-            'ignoredLines' => $statistics->getNumberOfIgnoredLines(),
-        ];
-    }
-
-    /**
-     * @param list<string> $lines the file's lines, already read for parsing
-     */
-    private function lineContent(array $lines, int $lineNumber): string
-    {
-        return trim($lines[$lineNumber - 1] ?? '');
     }
 }

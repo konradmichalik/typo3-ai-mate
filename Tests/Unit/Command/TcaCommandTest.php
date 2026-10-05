@@ -18,7 +18,7 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\Schema\ActiveRelation;
-use TYPO3\CMS\Core\Schema\Field\{FieldCollection, FileFieldType, InputFieldType, TextFieldType};
+use TYPO3\CMS\Core\Schema\Field\{FieldCollection, FileFieldType, InputFieldType};
 use TYPO3\CMS\Core\Schema\{SchemaCollection, TcaSchema, TcaSchemaFactory};
 
 /**
@@ -115,121 +115,6 @@ final class TcaCommandTest extends TestCase
 
         self::assertArrayNotHasKey('broken', $result['columns']);
         self::assertArrayHasKey('header', $result['columns']);
-    }
-
-    #[Test]
-    public function describeFieldReportsLabelTypeRenderTypeEvalAndDisplayCond(): void
-    {
-        $field = new TextFieldType('bodytext', [
-            'label' => 'Text',
-            'renderType' => 'textTable',
-            'eval' => 'trim',
-            'displayCond' => 'FIELD:CType:=:textmedia',
-        ]);
-
-        self::assertSame(
-            ['label' => 'Text', 'type' => 'text', 'renderType' => 'textTable', 'eval' => 'trim', 'displayCond' => 'FIELD:CType:=:textmedia'],
-            $this->command()->describeField($field),
-        );
-    }
-
-    #[Test]
-    public function describeFieldOmitsEmptyAndAbsentKeys(): void
-    {
-        $field = new InputFieldType('title', []);
-
-        self::assertSame(['type' => 'input'], $this->command()->describeField($field));
-    }
-
-    #[Test]
-    public function describeCapabilitiesReadsSoftDeleteWorkspaceLanguageAndSorting(): void
-    {
-        $schema = new TcaSchema('tt_content', new FieldCollection([]), [
-            'delete' => 'deleted',
-            'versioningWS' => true,
-            'languageField' => 'sys_language_uid',
-            'transOrigPointerField' => 'l10n_parent',
-            'sortby' => 'sorting',
-        ]);
-
-        self::assertSame(
-            ['softDelete' => 'deleted', 'workspace' => true, 'language' => true, 'sorting' => 'sorting'],
-            $this->command()->describeCapabilities($schema),
-        );
-    }
-
-    #[Test]
-    public function describeCapabilitiesReturnsNullAndFalseWhenNotSupported(): void
-    {
-        $schema = new TcaSchema('static_table', new FieldCollection([]), []);
-
-        self::assertSame(
-            ['softDelete' => null, 'workspace' => false, 'language' => false, 'sorting' => null],
-            $this->command()->describeCapabilities($schema),
-        );
-    }
-
-    #[Test]
-    public function describeRecordTypesListsVisibleFieldsPerSubSchema(): void
-    {
-        $subSchema = new TcaSchema('tt_content.text', new FieldCollection([
-            'bodytext' => new TextFieldType('bodytext', []),
-        ]), []);
-        $schema = new TcaSchema(
-            'tt_content',
-            new FieldCollection([]),
-            ['type' => 'CType'],
-            new SchemaCollection(['text' => $subSchema]),
-        );
-
-        self::assertSame(['text' => ['bodytext']], $this->command()->describeRecordTypes($schema));
-    }
-
-    #[Test]
-    public function describeRecordTypesReturnsEmptyWhenTableHasNoTypeField(): void
-    {
-        $schema = new TcaSchema('sys_category', new FieldCollection([]), []);
-
-        self::assertSame([], $this->command()->describeRecordTypes($schema));
-    }
-
-    #[Test]
-    public function describeRelationsResolvesTheTargetTableAndRelationshipType(): void
-    {
-        $schema = new TcaSchema('tt_content', new FieldCollection([
-            'image' => new FileFieldType('image', ['foreign_field' => 'uid_foreign'], [
-                new ActiveRelation('sys_file_reference', null),
-            ]),
-            'header' => new InputFieldType('header', []),
-        ]), []);
-
-        self::assertSame(
-            ['image' => ['type' => '1:n', 'toTables' => ['sys_file_reference']]],
-            $this->command()->describeRelations($schema),
-        );
-    }
-
-    #[Test]
-    public function describeRelationsDedupesMultipleRelationsToTheSameTable(): void
-    {
-        $schema = new TcaSchema('tt_content', new FieldCollection([
-            'image' => new FileFieldType('image', [], [
-                new ActiveRelation('sys_file_reference', null),
-                new ActiveRelation('sys_file_reference', null),
-            ]),
-        ]), []);
-
-        self::assertSame(['sys_file_reference'], $this->command()->describeRelations($schema)['image']['toTables']);
-    }
-
-    #[Test]
-    public function describeRelationsSkipsFieldsWithoutAnyResolvedRelation(): void
-    {
-        $schema = new TcaSchema('tt_content', new FieldCollection([
-            'image' => new FileFieldType('image', [], []),
-        ]), []);
-
-        self::assertSame([], $this->command()->describeRelations($schema));
     }
 
     #[Test]

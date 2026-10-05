@@ -66,26 +66,25 @@ final readonly class ConfigLayerResolver
     public function resolve(string $path, array $live): ?array
     {
         $overrideChain = [];
-        $lastFound = false;
+        $anyFound = false;
         $lastValue = null;
 
-        foreach ($this->layers() as $layer => $state) {
+        // The live state is the last layer: whatever changed the value after
+        // settings.php shows up as a difference to it.
+        foreach ([...$this->layers(), self::LAYER_BEYOND_SETTINGS => $live] as $layer => $state) {
             [$found, $value] = self::traverse($state, $path);
-            if ($found && (!$lastFound || $value !== $lastValue)) {
+            if (!$found) {
+                continue;
+            }
+            if (!$anyFound || $value !== $lastValue) {
                 $overrideChain[] = $layer;
             }
-            if ($found) {
-                $lastFound = true;
-                $lastValue = $value;
-            }
+            $anyFound = true;
+            $lastValue = $value;
         }
 
-        [$liveFound, $liveValue] = self::traverse($live, $path);
-        if (!$liveFound && !$lastFound) {
+        if (!$anyFound) {
             return null;
-        }
-        if ($liveFound && (!$lastFound || $liveValue !== $lastValue)) {
-            $overrideChain[] = self::LAYER_BEYOND_SETTINGS;
         }
 
         return [
