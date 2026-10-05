@@ -16,6 +16,7 @@ TOKEN="$(ddev exec bash -c "ls -t ${INSTANCE}/var/log/profiles/*.json 2>/dev/nul
 # tool|space-separated options, in the mate CLI's own `--<param>=<value>` form
 TESTS=(
   "typo3-tca|--table=tt_content"
+  "typo3-labels|--references=LLL:EXT:core/Resources/Private/Language/locallang_common.xlf:cancel --locale=de"
   "typo3-page|--pageId=1"
   "typo3-typoscript|--pageId=1 --path=tt_content"
   "typo3-middlewares|--stack=frontend"

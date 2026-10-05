@@ -15,7 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
+use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LabelsTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\{ChangelogType, ConfigSection, LogLevel, MiddlewareStack, OutputMode, TsConfigType, TypoScriptType};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -503,6 +503,24 @@ final class McpToolWrappersTest extends TestCase
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:icons:lookup');
         self::assertJsonPath($result, 'args', ['--identifiers', 'actions-add,actions-edit']);
+    }
+
+    #[Test]
+    public function labelsToolTakesNoArgumentsByDefault(): void
+    {
+        $result = $this->decode((new LabelsTool($this->runner))->lookup());
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:labels:lookup');
+        self::assertJsonPath($result, 'args', []);
+    }
+
+    #[Test]
+    public function labelsToolForwardsReferencesLocaleAndExtension(): void
+    {
+        $result = $this->decode((new LabelsTool($this->runner))->lookup('core.common:cancel', 'de', 'core'));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:labels:lookup');
+        self::assertJsonPath($result, 'args', ['--references', 'core.common:cancel', '--locale', 'de', '--extension', 'core']);
     }
 
     #[Test]
