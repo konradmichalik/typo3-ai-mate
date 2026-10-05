@@ -14,6 +14,8 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Tests\Functional\Command;
 
 use KonradMichalik\Typo3AiMate\Command\ExtensionScannerCommand;
+use KonradMichalik\Typo3AiMate\Command\Support\PhpFileScanner;
+use KonradMichalik\Typo3AiMate\Support\Cast;
 use PHPUnit\Framework\Attributes\Test;
 use ReflectionMethod;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -261,14 +263,29 @@ final class ExtensionScannerCommandTest extends FunctionalTestCase
     }
 
     #[Test]
-    public function lineContentReadsFromTheAlreadyParsedLinesInsteadOfRereadingTheFile(): void
+    public function fileScannerReportsEachMatchWithTheTrimmedSourceLine(): void
     {
         $command = new ExtensionScannerCommand($this->get(PackageManager::class));
-        $lineContent = new ReflectionMethod($command, 'lineContent');
-        $lines = ['<?php', '  $foo = 1;  ', 'bar();'];
+        $configurations = (new ReflectionMethod($command, 'preloadMatcherConfigurations'))
+            ->invoke($command, $command->buildMatcherConfigurations(['ClassNameMatcher.php']));
+        $path = __DIR__.'/../Fixtures/Extensions/scanner_fixture/Classes/LegacyConsumer.php';
+        $lines = file($path, \FILE_IGNORE_NEW_LINES);
+        self::assertIsArray($lines);
 
-        self::assertSame('$foo = 1;', $lineContent->invoke($command, $lines, 2));
-        self::assertSame('', $lineContent->invoke($command, $lines, 99));
+        $result = (new PhpFileScanner())->scan($path, 'Classes/LegacyConsumer.php', $configurations);
+
+        self::assertNotNull($result);
+        self::assertNotSame([], $result['matches']);
+        foreach ($result['matches'] as $match) {
+            self::assertSame('Classes/LegacyConsumer.php', $match['file']);
+            self::assertSame(trim($lines[Cast::int($match['line']) - 1]), $match['lineContent']);
+        }
+    }
+
+    #[Test]
+    public function fileScannerSkipsAnUnreadableFile(): void
+    {
+        self::assertNull((new PhpFileScanner())->scan(__DIR__.'/does-not-exist.php', 'does-not-exist.php', []));
     }
 
     /**
