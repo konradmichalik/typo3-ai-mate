@@ -195,14 +195,7 @@ final class RecordSchema
     public static function orderBy(mixed $orderBy, array $columns, array $ctrl): array
     {
         if (is_string($orderBy) && '' !== trim($orderBy)) {
-            $parts = explode(':', trim($orderBy), 2);
-            $field = trim($parts[0]);
-            $direction = isset($parts[1]) && 'desc' === strtolower(trim($parts[1])) ? 'DESC' : 'ASC';
-            if (!in_array($field, $columns, true)) {
-                throw new InvalidArgumentException(sprintf('Unknown field "%s" in order-by.', $field), 5379417855);
-            }
-
-            return [$field, $direction];
+            return self::explicitOrderBy(trim($orderBy), $columns);
         }
 
         $sortby = self::firstPlainColumn(Cast::string($ctrl['sortby'] ?? ''));
@@ -242,6 +235,22 @@ final class RecordSchema
         $delete = Cast::string($ctrl['delete'] ?? '');
 
         return '' !== $delete && in_array($delete, $columns, true) ? $delete : null;
+    }
+
+    /**
+     * @param list<string> $columns
+     *
+     * @return array{0: string, 1: string}
+     */
+    private static function explicitOrderBy(string $orderBy, array $columns): array
+    {
+        $parts = explode(':', $orderBy, 2);
+        $field = trim($parts[0]);
+        if (!in_array($field, $columns, true)) {
+            throw new InvalidArgumentException(sprintf('Unknown field "%s" in order-by.', $field), 5379417855);
+        }
+
+        return [$field, isset($parts[1]) && 'desc' === strtolower(trim($parts[1])) ? 'DESC' : 'ASC'];
     }
 
     private static function isSecretName(string $column): bool

@@ -200,18 +200,27 @@ final readonly class FluidResolver
             if (!is_array($value)) {
                 continue;
             }
-            $name = rtrim((string) $key, '.');
-            if ('view' === $name) {
-                if ('' !== $prefix && self::declaresRootPaths($value)) {
-                    $found[] = $prefix;
-                }
-                continue;
-            }
-
-            $found = [...$found, ...self::collectViewPaths($value, '' === $prefix ? $name : $prefix.'.'.$name, $depth + 1)];
+            $found = [...$found, ...self::viewPathsBelow($value, rtrim((string) $key, '.'), $prefix, $depth)];
         }
 
         return $found;
+    }
+
+    /**
+     * A `view` node ends the descent: its prefix is a candidate when it
+     * declares root paths. Any other node is searched further.
+     *
+     * @param array<mixed> $value
+     *
+     * @return list<string>
+     */
+    private static function viewPathsBelow(array $value, string $name, string $prefix, int $depth): array
+    {
+        if ('view' === $name) {
+            return '' !== $prefix && self::declaresRootPaths($value) ? [$prefix] : [];
+        }
+
+        return self::collectViewPaths($value, '' === $prefix ? $name : $prefix.'.'.$name, $depth + 1);
     }
 
     /**
