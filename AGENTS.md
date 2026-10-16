@@ -48,7 +48,7 @@ ddev mate-setup           # register the tools in each instance
 ddev mate-smoke 13        # call every tool through vendor/bin/mate (13 or 14)
 ```
 
-Code quality runs in the separate `Tests/CGL` project:
+Code quality runs in the separate `Tests/CGL` project. Its `composer.lock` is committed and updated by Renovate, so tool releases only reach CI through a Renovate PR:
 
 ```bash
 composer cgl install
