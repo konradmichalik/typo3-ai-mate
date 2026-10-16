@@ -131,12 +131,11 @@ final class ServiceDetailCommandTest extends TestCase
  */
 final readonly class WithTypedConstructor
 {
-    public function __construct(stdClass $dependency, string $label = 'x', ?stdClass $nullable = null)
-    {
-        // This fixture exists solely as a reflection target for its constructor's type
-        // signature; unset() is a genuine use of each parameter, not a suppression.
-        unset($dependency, $label, $nullable);
-    }
+    public function __construct(
+        public stdClass $dependency,
+        public string $label = 'x',
+        public ?stdClass $nullable = null,
+    ) {}
 }
 
 /**
