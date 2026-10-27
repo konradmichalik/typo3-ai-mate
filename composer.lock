@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7de85a60ee4cdfd8f8ee17afbfbbaac7",
+    "content-hash": "ef41821d39d16226f0187ba1726ce7ec",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -2331,23 +2331,23 @@
         },
         {
             "name": "symfony/ai-mate",
-            "version": "v0.14.0",
+            "version": "v0.15.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/ai-mate.git",
-                "reference": "8cbb03c1a8c3bc5ea02e4072c69c4c9ab3f67a85"
+                "reference": "0920fc01cbc9667804cfdb530b677a4df217c26a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/ai-mate/zipball/8cbb03c1a8c3bc5ea02e4072c69c4c9ab3f67a85",
-                "reference": "8cbb03c1a8c3bc5ea02e4072c69c4c9ab3f67a85",
+                "url": "https://api.github.com/repos/symfony/ai-mate/zipball/0920fc01cbc9667804cfdb530b677a4df217c26a",
+                "reference": "0920fc01cbc9667804cfdb530b677a4df217c26a",
                 "shasum": ""
             },
             "require": {
                 "php": ">=8.2",
                 "psr/container": "^1.1|^2.0",
                 "psr/log": "^2.0|^3.0",
-                "symfony/ai-mate-composer-plugin": "^0.14",
+                "symfony/ai-mate-composer-plugin": "^0.15",
                 "symfony/config": "^5.4|^6.4|^7.3|^8.0",
                 "symfony/console": "^5.4|^6.4|^7.3|^8.0",
                 "symfony/dependency-injection": "^5.4|^6.4|^7.3|^8.0",
@@ -2416,7 +2416,7 @@
                 "symfony"
             ],
             "support": {
-                "source": "https://github.com/symfony/ai-mate/tree/v0.14.0"
+                "source": "https://github.com/symfony/ai-mate/tree/v0.15.0"
             },
             "funding": [
                 {
@@ -2436,20 +2436,20 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-09-25T00:21:15+00:00"
+            "time": "2026-10-22T23:44:24+00:00"
         },
         {
             "name": "symfony/ai-mate-composer-plugin",
-            "version": "v0.14.0",
+            "version": "v0.15.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/ai-mate-composer-plugin.git",
-                "reference": "f7497d8a8d5b4dcaf790c88a37bf3ace2d34b817"
+                "reference": "6005a24aa1c81c215e94925b6c45ac9cfb6bda99"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/ai-mate-composer-plugin/zipball/f7497d8a8d5b4dcaf790c88a37bf3ace2d34b817",
-                "reference": "f7497d8a8d5b4dcaf790c88a37bf3ace2d34b817",
+                "url": "https://api.github.com/repos/symfony/ai-mate-composer-plugin/zipball/6005a24aa1c81c215e94925b6c45ac9cfb6bda99",
+                "reference": "6005a24aa1c81c215e94925b6c45ac9cfb6bda99",
                 "shasum": ""
             },
             "require": {
@@ -2462,7 +2462,7 @@
                 "phpstan/phpstan-phpunit": "^2.0",
                 "phpstan/phpstan-strict-rules": "^2.0",
                 "phpunit/phpunit": "^11.5.53",
-                "symfony/ai-mate": "^0.14"
+                "symfony/ai-mate": "^0.15"
             },
             "type": "composer-plugin",
             "extra": {
@@ -2504,7 +2504,7 @@
                 "mate"
             ],
             "support": {
-                "source": "https://github.com/symfony/ai-mate-composer-plugin/tree/v0.14.0"
+                "source": "https://github.com/symfony/ai-mate-composer-plugin/tree/v0.15.0"
             },
             "funding": [
                 {
@@ -2524,7 +2524,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-09-24T22:33:15+00:00"
+            "time": "2026-10-22T23:44:24+00:00"
         },
         {
             "name": "symfony/cache",
