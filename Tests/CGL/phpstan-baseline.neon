@@ -1,2 +1,97 @@
 parameters:
-	ignoreErrors: []
+	ignoreErrors:
+		-
+			message: '#^Error suppression via "@" should not be used\.$#'
+			identifier: ergebnis.noErrorSuppression
+			count: 1
+			path: ../../Classes/Command/ChangelogSearchCommand.php
+
+		-
+			message: '#^Error suppression via "@" should not be used\.$#'
+			identifier: ergebnis.noErrorSuppression
+			count: 1
+			path: ../../Classes/Command/InfoCommand.php
+
+		-
+			message: '#^Error suppression via "@" should not be used\.$#'
+			identifier: ergebnis.noErrorSuppression
+			count: 2
+			path: ../../Classes/Command/LogsCommand.php
+
+		-
+			message: '#^Error suppression via "@" should not be used\.$#'
+			identifier: ergebnis.noErrorSuppression
+			count: 1
+			path: ../../Classes/Command/Support/DeprecationOriginResolver.php
+
+		-
+			message: '#^Error suppression via "@" should not be used\.$#'
+			identifier: ergebnis.noErrorSuppression
+			count: 1
+			path: ../../Classes/Command/Support/PhpFileScanner.php
+
+		-
+			message: '#^Error suppression via "@" should not be used\.$#'
+			identifier: ergebnis.noErrorSuppression
+			count: 1
+			path: ../../Classes/Mate/ProfilerStateProvider.php
+
+		-
+			message: '#^Error suppression via "@" should not be used\.$#'
+			identifier: ergebnis.noErrorSuppression
+			count: 1
+			path: ../Unit/Command/DeprecationsCommandTest.php
+
+		-
+			message: '#^Error suppression via "@" should not be used\.$#'
+			identifier: ergebnis.noErrorSuppression
+			count: 2
+			path: ../Unit/Command/LogsCommandTest.php
+
+		-
+			message: '#^Error suppression via "@" should not be used\.$#'
+			identifier: ergebnis.noErrorSuppression
+			count: 1
+			path: ../Unit/Command/Support/DeprecationOriginResolverTest.php
+
+		-
+			message: '#^Error suppression via "@" should not be used\.$#'
+			identifier: ergebnis.noErrorSuppression
+			count: 5
+			path: ../Unit/Mate/ProfileProviderTest.php
+
+		-
+			message: '#^Error suppression via "@" should not be used\.$#'
+			identifier: ergebnis.noErrorSuppression
+			count: 2
+			path: ../Unit/Mate/ProfilerStateProviderTest.php
+
+		-
+			message: '#^Error suppression via "@" should not be used\.$#'
+			identifier: ergebnis.noErrorSuppression
+			count: 4
+			path: ../Unit/Mate/Typo3CliRunnerTest.php
+
+		-
+			message: '#^Error suppression via "@" should not be used\.$#'
+			identifier: ergebnis.noErrorSuppression
+			count: 8
+			path: ../Unit/Mcp/McpToolWrappersTest.php
+
+		-
+			message: '#^Error suppression via "@" should not be used\.$#'
+			identifier: ergebnis.noErrorSuppression
+			count: 5
+			path: ../Unit/Mcp/PerformanceToolTest.php
+
+		-
+			message: '#^Error suppression via "@" should not be used\.$#'
+			identifier: ergebnis.noErrorSuppression
+			count: 5
+			path: ../Unit/Mcp/ProfileResourceTest.php
+
+		-
+			message: '#^Error suppression via "@" should not be used\.$#'
+			identifier: ergebnis.noErrorSuppression
+			count: 2
+			path: ../Unit/Mcp/ProfilerControlToolTest.php
