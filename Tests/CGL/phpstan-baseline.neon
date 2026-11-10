@@ -49,12 +49,6 @@ parameters:
 			path: ../Unit/Command/LogsCommandTest.php
 
 		-
-			message: '#^Constructor of class KonradMichalik\\Typo3AiMate\\Tests\\Unit\\Command\\WithTypedConstructor has an unused parameter \$label\.$#'
-			identifier: constructor.unusedParameter
-			count: 1
-			path: ../Unit/Command/ServiceDetailCommandTest.php
-
-		-
 			message: '#^Error suppression via "@" should not be used\.$#'
 			identifier: ergebnis.noErrorSuppression
 			count: 1
