@@ -68,6 +68,21 @@ final class Typo3CliRunnerTest extends TestCase
     }
 
     #[Test]
+    public function jsonSkipsOptionsWithoutAValueButKeepsZero(): void
+    {
+        $result = (new Typo3CliRunner($this->rootDir))->json('ok', [], [
+            'missing' => null,
+            'empty' => '',
+            'zero' => 0,
+            'zero-string' => '0',
+            'off' => false,
+            'on' => true,
+        ]);
+
+        self::assertSame(['--zero', '0', '--zero-string', '0', '--on'], $result['args']);
+    }
+
+    #[Test]
     public function jsonPassesOptionLikeArgumentValuesAfterTheSeparator(): void
     {
         $result = (new Typo3CliRunner($this->rootDir))->json('ok', ['--help']);

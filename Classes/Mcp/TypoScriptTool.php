@@ -39,13 +39,7 @@ final readonly class TypoScriptTool
     )]
     public function dump(int $pageId, TypoScriptType $type = TypoScriptType::Setup, ?string $path = null, bool $full = false): string
     {
-        $options = ['type' => $type->value];
-        if (null !== $path && '' !== $path) {
-            $options['path'] = $path;
-        }
-        if ($full) {
-            $options['full'] = true;
-        }
+        $options = ['type' => $type->value, 'path' => $path, 'full' => $full];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:typoscript:dump', [$pageId], $options));
     }

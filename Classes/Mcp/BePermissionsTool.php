@@ -39,12 +39,12 @@ final readonly class BePermissionsTool
     )]
     public function inspect(?int $user = null, ?int $group = null, ?string $table = null, ?int $pageId = null): string
     {
-        $options = array_filter([
+        $options = [
             'user' => $user,
             'group' => $group,
             'table' => $table,
             'page-id' => $pageId,
-        ], static fn (int|string|null $value): bool => null !== $value && '' !== $value);
+        ];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:be-permissions', [], $options));
     }

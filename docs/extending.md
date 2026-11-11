@@ -21,6 +21,12 @@ final class MyCustomTool
 }
 ```
 
+Options are passed as an array of name and value. A `true` value becomes a bare `--flag`, while `false`, `null` and `''` leave the option out, so optional tool parameters can go in unfiltered:
+
+```php
+$this->typo3->json('myext:something', [$pageId], ['path' => $path, 'full' => $full]);
+```
+
 Recipe: (1) a TYPO3 console command that prints **raw JSON** (no `SymfonyStyle` — it decorates the output and breaks parsing), (2) a `#[MateTool]` class injecting `Typo3CliRunner`, returning its response through `ToolResult::from()`/`::untrusted()` (see [Untrusted data](security.md#untrusted-data) for which one), (3) register via A or B.
 
 A method's parameters (plus their `@param` docblock) are reflected into the tool's input schema, so document them there — a `#[MateTool]` argument itself is a PHP compile-time constant (no `outputSchema`, `annotations` or runtime-computed text; see [Tool descriptions are static](how-it-works.md#tool-descriptions-are-static)).

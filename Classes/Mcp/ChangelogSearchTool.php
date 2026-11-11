@@ -40,16 +40,14 @@ final readonly class ChangelogSearchTool
     )]
     public function search(string $query, ?ChangelogType $type = null, ?string $version = null, int $limit = 10): string
     {
-        $options = ['limit' => $limit];
-        if (null !== $type) {
-            $options['type'] = $type->value;
-        }
-        if (null !== $version && '' !== $version) {
+        $options = [
+            'limit' => $limit,
+            'type' => $type?->value,
             // The names differ on purpose: the console reserves `version`, while
             // the tool parameter stays as it is so the contract towards the
             // assistant does not change. Renaming either side breaks one of the two.
-            $options['core-version'] = $version;
-        }
+            'core-version' => $version,
+        ];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:changelog:search', [$query], $options));
     }

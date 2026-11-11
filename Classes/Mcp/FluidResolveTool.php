@@ -40,17 +40,13 @@ final readonly class FluidResolveTool
     )]
     public function resolve(int $pageId, string $plugin, ?string $template = null, ?string $partial = null, ?string $layout = null, string $format = 'html'): string
     {
-        $options = ['plugin' => $plugin];
-        if (null !== $template && '' !== $template) {
-            $options['template'] = $template;
-        }
-        if (null !== $partial && '' !== $partial) {
-            $options['partial'] = $partial;
-        }
-        if (null !== $layout && '' !== $layout) {
-            $options['layout'] = $layout;
-        }
-        $options['format'] = $format;
+        $options = [
+            'plugin' => $plugin,
+            'template' => $template,
+            'partial' => $partial,
+            'layout' => $layout,
+            'format' => $format,
+        ];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:fluid:resolve', [$pageId], $options));
     }

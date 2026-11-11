@@ -22,6 +22,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Whi
 ### Changed
 
 - `composer/semver` is now a direct dependency. TYPO3 v14 pulls it in through `typo3/cms-core`, v13 does not.
+- `Typo3CliRunner` leaves out options whose value is `null` or an empty string, as it already did for `false`. Third-party tools no longer need to filter optional parameters themselves. A tool that relied on passing `--name ''` to a command has to handle the missing option in the command instead.
 
 ### Fixed
 

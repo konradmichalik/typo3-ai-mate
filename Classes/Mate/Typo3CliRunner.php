@@ -35,7 +35,7 @@ final readonly class Typo3CliRunner
      * Run a TYPO3 console command and decode its stdout as a JSON array.
      *
      * @param list<string|int>           $arguments positional arguments
-     * @param array<string, scalar|bool> $options   --key value pairs; a true bool becomes a bare --flag
+     * @param array<string, scalar|null> $options   --key value pairs; a true bool becomes a bare --flag, null, '' and false are left out
      *
      * @return array<mixed>
      */
@@ -68,7 +68,7 @@ final readonly class Typo3CliRunner
      * assistant as a readable cause instead of an opaque protocol-level error.
      *
      * @param list<string|int>           $arguments
-     * @param array<string, scalar|bool> $options
+     * @param array<string, scalar|null> $options
      *
      * @return array<mixed>
      */
@@ -83,7 +83,7 @@ final readonly class Typo3CliRunner
 
     /**
      * @param list<string|int>           $arguments
-     * @param array<string, scalar|bool> $options
+     * @param array<string, scalar|null> $options
      */
     public function run(string $command, array $arguments = [], array $options = []): string
     {
@@ -129,7 +129,7 @@ final readonly class Typo3CliRunner
 
     /**
      * @param list<string|int>           $arguments
-     * @param array<string, scalar|bool> $options
+     * @param array<string, scalar|null> $options
      *
      * @return list<string>
      */
@@ -138,7 +138,7 @@ final readonly class Typo3CliRunner
         $line = [\PHP_BINARY, $this->rootDir.'/vendor/bin/typo3', $command];
 
         foreach ($options as $name => $value) {
-            if (false === $value) {
+            if (null === $value || '' === $value || false === $value) {
                 continue;
             }
             if (true === $value) {

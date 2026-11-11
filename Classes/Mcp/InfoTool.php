@@ -36,7 +36,7 @@ final readonly class InfoTool
     )]
     public function dump(bool $contentTypes = false): string
     {
-        $options = $contentTypes ? ['content-types' => true] : [];
+        $options = ['content-types' => $contentTypes];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:info:dump', [], $options));
     }

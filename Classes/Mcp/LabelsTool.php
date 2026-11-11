@@ -38,10 +38,7 @@ final readonly class LabelsTool
     )]
     public function lookup(?string $references = null, ?string $locale = null, ?string $extension = null): string
     {
-        $options = array_filter(
-            ['references' => $references, 'locale' => $locale, 'extension' => $extension],
-            static fn (?string $value): bool => null !== $value && '' !== $value,
-        );
+        $options = ['references' => $references, 'locale' => $locale, 'extension' => $extension];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:labels:lookup', [], $options));
     }

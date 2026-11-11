@@ -37,7 +37,7 @@ final readonly class ServiceDetailTool
     )]
     public function detail(?string $id = null, ?string $tag = null): string
     {
-        $options = null !== $tag && '' !== $tag ? ['tag' => $tag] : [];
+        $options = ['tag' => $tag];
         $arguments = null !== $id && '' !== $id ? [$id] : [];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:service:detail', $arguments, $options));
