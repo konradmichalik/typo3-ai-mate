@@ -97,7 +97,7 @@ Details, including why tool descriptions cannot carry runtime state, are in [how
 | [Use cases](docs/use-cases.md) | Slow page, error page, major upgrade, and the `request_id` anchor |
 | [Extending](docs/extending.md) | Writing your own `typo3-*` tool against `Typo3CliRunner` |
 | [Tool surface](docs/tool-surface.md) | What the tool count costs a session, measured rather than argued |
-| [Related projects](docs/related.md) | How this compares to dev-companion and the two typo3-mcp-server projects |
+| [Related projects](docs/related.md) | How this compares to dev-companion, the MCP servers that write content, and other ai-mate bridges |
 
 ## 🧑‍💻 Contributing
 
