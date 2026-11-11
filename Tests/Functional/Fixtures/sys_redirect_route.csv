@@ -1,3 +1,4 @@
 "sys_redirect"
 ,"uid","pid","source_host","source_path","target","target_statuscode","is_regexp","respect_query_parameters","keep_query_parameters","disabled"
 ,1,0,"*","/old-products","t3://page?uid=2",301,0,0,0,0
+,2,0,"*","/products","/products",301,0,0,0,0
