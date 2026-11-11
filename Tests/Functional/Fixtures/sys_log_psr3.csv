@@ -1,0 +1,4 @@
+"sys_log"
+,"uid","tstamp","request_id","time_micro","component","level","message","data"
+,10,1700000300,"65f1a2b3c4d5e",1700000300.25,"Vendor.Shop.Checkout","error","Payment provider {provider} rejected the call from 192.0.2.44","{""provider"":""acme-pay"",""ip"":""192.0.2.44""}"
+,11,1700000400,"77aa88bb99cc0",1700000400.5,"Vendor.Shop.Checkout","info","Checkout started",""

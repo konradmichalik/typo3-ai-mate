@@ -66,6 +66,7 @@ Exact tool names, so you can select one directly instead of searching for it.
 | Which backend modules exist, and what do they inherit? | `typo3-backend-modules` |
 | What is this page composed of, and what is uncached? | `typo3-page` |
 | What errored? What is in the log? | `typo3-logs-search`, `typo3-logs-tail`, `typo3-logs-by-level` |
+| Why did a backend save, file operation or workspace action fail? | `typo3-syslog` |
 | Why is this page slow? | `typo3-profiler-start` → exercise the page → `typo3-profiler-latest` → `typo3-page` |
 | What runs in the PSR-15 / PSR-14 chain? | `typo3-middlewares`, `typo3-events` |
 | Which console commands exist? | `typo3-commands` |
@@ -93,9 +94,9 @@ instead of finding out via a wasted call.
 ## What the tool surface does consistently
 
 - **`request_id`** (= profile `token` = TYPO3 `Core\RequestId`, logged as
-  `request="…"`) links the request-scoped tools: `typo3-profiler-*`, `typo3-page`
-  and `typo3-logs-*` all accept or report it, so one failing request can be
-  followed across all three.
+  `request="…"`) links the request-scoped tools: `typo3-profiler-*`, `typo3-page`,
+  `typo3-logs-*` and `typo3-syslog` all accept or report it, so one failing
+  request can be followed across all of them.
 - **Truncation is stated.** A capped result carries `_truncated: true` plus the
   real total (`statistics.matchCount`, `eventCount`, `tableCount`). Treat it as a
   sample and re-query with a narrower filter, never as the whole picture.

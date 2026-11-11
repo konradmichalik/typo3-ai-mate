@@ -7,7 +7,7 @@ Every command runs only in a Development context (`Environment::getContext()->is
 
 ## Read-only by default
 
-Only 3 of the 39 tools mutate anything:
+Only 3 of the 40 tools mutate anything:
 
 - `typo3-profiler-start` / `-stop` change profiler control state, and only as a time-boxed dev switch. They touch no records.
 - `typo3-render-page` issues a real internal HTTP request, so it has side effects in caches and logs.
@@ -17,6 +17,7 @@ Only 3 of the 39 tools mutate anything:
 ## Guards
 
 - **Redacts PII and secrets** (`Support\Redactor`) — emails, IPv4 addresses and `key=value`/`key: value` secrets (`password`, `token`, `api_key`, `authorization`, …) are stripped from logs, TypoScript/TSconfig dumps, resolved records and profiler data before they reach the AI client.
+- **Keeps user identities out of `typo3-syslog`**: `sys_log` stores a user id, an IP address and a workspace id with every row, and PSR-3 rows a context `data` blob. None of these columns is ever selected. Login entries and `be_users`/`fe_users` records keep their unfilled details template, because their log data is a user name, and a `be_users`/`fe_users` record uid is left out because it is a user id. All other details, and the PSR-3 message shown in their place, are filled from `log_data` where applicable and then redacted like log messages.
 - **Restricts `typo3-render-page` to configured site hosts** — an absolute `--url` is rejected unless its host matches one of the installation's site bases, and redirects are not followed, closing an SSRF vector against internal and cloud-metadata endpoints.
 - **Never returns scheduler task arguments**: `typo3-scheduler` picks the fields it reports by name, so a task's arguments and the backend module's summary of them (`getAdditionalInformation()`), where API keys and passwords for scheduled commands end up, never reach the output. The description and failure message it does report go through `Support\Redactor`. It reads through the core's task listing and avoids the repository and scheduler calls that disable broken tasks or clear stale running markers.
 - **Validates profile tokens** — `typo3-profiler-get` and the `typo3-profiler://profile/{token}` resource only accept alphanumeric tokens, rejecting path traversal before the file-based lookup.
@@ -31,7 +32,7 @@ Only 3 of the 39 tools mutate anything:
 
 ## Untrusted data
 
-Tool output captured from the inspected application (records, TCA labels, logs, rendered pages, profiler data, site and icon identifiers, extension keys) is wrapped by `Symfony\AI\Mate\Encoding\ResponseEncoder::encodeUntrusted()`. It nests the payload under an `untrusted_data` key alongside a `_security_notice` telling the model to treat the content strictly as data, never as instructions. That data is frequently authored by editors or third-party extensions, and is exactly the kind of content a prompt-injection attempt would try to plant.
+Tool output captured from the inspected application (records, TCA labels, logs, `sys_log` details, rendered pages, profiler data, site and icon identifiers, extension keys) is wrapped by `Symfony\AI\Mate\Encoding\ResponseEncoder::encodeUntrusted()`. It nests the payload under an `untrusted_data` key alongside a `_security_notice` telling the model to treat the content strictly as data, never as instructions. That data is frequently authored by editors or third-party extensions, and is exactly the kind of content a prompt-injection attempt would try to plant.
 
 `Classes/Mate/ToolResult.php` exposes both `from()` (plain `ResponseEncoder::encode()`) and `untrusted()` (`encodeUntrusted()`). Use `untrusted()` whenever the payload includes text or identifiers an editor or a third-party extension could have authored. Use `from()` only for output this package itself computed, with nothing pulled from the inspected application's own data or third-party code. When unsure, prefer `untrusted()`: wrapping data that turned out to be harmless costs nothing, the reverse does not.
 

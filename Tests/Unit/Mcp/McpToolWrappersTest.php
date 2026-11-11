@@ -15,10 +15,11 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, BePermissionsTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LabelsTool, LogsTool, MiddlewaresTool, OverridesTool, PageTool, RecordsTool, RenderPageTool, RouteTool, SchedulerTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool, ViewHelpersTool};
-use KonradMichalik\Typo3AiMate\Mcp\Enum\{ChangelogType, ConfigSection, LogLevel, MiddlewareStack, OutputMode, TsConfigType, TypoScriptType};
+use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, BePermissionsTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LabelsTool, LogsTool, MiddlewaresTool, OverridesTool, PageTool, RecordsTool, RenderPageTool, RouteTool, SchedulerTool, SiteTool, SysLogTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool, ViewHelpersTool};
+use KonradMichalik\Typo3AiMate\Mcp\Enum\{ChangelogType, ConfigSection, LogLevel, MiddlewareStack, OutputMode, SysLogType, TsConfigType, TypoScriptType};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Symfony\AI\Mate\Encoding\ResponseEncoder;
 
 /**
  * McpToolWrappersTest.
@@ -512,6 +513,27 @@ final class McpToolWrappersTest extends TestCase
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:logs:search');
         self::assertJsonPath($result, 'args', ['--limit', '10', '--format', 'summary']);
+    }
+
+    #[Test]
+    public function sysLogToolForwardsTheDefaultLimitOnlyAndWrapsTheOutputAsUntrusted(): void
+    {
+        $response = (new SysLogTool($this->runner))->search();
+        $result = $this->decode($response);
+
+        self::assertArrayHasKey('untrusted_data', (array) ResponseEncoder::decode($response));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:syslog:search');
+        self::assertJsonPath($result, 'args', ['--limit', '50']);
+    }
+
+    #[Test]
+    public function sysLogToolForwardsEveryFilter(): void
+    {
+        $result = $this->decode((new SysLogTool($this->runner))->search(true, 'tt_content', 12, SysLogType::Db, '65f1a2b3c4d5e', '2h', 10));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:syslog:search');
+        self::assertJsonPath($result, 'args', ['--error', '--table', 'tt_content', '--record-uid', '12', '--type', 'db', '--request-id', '65f1a2b3c4d5e', '--since', '2h', '--limit', '10']);
     }
 
     #[Test]
