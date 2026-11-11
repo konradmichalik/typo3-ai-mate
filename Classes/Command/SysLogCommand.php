@@ -15,6 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Command;
 
 use InvalidArgumentException;
 use KonradMichalik\Typo3AiMate\Command\Support\{RecordQueryInput, SysLogFormatter};
+use KonradMichalik\Typo3AiMate\Mcp\Enum\SysLogType;
 use KonradMichalik\Typo3AiMate\Support\Cast;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -74,7 +75,7 @@ final class SysLogCommand extends AbstractJsonCommand
             ->addOption('error', null, InputOption::VALUE_NONE, 'Only entries flagged as an error (user error, system error, security notice, warning) or logged at PSR-3 level error and above')
             ->addOption('table', null, InputOption::VALUE_REQUIRED, 'Restrict to one table, e.g. tt_content')
             ->addOption('record-uid', null, InputOption::VALUE_REQUIRED, 'Restrict to one record uid')
-            ->addOption('type', null, InputOption::VALUE_REQUIRED, 'db|file|cache|extension|error|site|setting|login')
+            ->addOption('type', null, InputOption::VALUE_REQUIRED, implode('|', array_column(SysLogType::cases(), 'value')))
             ->addOption('request-id', null, InputOption::VALUE_REQUIRED, 'Filter by request id (correlates with profile token)')
             ->addOption('since', null, InputOption::VALUE_REQUIRED, 'Only entries at or after this time: relative (e.g. 30m, 2h, 7d) or any parseable date')
             ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Maximum number of distinct entries (capped at 200)', (string) self::DEFAULT_LIMIT);
@@ -85,7 +86,7 @@ final class SysLogCommand extends AbstractJsonCommand
         $typeOption = Cast::string($input->getOption('type'));
         $type = '' === $typeOption ? null : $this->formatter->typeId($typeOption);
         if ('' !== $typeOption && null === $type) {
-            return $this->emit($output, ['error' => 'type must be one of db, file, cache, extension, error, site, setting, login.'], Command::FAILURE);
+            return $this->emit($output, ['error' => 'type must be one of '.implode(', ', array_column(SysLogType::cases(), 'value')).'.'], Command::FAILURE);
         }
 
         try {

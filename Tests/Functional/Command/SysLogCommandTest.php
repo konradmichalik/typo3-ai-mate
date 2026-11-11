@@ -89,6 +89,7 @@ final class SysLogCommandTest extends FunctionalTestCase
         [, $result] = $this->runCommand([]);
 
         self::assertSame('be_users', $result['entries'][0]['table']);
+        self::assertNull($result['entries'][0]['recordUid'], 'The uid of a be_users record is a user id.');
         self::assertSame('login', $result['entries'][2]['type']);
     }
 
