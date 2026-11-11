@@ -102,7 +102,7 @@ final readonly class SysLogFormatter
      *
      * @param iterable<array<string, mixed>> $rows
      *
-     * @return list<array{lastSeen: string, count: int, type: string|int, action: string|int, error: string|int, level: string, component: string, table: string, recordUid: int, pageUid: int, exampleRequestId: string, details: string}>
+     * @return list<array{lastSeen: string, count: int, type: string|int, action: string|int, error: string|int, level: string, component: string, table: string, recordUid: int|null, pageUid: int, exampleRequestId: string, details: string}>
      */
     public function aggregate(iterable $rows): array
     {
@@ -128,7 +128,7 @@ final readonly class SysLogFormatter
     /**
      * @param array<string, mixed> $row
      *
-     * @return array{type: string|int, action: string|int, error: string|int, level: string, component: string, table: string, recordUid: int, pageUid: int, exampleRequestId: string, details: string}
+     * @return array{type: string|int, action: string|int, error: string|int, level: string, component: string, table: string, recordUid: int|null, pageUid: int, exampleRequestId: string, details: string}
      */
     private function entry(array $row): array
     {
@@ -143,7 +143,7 @@ final readonly class SysLogFormatter
             'level' => Cast::string($row['level'] ?? ''),
             'component' => Cast::string($row['component'] ?? ''),
             'table' => Cast::string($row['tablename'] ?? ''),
-            'recordUid' => Cast::int($row['recuid'] ?? 0),
+            'recordUid' => in_array(Cast::string($row['tablename'] ?? ''), self::IDENTITY_TABLES, true) ? null : Cast::int($row['recuid'] ?? 0),
             'pageUid' => Cast::int($row['event_pid'] ?? 0),
             'exampleRequestId' => Cast::string($row['request_id'] ?? ''),
             'details' => $this->details($row),
