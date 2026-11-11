@@ -68,6 +68,8 @@ Exact tool names, so you can select one directly instead of searching for it.
 | What errored? What is in the log? | `typo3-logs-search`, `typo3-logs-tail`, `typo3-logs-by-level` |
 | Why did a backend save, file operation or workspace action fail? | `typo3-syslog` |
 | Why is this page slow? | `typo3-profiler-start` → exercise the page → `typo3-profiler-latest` → `typo3-page` |
+| Which recent request should I look at? | `typo3-profiler-triage` |
+| Did my change make this request faster? | `typo3-profiler-compare` with the tokens before and after |
 | What runs in the PSR-15 / PSR-14 chain? | `typo3-middlewares`, `typo3-events` |
 | Which console commands exist? | `typo3-commands` |
 | Why did this scheduler task not run? Is the scheduler running at all? | `typo3-scheduler` |
