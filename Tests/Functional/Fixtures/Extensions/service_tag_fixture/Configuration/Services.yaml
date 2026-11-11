@@ -1,0 +1,13 @@
+services:
+  # Private and referenced by nothing: compilation removes it, the tag map keeps it.
+  service_tag_fixture.private:
+    class: ArrayObject
+    public: false
+    tags:
+      - { name: service_tag_fixture.extension_point, identifier: private-one, priority: 10 }
+
+  service_tag_fixture.public:
+    class: SplObjectStorage
+    public: true
+    tags:
+      - { name: service_tag_fixture.extension_point, identifier: public-one }

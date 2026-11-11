@@ -45,7 +45,7 @@ final readonly class LogsTool
         OutputMode $mode = OutputMode::Summary,
         ?string $since = null,
     ): string {
-        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], $this->options([
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], [
             'query' => $query,
             'level' => $level?->value,
             'component' => $component,
@@ -53,7 +53,7 @@ final readonly class LogsTool
             'limit' => $limit,
             'format' => $mode->value,
             'since' => $since,
-        ])));
+        ]));
     }
 
     /**
@@ -64,11 +64,11 @@ final readonly class LogsTool
     #[MateTool(name: 'typo3-logs-tail', title: 'TYPO3 Log Tail', description: 'Return the most recent TYPO3 log entries. Defaults to a compact summary (distinct messages with counts). Use this when you want the last N entries regardless of severity or text.')]
     public function tail(int $limit = 50, OutputMode $mode = OutputMode::Summary, ?string $since = null): string
     {
-        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], $this->options([
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], [
             'limit' => $limit,
             'format' => $mode->value,
             'since' => $since,
-        ])));
+        ]));
     }
 
     /**
@@ -81,22 +81,12 @@ final readonly class LogsTool
     #[MateTool(name: 'typo3-logs-by-level', title: 'TYPO3 Logs by Level', description: 'Return TYPO3 log entries at or above a minimum severity (e.g. error), optionally filtered by request-id. Defaults to a compact summary (distinct messages with counts and lastSeen, no stack traces). Use this when you want every entry from a severity upwards regardless of message text.')]
     public function byLevel(LogLevel $minLevel, ?string $requestId = null, int $limit = 50, OutputMode $mode = OutputMode::Summary, ?string $since = null): string
     {
-        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], $this->options([
+        return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:logs:search', [], [
             'level' => $minLevel->value,
             'request-id' => $requestId,
             'limit' => $limit,
             'format' => $mode->value,
             'since' => $since,
-        ])));
-    }
-
-    /**
-     * @param array<string, scalar|null> $options
-     *
-     * @return array<string, scalar>
-     */
-    private function options(array $options): array
-    {
-        return array_filter($options, static fn (mixed $value): bool => null !== $value && '' !== $value);
+        ]));
     }
 }

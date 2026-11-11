@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Command;
 
-use KonradMichalik\Typo3AiMate\Command\Support\LogAggregator;
+use KonradMichalik\Typo3AiMate\Command\Support\{LogAggregator, SinceInput};
 use KonradMichalik\Typo3AiMate\Support\Cast;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\{InputInterface, InputOption};
@@ -160,29 +160,6 @@ final class LogsCommand extends AbstractJsonCommand
     }
 
     /**
-     * Resolve a --since value to a minimum unix timestamp. Accepts a relative
-     * offset (e.g. 30m, 2h, 7d) or any date string parseable by strtotime.
-     * Returns null when empty or unparseable (i.e. no lower time bound).
-     */
-    public function resolveSince(mixed $since): ?int
-    {
-        if (!is_string($since) || '' === trim($since)) {
-            return null;
-        }
-        $since = trim($since);
-
-        if (1 === preg_match('/^(\d+)\s*([smhd])$/i', $since, $matches)) {
-            $unit = ['s' => 1, 'm' => 60, 'h' => 3600, 'd' => 86400][strtolower($matches[2])] ?? 1;
-
-            return time() - ((int) $matches[1] * $unit);
-        }
-
-        $timestamp = strtotime($since);
-
-        return false === $timestamp ? null : $timestamp;
-    }
-
-    /**
      * Deduplicate entries by message, count occurrences and keep the most recent
      * timestamp. Entries are expected in chronological (file) order. The full
      * stack trace is intentionally dropped — this is the compact summary view.
@@ -232,7 +209,7 @@ final class LogsCommand extends AbstractJsonCommand
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $since = $this->resolveSince($input->getOption('since'));
+        $since = SinceInput::timestamp($input->getOption('since'));
         $filters = [
             'minSeverity' => $this->resolveMinSeverity($input->getOption('level')),
             'component' => $this->stringOption($input->getOption('component')),

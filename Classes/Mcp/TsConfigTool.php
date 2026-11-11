@@ -40,16 +40,7 @@ final readonly class TsConfigTool
     )]
     public function dump(int $pageId, TsConfigType $type = TsConfigType::Page, ?int $user = null, ?string $path = null, bool $full = false): string
     {
-        $options = ['type' => $type->value];
-        if (null !== $user) {
-            $options['user'] = $user;
-        }
-        if (null !== $path && '' !== $path) {
-            $options['path'] = $path;
-        }
-        if ($full) {
-            $options['full'] = true;
-        }
+        $options = ['type' => $type->value, 'user' => $user, 'path' => $path, 'full' => $full];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:tsconfig:dump', [$pageId], $options));
     }

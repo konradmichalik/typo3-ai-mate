@@ -111,7 +111,7 @@ final class ProfilerStateProviderTest extends TestCase
     {
         $this->provider()->activate('30m');
 
-        self::assertSame(['profiler:activate', '--duration', '30m'], $this->recordedArgv());
+        self::assertSame(['profiler:activate', '--duration=30m'], $this->recordedArgv());
     }
 
     #[Test]

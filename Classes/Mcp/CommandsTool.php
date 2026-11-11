@@ -37,13 +37,7 @@ final readonly class CommandsTool
     )]
     public function list(?string $pattern = null, bool $ownOnly = false): string
     {
-        $options = [];
-        if (null !== $pattern && '' !== $pattern) {
-            $options['pattern'] = $pattern;
-        }
-        if ($ownOnly) {
-            $options['own-only'] = true;
-        }
+        $options = ['pattern' => $pattern, 'own-only' => $ownOnly];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:commands:list', [], $options));
     }

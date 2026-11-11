@@ -36,7 +36,7 @@ final readonly class EventsTool
     )]
     public function list(?string $pattern = null): string
     {
-        $options = null !== $pattern && '' !== $pattern ? ['event' => $pattern] : [];
+        $options = ['event' => $pattern];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:events:list', [], $options));
     }

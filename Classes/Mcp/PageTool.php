@@ -37,7 +37,7 @@ final readonly class PageTool
     public function info(?int $pageId = null, ?string $url = null): string
     {
         $arguments = null !== $pageId ? [$pageId] : [];
-        $options = null !== $url && '' !== $url ? ['url' => $url] : [];
+        $options = ['url' => $url];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:page:info', $arguments, $options));
     }

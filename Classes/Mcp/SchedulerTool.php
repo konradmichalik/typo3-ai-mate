@@ -36,7 +36,7 @@ final readonly class SchedulerTool
     )]
     public function tasks(?int $uid = null): string
     {
-        $options = null === $uid ? [] : ['uid' => $uid];
+        $options = ['uid' => $uid];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:scheduler:tasks', [], $options));
     }

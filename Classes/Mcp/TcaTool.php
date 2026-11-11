@@ -48,13 +48,7 @@ final readonly class TcaTool
             return ToolResult::untrusted(['error'] === array_keys($names) ? $names : ['tables' => $names]);
         }
 
-        $options = [];
-        if (null !== $recordType && '' !== $recordType) {
-            $options['record-type'] = $recordType;
-        }
-        if (null !== $fields && '' !== $fields) {
-            $options['fields'] = $fields;
-        }
+        $options = ['record-type' => $recordType, 'fields' => $fields];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:tca:dump', [$table], $options));
     }

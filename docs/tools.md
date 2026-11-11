@@ -510,7 +510,9 @@ Three layers: `default` (TYPO3 core's own defaults), `settings.php` (`config/sys
 
 ## `typo3-service`
 
-Class, constructor argument types, and public/shared flags of one DI service — why is this implementation injected, is it shared or a fresh instance per use. Public services only: TYPO3 makes most services private by default (`_defaults: public: false` in `Configuration/Services.yaml`), and this tool can only reach what the container itself exposes. Constructor arguments are the *types* PHP declares, not the *values* TYPO3 resolved: a constructor-injected service and a scalar parameter both show only their declared type. No tags and no lazy/autowired/autoconfigured flags either — both are compiler-only metadata that no longer exists once the container has compiled, and getting them back would mean rebuilding a `ContainerBuilder` the way TYPO3's own cache warmup does, which needs several `@internal` core classes and nine synthetic bootstrap instances (`ClassLoader`, `ApplicationContext`, `cache.core`, …) this tool does not reconstruct.
+Class, constructor argument types, and public/shared flags of one DI service — why is this implementation injected, is it shared or a fresh instance per use. Public services only: TYPO3 makes most services private by default (`_defaults: public: false` in `Configuration/Services.yaml`), and this tool can only reach what the container itself exposes. Constructor arguments are the *types* PHP declares, not the *values* TYPO3 resolved: a constructor-injected service and a scalar parameter both show only their declared type. No lazy/autowired/autoconfigured flags either. They are compiler-only metadata that no longer exists once the container has compiled, and getting them back would mean rebuilding a `ContainerBuilder` the way TYPO3's own cache warmup does, which needs several `@internal` core classes and nine synthetic bootstrap instances (`ClassLoader`, `ApplicationContext`, `cache.core`, …) this tool does not reconstruct.
+
+With `tag` instead of `id`, it lists every service carrying that DI tag, with its tag attributes and public flag, private services included. The compiled container keeps no tags, so this extension records them itself: a compiler pass (`ServiceTagMapPass`) runs while TYPO3 builds the container, before private services are inlined or removed, and the map is dumped into the cached container with everything else. The lookup reads that map and resolves no service, and it reflects the container as last built: flush caches after changing a `Services.yaml`.
 
 Unlike every other tool on this page, this one is not read-only in the strictest sense: the shared/not-shared check resolves the service (twice for a non-shared one), which really constructs it. See [Security](security.md#read-only-by-default).
 
@@ -533,6 +535,29 @@ vendor/bin/mate tools:call typo3-service --id="GuzzleHttp\ClientInterface"
 ```
 
 Pass a class/interface name for an autowired service, or a string service id. A service that is not registered, or that TYPO3 keeps private (the default), answers `unsupported` — console commands are the one common exception: `#[AsCommand]`'s autoconfiguration makes them public so `CommandRegistry` can fetch them by id, so this tool can also inspect this package's own commands.
+
+</details>
+
+<details>
+<summary>Which services carry this tag?</summary>
+
+```bash
+vendor/bin/mate tools:call typo3-service --tag=typo3.singleton
+```
+
+```json
+{
+  "tag": "typo3.singleton",
+  "services": [
+    {"id": "TYPO3\\CMS\\Backend\\CodeEditor\\CodeEditor", "class": "TYPO3\\CMS\\Backend\\CodeEditor\\CodeEditor", "public": true, "attributes": [[]]},
+    …
+  ],
+  "serviceCount": 74,
+  "_truncated": false
+}
+```
+
+Up to 200 services per tag, `serviceCount` holds the full count. A tag no service carries answers an empty `services` list plus `knownTags`, the tag names the container knows (up to 200). A decorated service is listed under its decorator's id, since Symfony moves the tags to the decorator. For event listeners in dispatch order use [`typo3-events`](#typo3-events), which reads the listener provider instead.
 
 </details>
 

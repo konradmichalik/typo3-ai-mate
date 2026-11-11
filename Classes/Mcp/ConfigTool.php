@@ -38,10 +38,7 @@ final readonly class ConfigTool
     )]
     public function dump(?string $path = null, ConfigSection $section = ConfigSection::Confvars): string
     {
-        $options = ['section' => $section->value];
-        if (null !== $path && '' !== $path) {
-            $options['path'] = $path;
-        }
+        $options = ['section' => $section->value, 'path' => $path];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:config:dump', [], $options));
     }

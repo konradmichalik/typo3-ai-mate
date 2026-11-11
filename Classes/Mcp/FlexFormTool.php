@@ -38,7 +38,7 @@ final readonly class FlexFormTool
     )]
     public function diff(string $table, int $uid, ?string $field = null): string
     {
-        $options = null !== $field && '' !== $field ? ['field' => $field] : [];
+        $options = ['field' => $field];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:flexform:diff', [$table, $uid], $options));
     }

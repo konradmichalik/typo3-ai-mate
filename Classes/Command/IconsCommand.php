@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Command;
 
-use KonradMichalik\Typo3AiMate\Command\Support\IconLookup;
+use KonradMichalik\Typo3AiMate\Command\Support\{IconLookup, ListInput};
 use KonradMichalik\Typo3AiMate\Support\Cast;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\{InputInterface, InputOption};
@@ -53,7 +53,7 @@ final class IconsCommand extends AbstractJsonCommand
             $this->iconRegistry->getAllRegisteredIconIdentifiers(),
         ));
 
-        $identifiers = IconLookup::parseList($input->getOption('identifiers'));
+        $identifiers = ListInput::parse($input->getOption('identifiers'));
         if ([] !== $identifiers) {
             return $this->emit($output, [
                 'checked' => count($identifiers),
@@ -81,7 +81,7 @@ final class IconsCommand extends AbstractJsonCommand
             if (!$this->iconRegistry->isRegistered($identifier)) {
                 $described[$identifier] = [
                     'registered' => false,
-                    'suggestions' => IconLookup::suggest($identifier, $registered),
+                    'suggestions' => ListInput::suggest($identifier, $registered),
                     '_hint' => sprintf('"%s" is not registered. It resolves to no icon at all, not to a placeholder.', $identifier),
                 ];
                 continue;

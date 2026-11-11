@@ -37,10 +37,7 @@ final readonly class ViewHelpersTool
     )]
     public function lookup(?string $names = null, ?string $namespace = null): string
     {
-        $options = array_filter(
-            ['names' => $names, 'namespace' => $namespace],
-            static fn (?string $value): bool => null !== $value && '' !== $value,
-        );
+        $options = ['names' => $names, 'namespace' => $namespace];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:fluid:viewhelpers', [], $options));
     }

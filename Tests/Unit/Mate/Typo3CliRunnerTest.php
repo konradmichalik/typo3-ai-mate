@@ -18,6 +18,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
+use function dirname;
+
 /**
  * Typo3CliRunnerTest.
  *
@@ -44,9 +46,19 @@ final class Typo3CliRunnerTest extends TestCase
             case 'errfield': echo json_encode(['error' => 'something broke']); break;
             case 'errwithcontext': echo json_encode(['table' => 'tt_content', 'dataStructureResolved' => false, 'error' => 'no such plugin']); break;
             case 'fail':     fwrite(STDERR, 'boom'); exit(1);
+            case 'parsed':
+                require AUTOLOAD;
+                $definition = new Symfony\Component\Console\Input\InputDefinition([
+                    new Symfony\Component\Console\Input\InputArgument('command'),
+                    new Symfony\Component\Console\Input\InputOption('tag', null, Symfony\Component\Console\Input\InputOption::VALUE_REQUIRED),
+                ]);
+                $input = new Symfony\Component\Console\Input\ArgvInput($argv, $definition);
+                echo json_encode(['tag' => $input->getOption('tag')]);
+                break;
         }
         PHP_WRAP;
-        file_put_contents($this->rootDir.'/vendor/bin/typo3', $script);
+        $autoload = var_export(dirname(__DIR__, 3).'/vendor/autoload.php', true);
+        file_put_contents($this->rootDir.'/vendor/bin/typo3', str_replace('AUTOLOAD', $autoload, $script));
     }
 
     protected function tearDown(): void
@@ -65,6 +77,29 @@ final class Typo3CliRunnerTest extends TestCase
         self::assertSame('world', $result['hello']);
         // Options first, then the end-of-options separator, then positional args.
         self::assertSame(['--list', '--', 'tt_content'], $result['args']);
+    }
+
+    #[Test]
+    public function jsonSkipsOptionsWithoutAValueButKeepsZero(): void
+    {
+        $result = (new Typo3CliRunner($this->rootDir))->json('ok', [], [
+            'missing' => null,
+            'empty' => '',
+            'zero' => 0,
+            'zero-string' => '0',
+            'off' => false,
+            'on' => true,
+        ]);
+
+        self::assertSame(['--zero=0', '--zero-string=0', '--on'], $result['args']);
+    }
+
+    #[Test]
+    public function jsonPassesOptionValuesStartingWithADashAsTheValue(): void
+    {
+        $result = (new Typo3CliRunner($this->rootDir))->json('parsed', [], ['tag' => '-foo']);
+
+        self::assertSame(['tag' => '-foo'], $result);
     }
 
     #[Test]

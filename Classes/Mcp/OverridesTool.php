@@ -36,7 +36,7 @@ final readonly class OverridesTool
     )]
     public function list(?string $class = null): string
     {
-        $options = null !== $class && '' !== $class ? ['class' => $class] : [];
+        $options = ['class' => $class];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:overrides:list', [], $options));
     }

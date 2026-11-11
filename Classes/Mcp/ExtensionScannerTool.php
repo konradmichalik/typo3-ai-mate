@@ -40,10 +40,7 @@ final readonly class ExtensionScannerTool
     public function scan(?string $extension = null, OutputMode $mode = OutputMode::Summary, bool $ownOnly = false): string
     {
         $arguments = null !== $extension && '' !== $extension ? [$extension] : [];
-        $options = ['format' => $mode->value];
-        if ($ownOnly) {
-            $options['own-code'] = true;
-        }
+        $options = ['format' => $mode->value, 'own-code' => $ownOnly];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:upgrade:scan', $arguments, $options));
     }
