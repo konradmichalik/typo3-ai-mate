@@ -39,16 +39,18 @@ TESTS=(
   "typo3-profiler-start|--duration=1m"
   "typo3-profiler-stop|"
 )
-# latest, search and get answer "no profiles found" as unsupported until a
+# latest, search, get, compare and triage answer "no profiles found" as unsupported until a
 # request has been recorded, so they only run once one exists.
 if [ -n "${TOKEN}" ]; then
   TESTS+=(
     "typo3-profiler-latest|"
     "typo3-profiler-search|--urlContains=/"
     "typo3-profiler-get|--token=${TOKEN}"
+    "typo3-profiler-compare|--a=${TOKEN} --b=${TOKEN}"
+    "typo3-profiler-triage|"
   )
 else
-  printf "Skipping typo3-profiler-latest/-search/-get: no profile recorded yet (see CONTRIBUTING).\n"
+  printf "Skipping typo3-profiler-latest/-search/-get/-compare/-triage: no profile recorded yet (see CONTRIBUTING).\n"
 fi
 
 # Call one tool through the mate CLI. Returns its output on stdout and the CLI's

@@ -10,6 +10,7 @@ The examples below omit `--format=toon` for readability. An assistant should pas
 | --- | --- |
 | Start here | [`typo3-info`](#typo3-info) |
 | Profiling | [`typo3-profiler-latest` / `-list` / `-search` / `-get`](#typo3-profiler-latest---list---search---get) |
+| Profiling analysis | [`typo3-profiler-compare` / `-triage`](#typo3-profiler-compare---triage) |
 | Profiling control | [`typo3-profiler-start` / `-stop` / `-status`](#typo3-profiler-start---stop---status) |
 | Page | [`typo3-page`](#typo3-page) |
 | Records | [`typo3-records`](#typo3-records) |
@@ -72,6 +73,26 @@ vendor/bin/mate tools:call typo3-profiler-get --token=<token>
 ```
 
 Start with `-latest` for a single complaint. `typo3-profiler-search` when you already know a URL fragment or status code, `typo3-profiler-list --limit=20` to browse. Each summary carries a `resource_uri` for the full SQL detail.
+
+</details>
+
+## `typo3-profiler-compare` / `-triage`
+
+Work across several recorded profiles instead of one. Both read existing profiles only and collect nothing new.
+
+`typo3-profiler-compare` diffs two profiles (`a` as the baseline, `b` as the request after the change): timing, peak memory, query count and query time, duplicate query patterns and their executions, HTTP calls, log entries in total and by level, and included files. `largest_differences` ranks the metrics by fold change, so milliseconds and counts compete on one scale. `cache` shows hit and cacheable for both sides plus the cache-disabling reasons that appeared or went away. `contributors` names the duplicate queries, log components and events (when the profiler records them) whose numbers changed most.
+
+`typo3-profiler-triage` looks at the most recent profiles (`limit`, default 20) and returns at most five that are worth a look, each with its reasons and token: HTTP 5xx, an exception, error-level log entries, deprecations, a duration or query count at least twice the median of the profiles considered, and a single query repeated at least ten times (N+1 suspect). Failed requests rank first, then by number of reasons, then by duration. Profiles without any reason are left out, and `_truncated` says when more were flagged than returned.
+
+<details>
+<summary>Check whether a change made a page faster</summary>
+
+```bash
+vendor/bin/mate tools:call typo3-profiler-triage
+vendor/bin/mate tools:call typo3-profiler-compare --a=<token-before> --b=<token-after>
+```
+
+Take the two tokens from `typo3-profiler-search --urlContains=…` before and after the change. Read `largest_differences` first, then `contributors` for the queries behind the change.
 
 </details>
 
@@ -646,6 +667,6 @@ Requires a running webserver. An explicit `--url` is rejected unless its host ma
 
 ## Clusters that may have nothing to report yet
 
-All `typo3-*` tools are always callable — `mate`'s tool list is fixed at discovery time from the `#[MateTool]` attributes in this extension, nothing here changes it at runtime. Two clusters can still come back empty though: the profile-reading tools (`typo3-profiler-latest` / `-list` / `-search` / `-get`) until a profile exists or profiling is active, and the log search tools (`typo3-logs-search`, `typo3-logs-by-level`) until the log has entries — each answers with an honest `{"unsupported": true, "reason": "..."}` rather than an empty success.
+All `typo3-*` tools are always callable — `mate`'s tool list is fixed at discovery time from the `#[MateTool]` attributes in this extension, nothing here changes it at runtime. Two clusters can still come back empty though: the profile-reading tools (`typo3-profiler-latest` / `-list` / `-search` / `-get` / `-compare` / `-triage`) until a profile exists or profiling is active, and the log search tools (`typo3-logs-search`, `typo3-logs-by-level`) until the log has entries — each answers with an honest `{"unsupported": true, "reason": "..."}` rather than an empty success.
 
 `typo3-info` reports the current state under `toolClusters` (evaluated fresh on every call, from the filesystem) with a reason for each, so an assistant can check first instead of finding out via a wasted call.

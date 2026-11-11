@@ -78,6 +78,14 @@ final readonly class ProfileProvider
     }
 
     /**
+     * @return list<array<string, mixed>> the $limit newest full profiles, newest first
+     */
+    public function rawRecent(int $limit): array
+    {
+        return array_map($this->redact(...), $this->reader->latest(max(1, $limit)));
+    }
+
+    /**
      * Newest-first triage summaries.
      *
      * @return list<array<string, mixed>>
