@@ -7,7 +7,7 @@ Every command runs only in a Development context (`Environment::getContext()->is
 
 ## Read-only by default
 
-Only 3 of the 36 tools mutate anything:
+Only 3 of the 37 tools mutate anything:
 
 - `typo3-profiler-start` / `-stop` change profiler control state, and only as a time-boxed dev switch. They touch no records.
 - `typo3-render-page` issues a real internal HTTP request, so it has side effects in caches and logs.
@@ -21,6 +21,7 @@ Only 3 of the 36 tools mutate anything:
 - **Validates profile tokens** — `typo3-profiler-get` and the `typo3-profiler://profile/{token}` resource only accept alphanumeric tokens, rejecting path traversal before the file-based lookup.
 - **Hardens CLI argument passing** — `Typo3CliRunner` inserts an end-of-options `--` separator before positional arguments, so a value that happens to start with `-`/`--` (e.g. a table or page id from the assistant) can never be parsed as an option of the target command.
 - **Caps how long an agent can leave profiling on** — `typo3-profiler-start` rejects durations above 60 minutes (the profiler itself permits up to 7 days), so a looping agent cannot turn a dev machine into a permanently profiled one. Writes go through the profiler's `profiler:activate`/`:deactivate` commands, keeping atomic write and file permissions in the package that owns the state file.
+- **Returns no personal data from `typo3-be-permissions`**: the output is built from an allowlist of uids, access lists and group titles, so user names, real names, e-mail addresses and every other column of `be_users` never reach the client. Group titles go through `Support\Redactor` like other free text. Loading the user is read-only too: the core would otherwise persist a corrected workspace to `be_users` and log that to `sys_log` when the stored one is invalid, and the tool suppresses exactly that write.
 
 `ddev mate-smoke` asserts the first three of these against a live installation, so a regression fails a command rather than a reviewer's attention. See [`CONTRIBUTING.md`](../CONTRIBUTING.md).
 
