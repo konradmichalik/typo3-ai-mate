@@ -389,7 +389,7 @@ vendor/bin/mate tools:call typo3-route --url=https://example.com/news/my-article
 vendor/bin/mate tools:call typo3-route --url=/products/widget
 ```
 
-For an Extbase detail URL, `routeArguments` carries the plugin namespace with controller, action and the record argument, e.g. `{"tx_news_pi1": {"action": "detail", "controller": "News", "news": "5"}}`. A path without a host is tried against every configured site base in order. `outcome: no-match` is an answer, not an empty result: `reason` says whether the site, the language or the page slug did not match, and `closestBase` names the configured base nearest to the URL. Redirects are only checked when EXT:redirects is installed, which `redirectsAvailable` states. The `target` of a redirect is reported as stored, e.g. `t3://page?uid=2`.
+For an Extbase detail URL, `routeArguments` carries the plugin namespace with controller, action and the record argument, e.g. `{"tx_news_pi1": {"action": "detail", "controller": "News", "news": "5"}}`. A path without a host is tried against every configured site base in order. `outcome: no-match` is an answer, not an empty result: `reason` says whether the site, the language or the page slug did not match, and `closestBase` names the configured base nearest to the URL. Redirects are only checked when EXT:redirects is installed, which `redirectsAvailable` states. The `target` of a redirect is reported as stored, e.g. `t3://page?uid=2`. A redirect whose target is the requested URL itself carries `ignored` and does not win, since the frontend serves the page then.
 
 </details>
 

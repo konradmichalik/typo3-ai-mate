@@ -41,6 +41,7 @@ use function sprintf;
  * BePermissionsCommand.
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
+ * @license GPL-2.0-or-later
  */
 #[AsCommand(
     name: 'typo3-ai-mate:be-permissions',
