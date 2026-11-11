@@ -37,6 +37,7 @@ The examples below omit `--format=toon` for readability. An assistant should pas
 | Configuration | [`typo3-config`](#typo3-config) |
 | Services | [`typo3-service`](#typo3-service) |
 | Overrides | [`typo3-overrides`](#typo3-overrides) |
+| Upgrade | [`typo3-upgrade-compatibility`](#typo3-upgrade-compatibility) |
 | Upgrade | [`typo3-upgrade-wizards`](#typo3-upgrade-wizards) |
 | Upgrade | [`typo3-extension-scanner`](#typo3-extension-scanner) |
 | Upgrade | [`typo3-changelog-search`](#typo3-changelog-search) |
@@ -583,6 +584,32 @@ A decorator (`decorates:` in `Services.yaml`, `#[AsDecorator]`) replaces a servi
 What survives is the list of removed private service ids, which still contains each `<decorator id>.inner`. That names the decorator but not the service it decorates, misses decorators with a custom `decoration_inner_name`, and mixes in TYPO3's own `<id>_decorated_<n>.inner` entries from service provider extensions. The decorated id only appears inside the generated factory code. Recovering the pairing would mean parsing that generated PHP or rebuilding the container, and this tool does neither.
 
 To check a single public service, use [`typo3-service`](#typo3-service): its `class` is the decorator when the service is decorated.
+
+</details>
+
+## `typo3-upgrade-compatibility`
+
+Which installed extensions block an upgrade to a target TYPO3 version. For every active non-core extension it reports the `typo3/cms-core` constraint, where that constraint came from (`composer.json`, or `depends.typo3` in `ext_emconf.php` when `composer.json` does not require `typo3/cms-core`), whether the extension is `own` or `thirdParty`, and a status against the target: `blocking`, `unknown` or `compatible`. Blocking extensions come first. An extension without any constraint, or with one that cannot be parsed, is `unknown`, never `compatible`.
+
+<details>
+<summary>Find the packages that rule out the target before touching code</summary>
+
+```bash
+vendor/bin/mate tools:call typo3-upgrade-compatibility --target=14.3
+vendor/bin/mate tools:call typo3-upgrade-compatibility --target=14.3.7
+```
+
+```json
+{
+  "target": "14.3",
+  "summary": {"blocking": 1, "unknown": 0, "compatible": 12},
+  "extensions": [
+    {"extension": "news", "package": "georgringer/news", "origin": "thirdParty", "constraint": "^12.4 || ^13.4", "source": "composer.json", "status": "blocking"}
+  ]
+}
+```
+
+`major.minor` matches when the constraint allows any patch release of that minor, a full version only that release. Offline: it reads the installed package metadata and never asks a registry, so it cannot say whether a newer release of a blocking extension already allows the target. Only `typo3/cms-core` is evaluated, not other `typo3/cms-*` requirements. Then run `typo3-extension-scanner` for the code that has to change.
 
 </details>
 
