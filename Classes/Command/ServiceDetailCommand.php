@@ -95,7 +95,9 @@ final class ServiceDetailCommand extends AbstractJsonCommand
         ];
 
         if (0 === $serviceCount) {
-            $result['knownTags'] = $this->tagMap->tagNames();
+            $knownTags = $this->tagMap->tagNames();
+            $result['knownTags'] = array_slice($knownTags, 0, self::MAX_SERVICES);
+            $result['_truncated'] = count($knownTags) > self::MAX_SERVICES;
         }
 
         return $this->emit($output, $result);

@@ -16,6 +16,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 use KonradMichalik\Ttt\Attribute\WithEnvironment;
 use KonradMichalik\Typo3AiMate\Command\ServiceDetailCommand;
 use KonradMichalik\Typo3AiMate\Service\ServiceTagMap;
+use KonradMichalik\Typo3AiMate\Support\Cast;
 use KonradMichalik\Typo3AiMate\Tests\Unit\Command\Fixtures\InMemoryContainer;
 use PHPUnit\Framework\Attributes\{DataProvider, Test};
 use PHPUnit\Framework\TestCase;
@@ -138,6 +139,20 @@ final class ServiceDetailCommandTest extends TestCase
         self::assertSame(0, $result[0]);
         self::assertSame([], $result[1]['services']);
         self::assertSame(['acme.one', 'acme.two'], $result[1]['knownTags']);
+    }
+
+    #[Test]
+    public function theKnownTagNamesAreCapped(): void
+    {
+        $tags = [];
+        foreach (range(1, 201) as $number) {
+            $tags['acme.tag'.$number] = [];
+        }
+
+        $result = $this->runTagCommand(new ServiceTagMap($tags), ['--tag' => 'acme.ghost']);
+
+        self::assertCount(200, Cast::array($result[1]['knownTags']));
+        self::assertTrue($result[1]['_truncated']);
     }
 
     #[Test]
