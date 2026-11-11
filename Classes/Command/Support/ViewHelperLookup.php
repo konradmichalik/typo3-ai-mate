@@ -39,7 +39,8 @@ final class ViewHelperLookup
     public static function parseName(string $value): ?array
     {
         $parts = explode(':', trim($value, " \t\n\r\0\x0B</>"), 2);
-        if (2 !== count($parts) || '' === $parts[0] || '' === $parts[1]) {
+        // Fluid builds a class name from the name, so path or namespace characters must not reach it.
+        if (2 !== count($parts) || 1 !== preg_match('/^\w+$/', $parts[0]) || 1 !== preg_match('/^[\w.]+$/', $parts[1])) {
             return null;
         }
 
