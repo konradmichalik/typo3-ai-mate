@@ -26,7 +26,7 @@ This _dev-only_ extension hands the assistant that already-resolved state instea
 
 ## ✨ Features
 
-- **33 read-only diagnostic tools** over the resolved runtime state: TCA, page composition, records, TypoScript, TSconfig, Fluid resolution, PSR-15 and PSR-14 chains, logs, per-request profiles, DI services and more. See the [tool reference](docs/tools.md).
+- **34 diagnostic tools** over the resolved runtime state: TCA, page composition, records, TypoScript, TSconfig, Fluid resolution, PSR-15 and PSR-14 chains, logs, per-request profiles, DI services and more. All but three are [read-only](docs/security.md#read-only-by-default). See the [tool reference](docs/tools.md).
 - **Answers, not empty structures.** A miss reports `registered: false` or `unsupported` with a reason, so an assistant stops instead of retrying with different arguments.
 - **Prompt-injection aware.** Output captured from the installation arrives wrapped as [untrusted data](docs/security.md#untrusted-data), never as instructions.
 - **Diagnose without booting TYPO3 twice.** The tools shell out to the installation's own console, so they report what it actually computed. See [how it works](docs/how-it-works.md).
@@ -97,7 +97,7 @@ Details, including why tool descriptions cannot carry runtime state, are in [how
 | [Use cases](docs/use-cases.md) | Slow page, error page, major upgrade, and the `request_id` anchor |
 | [Extending](docs/extending.md) | Writing your own `typo3-*` tool against `Typo3CliRunner` |
 | [Tool surface](docs/tool-surface.md) | What the tool count costs a session, measured rather than argued |
-| [Related projects](docs/related.md) | How this compares to dev-companion and the two typo3-mcp-server projects |
+| [Related projects](docs/related.md) | How this compares to dev-companion, the MCP servers that write content, and other ai-mate bridges |
 
 ## 🧑‍💻 Contributing
 

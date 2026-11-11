@@ -124,7 +124,6 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Whi
 
 Initial release.
 
-[Unreleased]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.6.0...HEAD
 [Unreleased]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.7.0...HEAD
 [0.7.0]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.5.0...0.6.0
