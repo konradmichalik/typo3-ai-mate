@@ -14,8 +14,11 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Mcp;
 
 use KonradMichalik\Typo3AiMate\Mate\{ProfileProvider, ToolResult};
+use KonradMichalik\Typo3AiMate\Support\{ProfileComparison, ProfileTriage};
 use Symfony\AI\Mate\Attribute\MateTool;
 
+use function array_slice;
+use function count;
 use function sprintf;
 
 /**
@@ -25,6 +28,11 @@ use function sprintf;
  */
 final readonly class PerformanceTool
 {
+    private const NO_PROFILES = 'No profiles found. Trigger a frontend request in the Development context first.';
+    private const HEADER_FIELDS = ['token', 'url', 'status', 'resource_uri'];
+    private const TRIAGE_FIELDS = ['token', 'url', 'status', 'total_ms', 'query_count', 'resource_uri'];
+    private const TRIAGE_MAX_ENTRIES = 5;
+
     public function __construct(private ProfileProvider $profiles) {}
 
     #[MateTool(
@@ -37,7 +45,7 @@ final readonly class PerformanceTool
         $profile = $this->profiles->rawLatest();
 
         return ToolResult::untrusted(null === $profile
-            ? ['error' => 'No profiles found. Trigger a frontend request in the Development context first.']
+            ? ['error' => self::NO_PROFILES]
             : $this->profiles->summarize($profile));
     }
 
@@ -86,5 +94,71 @@ final readonly class PerformanceTool
         return ToolResult::untrusted(null === $profile
             ? ['error' => sprintf('Profile "%s" not found.', $token)]
             : $this->profiles->summarize($profile));
+    }
+
+    /**
+     * @param string $a token of the baseline profile, typically the request before the change
+     * @param string $b token of the profile to compare against the baseline, typically the request after the change
+     */
+    #[MateTool(
+        name: 'typo3-profiler-compare',
+        title: 'TYPO3 Profiler: Compare',
+        description: 'Compare two request profiles by token: deltas of timing, memory, query count and time, duplicate queries, HTTP calls and log entries by level, the largest differences first, the cache state of both, and the duplicate queries, log components and events that changed most. Use this for "did my change make it better" once you have two tokens from typo3-profiler-list/-search; for a single request use typo3-profiler-get.',
+    )]
+    public function compare(string $a, string $b): string
+    {
+        $profileA = $this->profiles->rawByToken($a);
+        $profileB = $this->profiles->rawByToken($b);
+        if (null === $profileA || null === $profileB) {
+            return ToolResult::untrusted(['error' => sprintf('Profile "%s" not found.', null === $profileA ? $a : $b)]);
+        }
+
+        return ToolResult::untrusted([
+            'a' => $this->pick($this->profiles->summarize($profileA), self::HEADER_FIELDS),
+            'b' => $this->pick($this->profiles->summarize($profileB), self::HEADER_FIELDS),
+        ] + ProfileComparison::compare($profileA, $profileB));
+    }
+
+    /**
+     * @param int $limit number of most recent profiles to consider; defaults to 20
+     */
+    #[MateTool(
+        name: 'typo3-profiler-triage',
+        title: 'TYPO3 Profiler: Triage',
+        description: 'Rank the most recent request profiles by what is worth a look (HTTP 5xx, exceptions, error-level log entries, deprecations, duration or query count at least twice the median, N+1 suspects), each with its reasons and token for typo3-profiler-get. Returns at most 5 entries. Use this to decide which of many recent requests to investigate; typo3-profiler-list lists them newest first without judging them.',
+    )]
+    public function triage(int $limit = 20): string
+    {
+        $profiles = $this->profiles->rawRecent($limit);
+        if ([] === $profiles) {
+            return ToolResult::untrusted(['error' => self::NO_PROFILES]);
+        }
+
+        $ranked = ProfileTriage::rank($profiles);
+        $result = [
+            'considered' => count($profiles),
+            'flagged' => count($ranked),
+            'profiles' => array_map(
+                fn (array $entry): array => $this->pick($this->profiles->summarize($entry['profile']), self::TRIAGE_FIELDS)
+                    + ['reasons' => $entry['reasons']],
+                array_slice($ranked, 0, self::TRIAGE_MAX_ENTRIES),
+            ),
+        ];
+        if (count($ranked) > self::TRIAGE_MAX_ENTRIES) {
+            $result['_truncated'] = true;
+        }
+
+        return ToolResult::untrusted($result);
+    }
+
+    /**
+     * @param array<string, mixed> $summary
+     * @param list<string>         $fields
+     *
+     * @return array<string, mixed>
+     */
+    private function pick(array $summary, array $fields): array
+    {
+        return array_intersect_key($summary, array_flip($fields));
     }
 }

@@ -102,6 +102,17 @@ final class ProfileProviderTest extends TestCase
     }
 
     #[Test]
+    public function rawRecentReturnsTheNewestProfilesRedacted(): void
+    {
+        $this->writeProfile('ddd', ['url' => '/form?token=secret123'], 1_000_000_400);
+
+        $profiles = (new ProfileProvider($this->rootDir))->rawRecent(2);
+
+        self::assertSame(['ddd', 'ccc'], array_column($profiles, 'token'));
+        self::assertSame('/form?token=[redacted]', $profiles[0]['url']);
+    }
+
+    #[Test]
     public function summarizeRedactsTheUrl(): void
     {
         $summary = (new ProfileProvider($this->rootDir))->summarize(['token' => 'x', 'url' => '/p?token=abc123secret']);
