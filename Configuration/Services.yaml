@@ -21,6 +21,10 @@ services:
   KonradMichalik\Typo3AiMate\Service\RedirectMatcher:
     arguments:
       $redirectService: '@?TYPO3\CMS\Redirects\Service\RedirectService'
+  # EXT:scheduler is optional; "@?" injects null when it is not installed.
+  KonradMichalik\Typo3AiMate\Command\SchedulerCommand:
+    arguments:
+      $taskRepository: '@?TYPO3\CMS\Scheduler\Domain\Repository\SchedulerTaskRepository'
 
   # Console commands are auto-tagged from the #[AsCommand] attribute via
   # autoconfigure (TYPO3 v12+). The MCP tool classes in Classes/Mcp/* are NOT

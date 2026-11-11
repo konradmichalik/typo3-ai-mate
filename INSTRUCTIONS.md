@@ -69,6 +69,7 @@ Exact tool names, so you can select one directly instead of searching for it.
 | Why is this page slow? | `typo3-profiler-start` → exercise the page → `typo3-profiler-latest` → `typo3-page` |
 | What runs in the PSR-15 / PSR-14 chain? | `typo3-middlewares`, `typo3-events` |
 | Which console commands exist? | `typo3-commands` |
+| Why did this scheduler task not run? Is the scheduler running at all? | `typo3-scheduler` |
 | What is in `TYPO3_CONF_VARS` or an extension's configuration? | `typo3-config` |
 | Why is this implementation injected? Is this service shared? | `typo3-service` |
 | Which sites exist? What is page N's URL? | `typo3-site` |
