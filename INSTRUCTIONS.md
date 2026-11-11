@@ -59,6 +59,7 @@ Exact tool names, so you can select one directly instead of searching for it.
 | Which physical Fluid file wins for this template name? | `typo3-fluid-resolve` |
 | Does this record's stored FlexForm still match its data structure? | `typo3-flexform` |
 | Which Fluid namespaces may a template use without declaring them? | `typo3-fluid-namespaces` |
+| Does this ViewHelper exist? Which arguments does it take? | `typo3-viewhelpers` |
 | Is this icon identifier registered, and which extension provides it? | `typo3-icons` |
 | Does this `LLL:` label key exist? Is it translated? | `typo3-labels` |
 | Which backend modules exist, and what do they inherit? | `typo3-backend-modules` |

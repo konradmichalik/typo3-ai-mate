@@ -9,6 +9,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Whi
 ### Added
 
 - New tool `typo3-route`: which page a frontend URL hits, resolved through the site router. Returns the matched site, language and page (id, slug, doktype), the route enhancer arguments split into static, dynamic and query arguments, and a matching `sys_redirect` entry (source, target, status code) checked before the page as the frontend does. Absolute URLs and plain paths both work. A miss answers `outcome: no-match` with a reason and the closest configured site base. Redirects are only checked when EXT:redirects is installed, which `redirectsAvailable` states.
+- New tool `typo3-viewhelpers`: whether Fluid ViewHelpers such as `f:link.page` exist, the class each resolves to and its registered arguments with type, required flag, default and description. A miss carries the closest ViewHelper names of the same namespace as suggestions, an unknown prefix the closest global prefixes. With `namespace` it lists the ViewHelper names of one global prefix. Resolution goes through the runtime `ViewHelperResolver`.
 
 ### Fixed
 
