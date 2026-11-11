@@ -25,6 +25,7 @@ use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 use function array_values;
+use function in_array;
 use function parse_str;
 use function sprintf;
 use function str_starts_with;
@@ -90,6 +91,10 @@ final readonly class RouteResolver
     private function resolveUri(UriInterface $uri): array
     {
         $redirect = $this->redirectMatcher->match($uri);
+        if (null !== $redirect && self::pointsBackTo($redirect['target'], $uri)) {
+            // The redirect handler of the core drops a redirect to the requested URL and serves the page.
+            $redirect['ignored'] = 'The target is the requested URL, so the frontend serves the page instead.';
+        }
         $siteRoute = $this->matchSite($uri);
         $site = $siteRoute?->getSite();
         if (null === $siteRoute || !$site instanceof Site) {
@@ -100,7 +105,7 @@ final readonly class RouteResolver
         $result = $this->describe((string) $uri, $redirect, $site, $language);
         $pageArguments = null !== $language ? $this->matchPage($uri, $site, $siteRoute) : null;
         if (null !== $pageArguments) {
-            $result['outcome'] = null !== $redirect ? 'redirect' : 'page';
+            $result['outcome'] = self::redirectWins($redirect) ? 'redirect' : 'page';
             $result['page'] = $this->describePage($pageArguments, $language);
             $result['routeArguments'] = $pageArguments->getRouteArguments();
             $result['staticArguments'] = $pageArguments->getStaticArguments();
@@ -120,7 +125,7 @@ final readonly class RouteResolver
     {
         return [
             'url' => $url,
-            'outcome' => null !== $redirect ? 'redirect' : 'no-match',
+            'outcome' => self::redirectWins($redirect) ? 'redirect' : 'no-match',
             'redirectsAvailable' => $this->redirectMatcher->isAvailable(),
             'redirect' => $redirect,
             'site' => null !== $site ? [
@@ -248,5 +253,20 @@ final readonly class RouteResolver
             null === $route['language'] => sprintf('Site "%s" matches, but none of its language bases does.', $route['site']['identifier']),
             default => 'Site and language match, but no visible page slug or route enhancer matches the path.',
         };
+    }
+
+    private static function pointsBackTo(string $target, UriInterface $uri): bool
+    {
+        $target = rtrim($target, '/');
+
+        return '' !== $target && in_array($target, [rtrim((string) $uri, '/'), rtrim($uri->getPath(), '/')], true);
+    }
+
+    /**
+     * @param array<string, mixed>|null $redirect
+     */
+    private static function redirectWins(?array $redirect): bool
+    {
+        return null !== $redirect && !isset($redirect['ignored']);
     }
 }
