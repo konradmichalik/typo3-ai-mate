@@ -53,7 +53,7 @@ final readonly class RecordsTool
         OutputMode $mode = OutputMode::Summary,
         bool $respectEnableFields = false,
     ): string {
-        $options = $this->options([
+        $options = [
             'uid' => $uid,
             'pid' => $pid,
             'where' => $filter,
@@ -61,19 +61,9 @@ final readonly class RecordsTool
             'limit' => $limit,
             'order-by' => $orderBy,
             'format' => $mode->value,
-            'respect-enable-fields' => $respectEnableFields ?: null,
-        ]);
+            'respect-enable-fields' => $respectEnableFields,
+        ];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:records:query', [$table], $options));
-    }
-
-    /**
-     * @param array<string, scalar|null> $options
-     *
-     * @return array<string, scalar>
-     */
-    private function options(array $options): array
-    {
-        return array_filter($options, static fn (mixed $value): bool => null !== $value && '' !== $value);
     }
 }

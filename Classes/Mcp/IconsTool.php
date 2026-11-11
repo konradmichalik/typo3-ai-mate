@@ -36,7 +36,7 @@ final readonly class IconsTool
     )]
     public function lookup(?string $identifiers = null): string
     {
-        $options = null !== $identifiers && '' !== $identifiers ? ['identifiers' => $identifiers] : [];
+        $options = ['identifiers' => $identifiers];
 
         return ToolResult::untrusted($this->typo3->jsonOrError('typo3-ai-mate:icons:lookup', [], $options));
     }

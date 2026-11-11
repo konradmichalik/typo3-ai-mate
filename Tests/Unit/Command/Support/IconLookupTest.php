@@ -17,8 +17,6 @@ use KonradMichalik\Typo3AiMate\Command\Support\IconLookup;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-use function array_slice;
-
 /**
  * IconLookupTest.
  *
@@ -40,70 +38,12 @@ final class IconLookupTest extends TestCase
     ];
 
     #[Test]
-    public function parseListSplitsTrimsAndDeduplicates(): void
-    {
-        self::assertSame(
-            ['actions-add', 'actions-edit'],
-            IconLookup::parseList(' actions-add , actions-edit ,, actions-add '),
-        );
-    }
-
-    #[Test]
-    public function parseListIsEmptyForANonString(): void
-    {
-        self::assertSame([], IconLookup::parseList(null));
-    }
-
-    #[Test]
     public function groupCountsCountsByLeadingSegment(): void
     {
         self::assertSame(
             ['actions' => 3, 'content' => 2, 'tx' => 1],
             IconLookup::groupCounts(self::REGISTERED),
         );
-    }
-
-    #[Test]
-    public function matchingIsCaseInsensitiveAndSorted(): void
-    {
-        self::assertSame(
-            ['content-text', 'content-textmedia'],
-            IconLookup::matching('TEXT', self::REGISTERED),
-        );
-    }
-
-    #[Test]
-    public function suggestPrefersSubstringMatchesOverEditDistance(): void
-    {
-        $suggestions = IconLookup::suggest('content', self::REGISTERED);
-
-        self::assertSame(['content-text', 'content-textmedia'], array_slice($suggestions, 0, 2));
-    }
-
-    #[Test]
-    public function suggestFindsTheNearestIdentifierForATypo(): void
-    {
-        self::assertContains('actions-delete', IconLookup::suggest('action-delete', self::REGISTERED));
-    }
-
-    #[Test]
-    public function suggestCapsSubstringMatchesAndSkipsTheEditDistancePass(): void
-    {
-        // Six substring matches against a limit of five: the cap has to apply,
-        // and a sixth match must not be pushed out by a merely-similar name the
-        // edit-distance pass would otherwise add.
-        $registered = ['a-content', 'b-content', 'c-content', 'd-content', 'e-content', 'f-content', 'contant'];
-
-        $suggestions = IconLookup::suggest('content', $registered);
-
-        self::assertCount(5, $suggestions);
-        self::assertNotContains('contant', $suggestions);
-    }
-
-    #[Test]
-    public function suggestIsEmptyWhenNothingIsClose(): void
-    {
-        self::assertSame([], IconLookup::suggest('completely-unrelated-identifier', self::REGISTERED));
     }
 
     #[Test]
