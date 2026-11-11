@@ -27,7 +27,7 @@ final readonly class PageTool
 
     /**
      * @param int|null    $pageId Page UID to inspect — typically the page.id reported by a profiler summary. Exactly one of pageId or url is required; if both are given, pageId takes precedence and url is ignored.
-     * @param string|null $url    Speaking URL to resolve to a page instead of a UID. Exactly one of pageId or url is required; if both are given, pageId takes precedence and url is ignored.
+     * @param string|null $url    Speaking URL or path to resolve to a page through the site router (see typo3-route) instead of a UID. Exactly one of pageId or url is required; if both are given, pageId takes precedence and url is ignored.
      */
     #[MateTool(
         name: 'typo3-page',

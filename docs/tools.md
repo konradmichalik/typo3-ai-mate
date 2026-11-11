@@ -100,7 +100,7 @@ vendor/bin/mate tools:call typo3-page --pageId=42
 vendor/bin/mate tools:call typo3-page --url=/products/widget
 ```
 
-`user_int_plugins` is the field to read first on a slow page: those render uncached on every request.
+`user_int_plugins` is the field to read first on a slow page: those render uncached on every request. A `url` resolves through the site router, the same way as [`typo3-route`](#typo3-route), so it reaches the page the URL actually hits.
 </details>
 
 ## `typo3-records`

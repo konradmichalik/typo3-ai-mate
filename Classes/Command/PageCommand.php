@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Command;
 
-use KonradMichalik\Typo3AiMate\Service\TypoScriptResolver;
+use KonradMichalik\Typo3AiMate\Service\{RouteResolver, TypoScriptResolver};
 use KonradMichalik\Typo3AiMate\Support\Cast;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -22,7 +22,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Throwable;
 use TYPO3\CMS\Core\Database\{Connection, ConnectionPool};
 use TYPO3\CMS\Core\Database\Query\Restriction\DeletedRestriction;
-use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 use function array_key_exists;
@@ -43,7 +42,7 @@ final class PageCommand extends AbstractJsonCommand
 {
     public function __construct(
         private readonly ConnectionPool $connectionPool,
-        private readonly SiteFinder $siteFinder,
+        private readonly RouteResolver $routeResolver,
         private readonly TypoScriptResolver $typoScriptResolver,
     ) {
         parent::__construct();
@@ -88,7 +87,7 @@ final class PageCommand extends AbstractJsonCommand
     {
         $this
             ->addArgument('pageId', InputArgument::OPTIONAL, 'Page UID (primary; usually taken from a profile)')
-            ->addOption('url', null, InputOption::VALUE_REQUIRED, 'Best-effort URL to resolve to a page id');
+            ->addOption('url', null, InputOption::VALUE_REQUIRED, 'URL or path, resolved to a page id through the site router');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -127,24 +126,9 @@ final class PageCommand extends AbstractJsonCommand
             return (int) $pageId;
         }
 
-        // Best-effort URL -> id resolution via the site configuration.
         $url = $input->getOption('url');
-        if (!is_string($url) || '' === $url) {
-            return null;
-        }
 
-        try {
-            foreach ($this->siteFinder->getAllSites() as $site) {
-                $base = rtrim((string) $site->getBase(), '/');
-                if ('' !== $base && str_starts_with($url, $base)) {
-                    return $site->getRootPageId();
-                }
-            }
-        } catch (Throwable) {
-            return null;
-        }
-
-        return null;
+        return is_string($url) && '' !== $url ? $this->routeResolver->resolvePageId($url) : null;
     }
 
     /**

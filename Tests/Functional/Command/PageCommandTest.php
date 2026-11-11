@@ -14,13 +14,14 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Tests\Functional\Command;
 
 use KonradMichalik\Typo3AiMate\Command\PageCommand;
-use KonradMichalik\Typo3AiMate\Service\TypoScriptResolver;
+use KonradMichalik\Typo3AiMate\Service\{RedirectMatcher, RouteResolver, TypoScriptResolver};
 use PHPUnit\Framework\Attributes\Test;
 use RuntimeException;
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\Configuration\SiteWriter;
 use TYPO3\CMS\Core\Console\CommandRegistry;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Routing\SiteMatcher;
 use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
@@ -74,6 +75,28 @@ final class PageCommandTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function resolvesASubpageUrlToTheSubpageInsteadOfTheRootPage(): void
+    {
+        $this->importCSVDataSet(__DIR__.'/../Fixtures/pages_subpage.csv');
+
+        [$exitCode, $result] = $this->runCommand(['--url' => 'https://example.com/products/widget']);
+
+        self::assertSame(0, $exitCode);
+        self::assertSame(3, $result['page']['id']);
+    }
+
+    #[Test]
+    public function resolvesARelativeSubpageUrl(): void
+    {
+        $this->importCSVDataSet(__DIR__.'/../Fixtures/pages_subpage.csv');
+
+        [$exitCode, $result] = $this->runCommand(['--url' => '/products/widget']);
+
+        self::assertSame(0, $exitCode);
+        self::assertSame(3, $result['page']['id']);
+    }
+
+    #[Test]
     public function failsForAnUnknownPage(): void
     {
         [$exitCode, $result] = $this->runCommand(['pageId' => '999']);
@@ -105,7 +128,8 @@ final class PageCommandTest extends FunctionalTestCase
     {
         $siteFinder = self::createStub(SiteFinder::class);
         $siteFinder->method('getAllSites')->willThrowException(new RuntimeException('sites unavailable'));
-        $command = new PageCommand($this->get(ConnectionPool::class), $siteFinder, $this->get(TypoScriptResolver::class));
+        $routeResolver = new RouteResolver($siteFinder, $this->get(SiteMatcher::class), $this->get(ConnectionPool::class), new RedirectMatcher());
+        $command = new PageCommand($this->get(ConnectionPool::class), $routeResolver, $this->get(TypoScriptResolver::class));
 
         $tester = new CommandTester($command);
         $exitCode = $tester->execute(['--url' => 'https://example.com/']);
