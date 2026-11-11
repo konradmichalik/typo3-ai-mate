@@ -46,8 +46,7 @@ final class OverridesCommand extends AbstractJsonCommand
     public function __construct(
         private readonly PackageManager $packageManager,
         private readonly ClassLoader $classLoader,
-    )
-    {
+    ) {
         parent::__construct();
     }
 
