@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). While the version is below 1.0.0 a minor bump may contain breaking changes, and this file marks them explicitly.
 
+## [Unreleased]
+
+### Added
+
+- New tool `typo3-route`: which page a frontend URL hits, resolved through the site router. Returns the matched site, language and page (id, slug, doktype), the route enhancer arguments split into static, dynamic and query arguments, and a matching `sys_redirect` entry (source, target, status code) checked before the page as the frontend does. Absolute URLs and plain paths both work. A miss answers `outcome: no-match` with a reason and the closest configured site base. Redirects are only checked when EXT:redirects is installed, which `redirectsAvailable` states.
 ## [0.7.0] - 2026-10-05
 
 ### Added

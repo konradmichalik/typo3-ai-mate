@@ -27,6 +27,7 @@ The examples below omit `--format=toon` for readability. An assistant should pas
 | Middlewares | [`typo3-middlewares`](#typo3-middlewares) |
 | Events | [`typo3-events`](#typo3-events) |
 | Sites | [`typo3-site`](#typo3-site) |
+| Routing | [`typo3-route`](#typo3-route) |
 | Console | [`typo3-commands`](#typo3-commands) |
 | Configuration | [`typo3-config`](#typo3-config) |
 | Services | [`typo3-service`](#typo3-service) |
@@ -100,7 +101,6 @@ vendor/bin/mate tools:call typo3-page --url=/products/widget
 ```
 
 `user_int_plugins` is the field to read first on a slow page: those render uncached on every request.
-
 </details>
 
 ## `typo3-records`
@@ -338,6 +338,22 @@ vendor/bin/mate tools:call typo3-site --pageId=42 --language=1
 ```
 
 Use this instead of `typo3-render-page` when you only want the URL and not the request and its side effects.
+
+</details>
+
+## `typo3-route`
+
+The reverse of `typo3-site --pageId`: which page a URL hits, and why. The URL goes through the site router the frontend uses, so you get the matched site, language and page (id, slug, doktype, page type) plus the arguments a route enhancer produced, split into `staticArguments`, `dynamicArguments` and `queryArguments`. A matching `sys_redirect` entry is checked first, as the frontend does, and `outcome: redirect` means it wins over the page match. No request is sent.
+
+<details>
+<summary>Find out which page and plugin action a URL reaches</summary>
+
+```bash
+vendor/bin/mate tools:call typo3-route --url=https://example.com/news/my-article
+vendor/bin/mate tools:call typo3-route --url=/products/widget
+```
+
+For an Extbase detail URL, `routeArguments` carries the plugin namespace with controller, action and the record argument, e.g. `{"tx_news_pi1": {"action": "detail", "controller": "News", "news": "5"}}`. A path without a host is tried against every configured site base in order. `outcome: no-match` is an answer, not an empty result: `reason` says whether the site, the language or the page slug did not match, and `closestBase` names the configured base nearest to the URL. Redirects are only checked when EXT:redirects is installed, which `redirectsAvailable` states. The `target` of a redirect is reported as stored, e.g. `t3://page?uid=2`.
 
 </details>
 

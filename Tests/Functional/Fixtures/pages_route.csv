@@ -1,0 +1,7 @@
+"pages"
+,"uid","pid","title","slug","doktype","sys_language_uid","l10n_parent"
+,1,0,"Home","/",1,0,0
+,2,1,"Products","/products",1,0,0
+,3,2,"Widget","/products/widget",1,0,0
+,4,1,"News","/news",1,0,0
+,5,1,"Produkte","/produkte",1,1,2

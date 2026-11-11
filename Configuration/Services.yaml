@@ -17,6 +17,11 @@ services:
     arguments:
       $translationDomainMapper: '@?TYPO3\CMS\Core\Localization\TranslationDomainMapper'
 
+  # EXT:redirects is optional; "@?" injects null when it is not installed.
+  KonradMichalik\Typo3AiMate\Service\RedirectMatcher:
+    arguments:
+      $redirectService: '@?TYPO3\CMS\Redirects\Service\RedirectService'
+
   # Console commands are auto-tagged from the #[AsCommand] attribute via
   # autoconfigure (TYPO3 v12+). The MCP tool classes in Classes/Mcp/* are NOT
   # registered here: they run in the separate Symfony DI container of the Mate
