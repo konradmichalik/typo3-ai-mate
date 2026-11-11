@@ -6,8 +6,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Whi
 
 ## [Unreleased]
 
+### Added
+
+- New tool `typo3-route`: which page a frontend URL hits, resolved through the site router. Returns the matched site, language and page (id, slug, doktype), the route enhancer arguments split into static, dynamic and query arguments, and a matching `sys_redirect` entry (source, target, status code) checked before the page as the frontend does. Absolute URLs and plain paths both work. A miss answers `outcome: no-match` with a reason and the closest configured site base. Redirects are only checked when EXT:redirects is installed, which `redirectsAvailable` states.
+
 ### Fixed
 
+- `typo3-page --url` resolved any URL under a site base to the site's root page, and a relative path such as `/products/widget` to nothing. It now uses the same resolver as `typo3-route` and reports the page the URL actually hits.
 - `typo3-extension-scanner` reported no matches on TYPO3 14.3.11 and later, where the core moved its `CodeStatistics` and `GeneratorClassesResolver` visitors into the `Php\Visitor` namespace. Both locations are supported now.
 
 ## [0.7.0] - 2026-10-05

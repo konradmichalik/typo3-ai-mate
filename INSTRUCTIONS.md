@@ -70,6 +70,7 @@ Exact tool names, so you can select one directly instead of searching for it.
 | What is in `TYPO3_CONF_VARS` or an extension's configuration? | `typo3-config` |
 | Why is this implementation injected? Is this service shared? | `typo3-service` |
 | Which sites exist? What is page N's URL? | `typo3-site` |
+| Which page does this URL hit? Is it redirected? Which route arguments? | `typo3-route` |
 | What breaks when I upgrade my code? | `typo3-extension-scanner`, then `typo3-changelog-search` |
 | Which DB/config migrations are outstanding? | `typo3-upgrade-wizards` |
 | Which deprecations actually fired at runtime? | `typo3-deprecations` |

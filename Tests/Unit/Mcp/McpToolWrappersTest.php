@@ -15,7 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LabelsTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
+use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LabelsTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, RouteTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\{ChangelogType, ConfigSection, LogLevel, MiddlewareStack, OutputMode, TsConfigType, TypoScriptType};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -386,6 +386,15 @@ final class McpToolWrappersTest extends TestCase
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:site:dump');
         self::assertJsonPath($result, 'args', ['--pageId', '5', '--language', '0']);
+    }
+
+    #[Test]
+    public function routeToolForwardsTheUrlAsArgument(): void
+    {
+        $result = $this->decode((new RouteTool($this->runner))->resolve('/products/widget'));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:route:resolve');
+        self::assertJsonPath($result, 'args', ['--', '/products/widget']);
     }
 
     #[Test]

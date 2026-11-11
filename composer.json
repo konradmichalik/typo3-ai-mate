@@ -20,6 +20,7 @@
 		"konradmichalik/typo3-request-profiler": "^0.5 || ^0.6 || ^1.0",
 		"nikic/php-parser": "^5.9.0",
 		"psr/container": "^2.0.2",
+		"psr/http-message": "^1.0 || ^2.0",
 		"psr/http-server-handler": "^1.0.2",
 		"psr/http-server-middleware": "^1.0.2",
 		"psr/log": "^3.0.2",
@@ -40,10 +41,13 @@
 		"konradmichalik/ttt": "^0.6.0",
 		"phpunit/phpcov": "^9.0 || ^10.0 || ^11.0 || ^13.0",
 		"phpunit/phpunit": "^10.5 || ^11.0 || ^12.0 || ^13.0",
-		"psr/http-message": "^1.0 || ^2.0",
 		"symfony/yaml": "^6.4 || ^7.0 || ^8.0",
 		"typo3/cms-base-distribution": "^13.4 || ^14.3",
+		"typo3/cms-redirects": "^13.4 || ^14.3",
 		"typo3/testing-framework": "^9.7.0"
+	},
+	"suggest": {
+		"typo3/cms-redirects": "Lets typo3-route report the sys_redirect entry a URL hits before its page"
 	},
 	"autoload": {
 		"psr-4": {
