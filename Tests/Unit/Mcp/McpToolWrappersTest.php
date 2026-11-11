@@ -69,7 +69,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new ChangelogSearchTool($this->runner))->search('sys_file_reference'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:changelog:search');
-        self::assertJsonPath($result, 'args', ['--limit', '10', '--', 'sys_file_reference']);
+        self::assertJsonPath($result, 'args', ['--limit=10', '--', 'sys_file_reference']);
     }
 
     #[Test]
@@ -78,7 +78,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new ChangelogSearchTool($this->runner))->search('CType', ChangelogType::Breaking, '13', 5));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:changelog:search');
-        self::assertJsonPath($result, 'args', ['--limit', '5', '--type', 'Breaking', '--core-version', '13', '--', 'CType']);
+        self::assertJsonPath($result, 'args', ['--limit=5', '--type=Breaking', '--core-version=13', '--', 'CType']);
     }
 
     #[Test]
@@ -108,7 +108,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new TcaTool($this->runner))->dump('tt_content', recordType: 'textmedia', fields: 'header,bodytext'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:tca:dump');
-        self::assertJsonPath($result, 'args', ['--record-type', 'textmedia', '--fields', 'header,bodytext', '--', 'tt_content']);
+        self::assertJsonPath($result, 'args', ['--record-type=textmedia', '--fields=header,bodytext', '--', 'tt_content']);
     }
 
     #[Test]
@@ -134,7 +134,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new PageTool($this->runner))->info(null, 'https://example.com/path'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:page:info');
-        self::assertJsonPath($result, 'args', ['--url', 'https://example.com/path']);
+        self::assertJsonPath($result, 'args', ['--url=https://example.com/path']);
     }
 
     #[Test]
@@ -143,7 +143,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new TypoScriptTool($this->runner))->dump(7, TypoScriptType::Constants, 'lib.foo'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:typoscript:dump');
-        self::assertJsonPath($result, 'args', ['--type', 'constants', '--path', 'lib.foo', '--', '7']);
+        self::assertJsonPath($result, 'args', ['--type=constants', '--path=lib.foo', '--', '7']);
     }
 
     #[Test]
@@ -152,7 +152,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new TypoScriptTool($this->runner))->dump(7, TypoScriptType::Setup, null, true));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:typoscript:dump');
-        self::assertJsonPath($result, 'args', ['--type', 'setup', '--full', '--', '7']);
+        self::assertJsonPath($result, 'args', ['--type=setup', '--full', '--', '7']);
     }
 
     #[Test]
@@ -161,7 +161,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new TsConfigTool($this->runner))->dump(3));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:tsconfig:dump');
-        self::assertJsonPath($result, 'args', ['--type', 'page', '--', '3']);
+        self::assertJsonPath($result, 'args', ['--type=page', '--', '3']);
     }
 
     #[Test]
@@ -170,7 +170,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new TsConfigTool($this->runner))->dump(3, TsConfigType::User, 5, 'mod.web_layout'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:tsconfig:dump');
-        self::assertJsonPath($result, 'args', ['--type', 'user', '--user', '5', '--path', 'mod.web_layout', '--', '3']);
+        self::assertJsonPath($result, 'args', ['--type=user', '--user=5', '--path=mod.web_layout', '--', '3']);
     }
 
     #[Test]
@@ -179,7 +179,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new TsConfigTool($this->runner))->dump(3, TsConfigType::Page, null, null, true));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:tsconfig:dump');
-        self::assertJsonPath($result, 'args', ['--type', 'page', '--full', '--', '3']);
+        self::assertJsonPath($result, 'args', ['--type=page', '--full', '--', '3']);
     }
 
     #[Test]
@@ -188,7 +188,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new FluidResolveTool($this->runner))->resolve(9, 'plugin.tx_news_pi1', 'News/List'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:fluid:resolve');
-        self::assertJsonPath($result, 'args', ['--plugin', 'plugin.tx_news_pi1', '--template', 'News/List', '--format', 'html', '--', '9']);
+        self::assertJsonPath($result, 'args', ['--plugin=plugin.tx_news_pi1', '--template=News/List', '--format=html', '--', '9']);
     }
 
     #[Test]
@@ -197,7 +197,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new FluidResolveTool($this->runner))->resolve(9, 'page.10', null, 'Header', 'Default', 'xml'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:fluid:resolve');
-        self::assertJsonPath($result, 'args', ['--plugin', 'page.10', '--partial', 'Header', '--layout', 'Default', '--format', 'xml', '--', '9']);
+        self::assertJsonPath($result, 'args', ['--plugin=page.10', '--partial=Header', '--layout=Default', '--format=xml', '--', '9']);
     }
 
     #[Test]
@@ -206,7 +206,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new MiddlewaresTool($this->runner))->list(MiddlewareStack::Backend));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:middlewares:list');
-        self::assertJsonPath($result, 'args', ['--stack', 'backend']);
+        self::assertJsonPath($result, 'args', ['--stack=backend']);
     }
 
     #[Test]
@@ -215,7 +215,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new EventsTool($this->runner))->list('SomeEvent'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:events:list');
-        self::assertJsonPath($result, 'args', ['--event', 'SomeEvent']);
+        self::assertJsonPath($result, 'args', ['--event=SomeEvent']);
     }
 
     #[Test]
@@ -233,7 +233,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new ServiceDetailTool($this->runner))->detail(tag: 'event.listener'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:service:detail');
-        self::assertJsonPath($result, 'args', ['--tag', 'event.listener']);
+        self::assertJsonPath($result, 'args', ['--tag=event.listener']);
     }
 
     #[Test]
@@ -251,7 +251,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new OverridesTool($this->runner))->list('TYPO3\\CMS\\Core\\Http\\RequestFactory'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:overrides:list');
-        self::assertJsonPath($result, 'args', ['--class', 'TYPO3\\CMS\\Core\\Http\\RequestFactory']);
+        self::assertJsonPath($result, 'args', ['--class=TYPO3\\CMS\\Core\\Http\\RequestFactory']);
     }
 
     #[Test]
@@ -260,7 +260,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new CommandsTool($this->runner))->list('cache'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:commands:list');
-        self::assertJsonPath($result, 'args', ['--pattern', 'cache']);
+        self::assertJsonPath($result, 'args', ['--pattern=cache']);
     }
 
     #[Test]
@@ -296,7 +296,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new DbSchemaTool($this->runner))->dump(null, 'tt_'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:db-schema:dump');
-        self::assertJsonPath($result, 'args', ['--pattern', 'tt_']);
+        self::assertJsonPath($result, 'args', ['--pattern=tt_']);
     }
 
     #[Test]
@@ -323,7 +323,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new ConfigTool($this->runner))->dump());
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:config:dump');
-        self::assertJsonPath($result, 'args', ['--section', 'confvars']);
+        self::assertJsonPath($result, 'args', ['--section=confvars']);
     }
 
     #[Test]
@@ -332,7 +332,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new ConfigTool($this->runner))->dump('my_ext', ConfigSection::Extension));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:config:dump');
-        self::assertJsonPath($result, 'args', ['--section', 'extension', '--path', 'my_ext']);
+        self::assertJsonPath($result, 'args', ['--section=extension', '--path=my_ext']);
     }
 
     #[Test]
@@ -341,7 +341,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new ExtensionScannerTool($this->runner))->scan('my_ext'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:upgrade:scan');
-        self::assertJsonPath($result, 'args', ['--format', 'summary', '--', 'my_ext']);
+        self::assertJsonPath($result, 'args', ['--format=summary', '--', 'my_ext']);
     }
 
     #[Test]
@@ -350,7 +350,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new ExtensionScannerTool($this->runner))->scan());
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:upgrade:scan');
-        self::assertJsonPath($result, 'args', ['--format', 'summary']);
+        self::assertJsonPath($result, 'args', ['--format=summary']);
     }
 
     #[Test]
@@ -359,7 +359,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new ExtensionScannerTool($this->runner))->scan(null, OutputMode::Full, true));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:upgrade:scan');
-        self::assertJsonPath($result, 'args', ['--format', 'full', '--own-code']);
+        self::assertJsonPath($result, 'args', ['--format=full', '--own-code']);
     }
 
     #[Test]
@@ -368,7 +368,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new UpgradeCompatibilityTool($this->runner))->check('14.3'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:upgrade:compatibility');
-        self::assertJsonPath($result, 'args', ['--target', '14.3']);
+        self::assertJsonPath($result, 'args', ['--target=14.3']);
     }
 
     #[Test]
@@ -386,7 +386,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new RenderPageTool($this->runner))->render(5));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:fe:render');
-        self::assertJsonPath($result, 'args', ['--language', '0', '--', '5']);
+        self::assertJsonPath($result, 'args', ['--language=0', '--', '5']);
     }
 
     #[Test]
@@ -395,7 +395,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new RenderPageTool($this->runner))->render(null, 'https://example.com/page'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:fe:render');
-        self::assertJsonPath($result, 'args', ['--url', 'https://example.com/page', '--language', '0']);
+        self::assertJsonPath($result, 'args', ['--url=https://example.com/page', '--language=0']);
     }
 
     #[Test]
@@ -413,7 +413,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new SiteTool($this->runner))->dump('main'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:site:dump');
-        self::assertJsonPath($result, 'args', ['--identifier', 'main']);
+        self::assertJsonPath($result, 'args', ['--identifier=main']);
     }
 
     #[Test]
@@ -422,7 +422,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new SiteTool($this->runner))->dump(null, 5, 1));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:site:dump');
-        self::assertJsonPath($result, 'args', ['--pageId', '5', '--language', '1']);
+        self::assertJsonPath($result, 'args', ['--pageId=5', '--language=1']);
     }
 
     #[Test]
@@ -431,7 +431,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new SiteTool($this->runner))->dump('main', 5));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:site:dump');
-        self::assertJsonPath($result, 'args', ['--pageId', '5', '--language', '0']);
+        self::assertJsonPath($result, 'args', ['--pageId=5', '--language=0']);
     }
 
     #[Test]
@@ -467,7 +467,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new SchedulerTool($this->runner))->tasks(7));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:scheduler:tasks');
-        self::assertJsonPath($result, 'args', ['--uid', '7']);
+        self::assertJsonPath($result, 'args', ['--uid=7']);
     }
 
     #[Test]
@@ -476,7 +476,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new RecordsTool($this->runner))->query('tt_content'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:records:query');
-        self::assertJsonPath($result, 'args', ['--limit', '25', '--format', 'summary', '--', 'tt_content']);
+        self::assertJsonPath($result, 'args', ['--limit=25', '--format=summary', '--', 'tt_content']);
     }
 
     #[Test]
@@ -485,7 +485,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new RecordsTool($this->runner))->query('tt_content', null, 42, 'CType=text'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:records:query');
-        self::assertJsonPath($result, 'args', ['--pid', '42', '--where', 'CType=text', '--limit', '25', '--format', 'summary', '--', 'tt_content']);
+        self::assertJsonPath($result, 'args', ['--pid=42', '--where=CType=text', '--limit=25', '--format=summary', '--', 'tt_content']);
     }
 
     #[Test]
@@ -494,7 +494,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new RecordsTool($this->runner))->query('pages', 5, null, null, 'uid,title', 10, 'title:desc', OutputMode::Full, true));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:records:query');
-        self::assertJsonPath($result, 'args', ['--uid', '5', '--fields', 'uid,title', '--limit', '10', '--order-by', 'title:desc', '--format', 'full', '--respect-enable-fields', '--', 'pages']);
+        self::assertJsonPath($result, 'args', ['--uid=5', '--fields=uid,title', '--limit=10', '--order-by=title:desc', '--format=full', '--respect-enable-fields', '--', 'pages']);
     }
 
     #[Test]
@@ -503,7 +503,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new BePermissionsTool($this->runner))->inspect(5));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:be-permissions');
-        self::assertJsonPath($result, 'args', ['--user', '5']);
+        self::assertJsonPath($result, 'args', ['--user=5']);
     }
 
     #[Test]
@@ -512,7 +512,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new BePermissionsTool($this->runner))->inspect(null, 3, 'tt_content', 42));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:be-permissions');
-        self::assertJsonPath($result, 'args', ['--group', '3', '--table', 'tt_content', '--page-id', '42']);
+        self::assertJsonPath($result, 'args', ['--group=3', '--table=tt_content', '--page-id=42']);
     }
 
     #[Test]
@@ -521,7 +521,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new LogsTool($this->runner))->search('boom', LogLevel::Error));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:logs:search');
-        self::assertJsonPath($result, 'args', ['--query', 'boom', '--level', 'error', '--limit', '50', '--format', 'summary']);
+        self::assertJsonPath($result, 'args', ['--query=boom', '--level=error', '--limit=50', '--format=summary']);
     }
 
     #[Test]
@@ -530,7 +530,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new LogsTool($this->runner))->byLevel(LogLevel::Error, 'abc123', 50, OutputMode::Full, '2h'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:logs:search');
-        self::assertJsonPath($result, 'args', ['--level', 'error', '--request-id', 'abc123', '--limit', '50', '--format', 'full', '--since', '2h']);
+        self::assertJsonPath($result, 'args', ['--level=error', '--request-id=abc123', '--limit=50', '--format=full', '--since=2h']);
     }
 
     #[Test]
@@ -539,7 +539,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new LogsTool($this->runner))->tail(10));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:logs:search');
-        self::assertJsonPath($result, 'args', ['--limit', '10', '--format', 'summary']);
+        self::assertJsonPath($result, 'args', ['--limit=10', '--format=summary']);
     }
 
     #[Test]
@@ -551,7 +551,7 @@ final class McpToolWrappersTest extends TestCase
         self::assertArrayHasKey('untrusted_data', (array) ResponseEncoder::decode($response));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:syslog:search');
-        self::assertJsonPath($result, 'args', ['--limit', '50']);
+        self::assertJsonPath($result, 'args', ['--limit=50']);
     }
 
     #[Test]
@@ -560,7 +560,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new SysLogTool($this->runner))->search(true, 'tt_content', 12, SysLogType::Db, '65f1a2b3c4d5e', '2h', 10));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:syslog:search');
-        self::assertJsonPath($result, 'args', ['--error', '--table', 'tt_content', '--record-uid', '12', '--type', 'db', '--request-id', '65f1a2b3c4d5e', '--since', '2h', '--limit', '10']);
+        self::assertJsonPath($result, 'args', ['--error', '--table=tt_content', '--record-uid=12', '--type=db', '--request-id=65f1a2b3c4d5e', '--since=2h', '--limit=10']);
     }
 
     #[Test]
@@ -578,7 +578,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new FlexFormTool($this->runner))->diff('tt_content', 7, 'pi_flexform'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:flexform:diff');
-        self::assertJsonPath($result, 'args', ['--field', 'pi_flexform', '--', 'tt_content', '7']);
+        self::assertJsonPath($result, 'args', ['--field=pi_flexform', '--', 'tt_content', '7']);
     }
 
     #[Test]
@@ -614,7 +614,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new IconsTool($this->runner))->lookup('actions-add,actions-edit'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:icons:lookup');
-        self::assertJsonPath($result, 'args', ['--identifiers', 'actions-add,actions-edit']);
+        self::assertJsonPath($result, 'args', ['--identifiers=actions-add,actions-edit']);
     }
 
     #[Test]
@@ -632,7 +632,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new LabelsTool($this->runner))->lookup('core.common:cancel', 'de', 'core'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:labels:lookup');
-        self::assertJsonPath($result, 'args', ['--references', 'core.common:cancel', '--locale', 'de', '--extension', 'core']);
+        self::assertJsonPath($result, 'args', ['--references=core.common:cancel', '--locale=de', '--extension=core']);
     }
 
     #[Test]
@@ -650,7 +650,7 @@ final class McpToolWrappersTest extends TestCase
         $result = $this->decode((new ViewHelpersTool($this->runner))->lookup('f:link.page,f:if', 'f'));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:fluid:viewhelpers');
-        self::assertJsonPath($result, 'args', ['--names', 'f:link.page,f:if', '--namespace', 'f']);
+        self::assertJsonPath($result, 'args', ['--names=f:link.page,f:if', '--namespace=f']);
     }
 
     #[Test]

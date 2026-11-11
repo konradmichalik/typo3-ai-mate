@@ -26,6 +26,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Whi
 
 ### Fixed
 
+- Tool parameters whose value starts with `-`, such as a `typo3-service` tag `-foo`, were parsed as another option by the console and failed with a raw console error instead of JSON. `Typo3CliRunner` now passes options as `--name=value`.
 - `typo3-page --url` resolved any URL under a site base to the site's root page, and a relative path such as `/products/widget` to nothing. It now uses the same resolver as `typo3-route` and reports the page the URL actually hits.
 - `typo3-extension-scanner` reported no matches on TYPO3 14.3.11 and later, where the core moved its `CodeStatistics` and `GeneratorClassesResolver` visitors into the `Php\Visitor` namespace. Both locations are supported now.
 

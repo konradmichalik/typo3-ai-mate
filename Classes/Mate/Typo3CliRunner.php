@@ -35,7 +35,7 @@ final readonly class Typo3CliRunner
      * Run a TYPO3 console command and decode its stdout as a JSON array.
      *
      * @param list<string|int>           $arguments positional arguments
-     * @param array<string, scalar|null> $options   --key value pairs; a true bool becomes a bare --flag, null, '' and false are left out
+     * @param array<string, scalar|null> $options   --key=value pairs; a true bool becomes a bare --flag, null, '' and false are left out
      *
      * @return array<mixed>
      */
@@ -145,8 +145,9 @@ final readonly class Typo3CliRunner
                 $line[] = '--'.$name;
                 continue;
             }
-            $line[] = '--'.$name;
-            $line[] = (string) $value;
+            // The "=" binds a value that starts with "-" to its option, where a
+            // separate token would be parsed as another option.
+            $line[] = '--'.$name.'='.$value;
         }
 
         // End-of-options separator before the positional arguments: a value that

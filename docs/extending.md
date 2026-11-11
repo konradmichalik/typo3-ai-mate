@@ -21,7 +21,7 @@ final class MyCustomTool
 }
 ```
 
-Options are passed as an array of name and value. A `true` value becomes a bare `--flag`, while `false`, `null` and `''` leave the option out, so optional tool parameters can go in unfiltered:
+Options are passed as an array of name and value. Each one reaches the command as `--name=value`, so a value starting with `-` stays a value. A `true` value becomes a bare `--flag`, while `false`, `null` and `''` leave the option out, so optional tool parameters can go in unfiltered:
 
 ```php
 $this->typo3->json('myext:something', [$pageId], ['path' => $path, 'full' => $full]);
