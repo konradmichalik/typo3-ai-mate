@@ -8,7 +8,7 @@ Guidance for coding agents working in this repository.
 
 - PHP: `~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0`
 - TYPO3: `^13.4 || ^14.3` (core, backend, fluid, install)
-- `symfony/ai-mate`: `^0.14`
+- `symfony/ai-mate`: `^0.15`
 - License: GPL-2.0-or-later
 
 ## Structure
