@@ -157,6 +157,18 @@ final class RouteCommandTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function doesNotLetARedirectToTheRequestedUrlWinOverThePage(): void
+    {
+        [, $result] = $this->runCommand('https://example.test/products');
+
+        self::assertSame('page', $result['outcome']);
+        self::assertIsArray($result['redirect']);
+        self::assertArrayHasKey('ignored', $result['redirect']);
+        self::assertIsArray($result['page']);
+        self::assertSame(2, $result['page']['id']);
+    }
+
+    #[Test]
     public function answersNoMatchWithTheClosestSiteBaseForAnUnknownHost(): void
     {
         [$exitCode, $result] = $this->runCommand('https://unknown.example/products');
