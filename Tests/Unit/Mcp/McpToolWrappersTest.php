@@ -530,10 +530,10 @@ final class McpToolWrappersTest extends TestCase
     #[Test]
     public function sysLogToolForwardsEveryFilter(): void
     {
-        $result = $this->decode((new SysLogTool($this->runner))->search(true, 'tt_content', 12, SysLogType::Db, '2h', 10));
+        $result = $this->decode((new SysLogTool($this->runner))->search(true, 'tt_content', 12, SysLogType::Db, '65f1a2b3c4d5e', '2h', 10));
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:syslog:search');
-        self::assertJsonPath($result, 'args', ['--error', '--table', 'tt_content', '--record-uid', '12', '--type', 'db', '--since', '2h', '--limit', '10']);
+        self::assertJsonPath($result, 'args', ['--error', '--table', 'tt_content', '--record-uid', '12', '--type', 'db', '--request-id', '65f1a2b3c4d5e', '--since', '2h', '--limit', '10']);
     }
 
     #[Test]

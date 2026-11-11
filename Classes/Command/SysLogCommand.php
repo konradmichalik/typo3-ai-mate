@@ -49,10 +49,16 @@ final class SysLogCommand extends AbstractJsonCommand
     private const SCAN_LIMIT = 1000;
 
     /**
-     * The only columns ever selected. userid, IP and workspace stay in the
-     * database.
+     * The only columns ever selected. userid, IP, workspace and the PSR-3 data
+     * stay in the database.
      */
-    private const COLUMNS = ['tstamp', 'type', 'action', 'error', 'tablename', 'recuid', 'event_pid', 'details', 'log_data'];
+    private const COLUMNS = ['tstamp', 'type', 'action', 'error', 'tablename', 'recuid', 'event_pid', 'details', 'log_data', 'level', 'component', 'request_id', 'message'];
+
+    /**
+     * PSR-3 levels the DatabaseWriter stores that count as an error, next to
+     * the legacy error column.
+     */
+    private const ERROR_LEVELS = ['error', 'critical', 'alert', 'emergency'];
 
     private readonly SysLogFormatter $formatter;
 
@@ -65,10 +71,11 @@ final class SysLogCommand extends AbstractJsonCommand
     protected function configure(): void
     {
         $this
-            ->addOption('error', null, InputOption::VALUE_NONE, 'Only entries flagged as an error (user error, system error, security notice, warning)')
+            ->addOption('error', null, InputOption::VALUE_NONE, 'Only entries flagged as an error (user error, system error, security notice, warning) or logged at PSR-3 level error and above')
             ->addOption('table', null, InputOption::VALUE_REQUIRED, 'Restrict to one table, e.g. tt_content')
             ->addOption('record-uid', null, InputOption::VALUE_REQUIRED, 'Restrict to one record uid')
             ->addOption('type', null, InputOption::VALUE_REQUIRED, 'db|file|cache|extension|error|site|setting|login')
+            ->addOption('request-id', null, InputOption::VALUE_REQUIRED, 'Filter by request id (correlates with profile token)')
             ->addOption('since', null, InputOption::VALUE_REQUIRED, 'Only entries at or after this time: relative (e.g. 30m, 2h, 7d) or any parseable date')
             ->addOption('limit', null, InputOption::VALUE_REQUIRED, 'Maximum number of distinct entries (capped at 200)', (string) self::DEFAULT_LIMIT);
     }
@@ -92,6 +99,7 @@ final class SysLogCommand extends AbstractJsonCommand
             'table' => Cast::string($input->getOption('table')),
             'recordUid' => $recordUid,
             'type' => $type,
+            'requestId' => Cast::string($input->getOption('request-id')),
             'since' => (new LogsCommand())->resolveSince($input->getOption('since')),
         ];
         $limit = min(self::MAX_LIMIT, max(1, Cast::int($input->getOption('limit'))));
@@ -112,7 +120,7 @@ final class SysLogCommand extends AbstractJsonCommand
     }
 
     /**
-     * @param array{error: bool, table: string, recordUid: int|null, type: int|null, since: int|null} $filters
+     * @param array{error: bool, table: string, recordUid: int|null, type: int|null, requestId: string, since: int|null} $filters
      */
     private function count(array $filters): int
     {
@@ -122,7 +130,7 @@ final class SysLogCommand extends AbstractJsonCommand
     }
 
     /**
-     * @param array{error: bool, table: string, recordUid: int|null, type: int|null, since: int|null} $filters
+     * @param array{error: bool, table: string, recordUid: int|null, type: int|null, requestId: string, since: int|null} $filters
      *
      * @return list<array<string, mixed>>
      */
@@ -142,7 +150,7 @@ final class SysLogCommand extends AbstractJsonCommand
     }
 
     /**
-     * @param array{error: bool, table: string, recordUid: int|null, type: int|null, since: int|null} $filters
+     * @param array{error: bool, table: string, recordUid: int|null, type: int|null, requestId: string, since: int|null} $filters
      */
     private function filtered(array $filters): QueryBuilder
     {
@@ -151,7 +159,10 @@ final class SysLogCommand extends AbstractJsonCommand
         $expr = $queryBuilder->expr();
 
         if ($filters['error']) {
-            $queryBuilder->andWhere($expr->gt('error', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)));
+            $queryBuilder->andWhere($expr->or(
+                $expr->gt('error', $queryBuilder->createNamedParameter(0, Connection::PARAM_INT)),
+                $expr->in('level', $queryBuilder->createNamedParameter(self::ERROR_LEVELS, Connection::PARAM_STR_ARRAY)),
+            ));
         }
         if ('' !== $filters['table']) {
             $queryBuilder->andWhere($expr->eq('tablename', $queryBuilder->createNamedParameter($filters['table'])));
@@ -161,6 +172,9 @@ final class SysLogCommand extends AbstractJsonCommand
         }
         if (null !== $filters['type']) {
             $queryBuilder->andWhere($expr->eq('type', $queryBuilder->createNamedParameter($filters['type'], Connection::PARAM_INT)));
+        }
+        if ('' !== $filters['requestId']) {
+            $queryBuilder->andWhere($expr->eq('request_id', $queryBuilder->createNamedParameter($filters['requestId'])));
         }
         if (null !== $filters['since']) {
             $queryBuilder->andWhere($expr->gte('tstamp', $queryBuilder->createNamedParameter($filters['since'], Connection::PARAM_INT)));

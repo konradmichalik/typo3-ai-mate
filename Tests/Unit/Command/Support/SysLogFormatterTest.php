@@ -102,11 +102,11 @@ final class SysLogFormatterTest extends TestCase
     #[Test]
     public function aggregateGroupsIdenticalEventsCountsThemAndSortsNewestFirst(): void
     {
-        $denied = ['tstamp' => 1000, 'type' => 1, 'action' => 2, 'error' => 1, 'tablename' => 'tt_content', 'recuid' => 12, 'event_pid' => 3, 'details' => 'Attempt to modify record {table}:{uid} denied', 'log_data' => '{"table":"tt_content","uid":12}'];
+        $denied = ['tstamp' => 1000, 'type' => 1, 'action' => 2, 'error' => 1, 'tablename' => 'tt_content', 'recuid' => 12, 'event_pid' => 3, 'details' => 'Attempt to modify record {table}:{uid} denied', 'log_data' => '{"table":"tt_content","uid":12}', 'level' => 'info', 'component' => '', 'request_id' => 'aaa'];
         $inserted = ['tstamp' => 1500, 'type' => 1, 'action' => 1, 'error' => 0, 'tablename' => 'pages', 'recuid' => 5, 'event_pid' => 1, 'details' => 'Record was inserted', 'log_data' => ''];
 
         $entries = $this->formatter->aggregate([
-            ['tstamp' => 2000] + $denied,
+            ['tstamp' => 2000, 'request_id' => 'bbb'] + $denied,
             $inserted,
             $denied,
         ]);
@@ -118,9 +118,12 @@ final class SysLogFormatterTest extends TestCase
             'type' => 'db',
             'action' => 'update',
             'error' => 'userError',
+            'level' => 'info',
+            'component' => '',
             'table' => 'tt_content',
             'recordUid' => 12,
             'pageUid' => 3,
+            'exampleRequestId' => 'bbb',
             'details' => 'Attempt to modify record tt_content:12 denied',
         ], $entries[0]);
         self::assertSame('insert', $entries[1]['action']);
@@ -153,6 +156,36 @@ final class SysLogFormatterTest extends TestCase
         self::assertSame('extension', $entries[0]['type']);
         self::assertSame(0, $entries[0]['action']);
         self::assertSame('systemError', $entries[0]['error']);
+    }
+
+    #[Test]
+    public function detailsFallsBackToThePsr3MessageWithoutInterpolatingItsData(): void
+    {
+        $details = $this->formatter->details([
+            'type' => 0,
+            'tablename' => '',
+            'details' => null,
+            'message' => 'Provider {provider} rejected the call from 192.0.2.44',
+            'data' => '{"provider":"acme-pay"}',
+        ]);
+
+        self::assertSame('Provider {provider} rejected the call from [redacted-ip]', $details);
+    }
+
+    #[Test]
+    public function aggregateCarriesLevelComponentAndRequestIdOfPsr3Rows(): void
+    {
+        $entries = $this->formatter->aggregate([[
+            'tstamp' => 1000, 'type' => 0, 'action' => 0, 'error' => 0, 'tablename' => '', 'recuid' => 0, 'event_pid' => -1,
+            'details' => '', 'log_data' => '', 'level' => 'error', 'component' => 'Vendor.Shop.Checkout', 'request_id' => '65f1a2b3c4d5e',
+            'message' => 'Checkout failed', 'data' => '{"secretKey":"acme-pay"}',
+        ]]);
+
+        self::assertSame('error', $entries[0]['level']);
+        self::assertSame('Vendor.Shop.Checkout', $entries[0]['component']);
+        self::assertSame('65f1a2b3c4d5e', $entries[0]['exampleRequestId']);
+        self::assertSame('Checkout failed', $entries[0]['details']);
+        self::assertStringNotContainsString('acme-pay', (string) json_encode($entries));
     }
 
     #[Test]

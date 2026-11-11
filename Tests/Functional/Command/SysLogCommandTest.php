@@ -77,7 +77,7 @@ final class SysLogCommandTest extends FunctionalTestCase
         self::assertStringNotContainsString('4711', $encoded);
         self::assertStringNotContainsString('jane.roe', $encoded);
         foreach ($result['entries'] as $entry) {
-            self::assertSame(['lastSeen', 'count', 'type', 'action', 'error', 'table', 'recordUid', 'pageUid', 'details'], array_keys($entry));
+            self::assertSame(['lastSeen', 'count', 'type', 'action', 'error', 'level', 'component', 'table', 'recordUid', 'pageUid', 'exampleRequestId', 'details'], array_keys($entry));
         }
     }
 
@@ -128,6 +128,35 @@ final class SysLogCommandTest extends FunctionalTestCase
         self::assertCount(1, $result['entries']);
         self::assertSame(3, $result['distinct']);
         self::assertTrue($result['_truncated']);
+    }
+
+    #[Test]
+    public function showsPsr3DatabaseWriterRowsByMessageWithoutTheirData(): void
+    {
+        $this->importCSVDataSet(__DIR__.'/../Fixtures/sys_log_psr3.csv');
+
+        [$exitCode, $result] = $this->runCommand(['--request-id' => '65f1a2b3c4d5e']);
+
+        self::assertSame(0, $exitCode);
+        self::assertSame(1, $result['totalMatched']);
+        $entry = $result['entries'][0];
+        self::assertSame('error', $entry['level']);
+        self::assertSame('Vendor.Shop.Checkout', $entry['component']);
+        self::assertSame('65f1a2b3c4d5e', $entry['exampleRequestId']);
+        self::assertSame('Payment provider {provider} rejected the call from [redacted-ip]', $entry['details']);
+        self::assertStringNotContainsString('acme-pay', (string) json_encode($result));
+    }
+
+    #[Test]
+    public function errorFilterIncludesPsr3RowsAtErrorLevel(): void
+    {
+        $this->importCSVDataSet(__DIR__.'/../Fixtures/sys_log_psr3.csv');
+        $this->importCSVDataSet(__DIR__.'/../Fixtures/sys_log_privacy.csv');
+
+        [, $result] = $this->runCommand(['--error' => true]);
+
+        self::assertSame(2, $result['totalMatched']);
+        self::assertSame(['Vendor.Shop.Checkout', ''], array_column($result['entries'], 'component'));
     }
 
     #[Test]
