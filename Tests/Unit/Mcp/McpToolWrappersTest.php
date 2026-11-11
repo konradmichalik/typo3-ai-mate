@@ -15,7 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LabelsTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, RouteTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool, ViewHelpersTool};
+use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, BePermissionsTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LabelsTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, RouteTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool, ViewHelpersTool};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\{ChangelogType, ConfigSection, LogLevel, MiddlewareStack, OutputMode, TsConfigType, TypoScriptType};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -431,6 +431,24 @@ final class McpToolWrappersTest extends TestCase
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:records:query');
         self::assertJsonPath($result, 'args', ['--uid', '5', '--fields', 'uid,title', '--limit', '10', '--order-by', 'title:desc', '--format', 'full', '--respect-enable-fields', '--', 'pages']);
+    }
+
+    #[Test]
+    public function bePermissionsToolForwardsTheUserOnly(): void
+    {
+        $result = $this->decode((new BePermissionsTool($this->runner))->inspect(5));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:be-permissions');
+        self::assertJsonPath($result, 'args', ['--user', '5']);
+    }
+
+    #[Test]
+    public function bePermissionsToolForwardsGroupTableAndPage(): void
+    {
+        $result = $this->decode((new BePermissionsTool($this->runner))->inspect(null, 3, 'tt_content', 42));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:be-permissions');
+        self::assertJsonPath($result, 'args', ['--group', '3', '--table', 'tt_content', '--page-id', '42']);
     }
 
     #[Test]
