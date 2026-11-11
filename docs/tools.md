@@ -31,6 +31,7 @@ The examples below omit `--format=toon` for readability. An assistant should pas
 | Sites | [`typo3-site`](#typo3-site) |
 | Routing | [`typo3-route`](#typo3-route) |
 | Console | [`typo3-commands`](#typo3-commands) |
+| Scheduler | [`typo3-scheduler`](#typo3-scheduler) |
 | Configuration | [`typo3-config`](#typo3-config) |
 | Services | [`typo3-service`](#typo3-service) |
 | Upgrade | [`typo3-upgrade-wizards`](#typo3-upgrade-wizards) |
@@ -405,6 +406,22 @@ vendor/bin/mate tools:call typo3-commands --ownOnly=true
 ```
 
 `--ownOnly=true` hides core and vendor commands, leaving what this project itself registers.
+
+</details>
+
+## `typo3-scheduler`
+
+Scheduler task status, the answer to "why did my task not run?". Lists every task with uid, type, title, description, group, last and next execution and the last failure message, each with a `flags` list: `disabled`, `group-hidden`, `failed`, `running`, `stale-running` (the running marker is older than the scheduler's `maxLifetime`, so the process is presumably dead) and `invalid` (the task can no longer be restored, with the error). `schedulerLastRun` says when the scheduler itself last ran, or `recorded: false` if it never has. `uid` returns one task with its recurrence (single or recurring, interval or cron expression, parallel execution), last execution context and failure code. Task arguments are never returned, since they often hold credentials; description and failure message are redacted. Without EXT:scheduler the tool answers `installed: false`.
+
+<details>
+<summary>Find out why a task did not run</summary>
+
+```bash
+vendor/bin/mate tools:call typo3-scheduler
+vendor/bin/mate tools:call typo3-scheduler --uid=3
+```
+
+Check `schedulerLastRun` first: if the scheduler has not run for a while, no task runs, whatever its flags say. Read-only; running or editing a task is not exposed.
 
 </details>
 

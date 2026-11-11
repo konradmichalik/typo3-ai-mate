@@ -28,6 +28,7 @@ TESTS=(
   "typo3-logs-tail|--limit=5"
   "typo3-logs-by-level|--minLevel=error"
   "typo3-upgrade-wizards|"
+  "typo3-scheduler|"
   "typo3-deprecations|"
   "typo3-extension-scanner|--extension=typo3_ai_mate"
   "typo3-profiler-list|--limit=5"
