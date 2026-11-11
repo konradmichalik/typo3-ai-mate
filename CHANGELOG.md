@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). While the version is below 1.0.0 a minor bump may contain breaking changes, and this file marks them explicitly.
 
+## [Unreleased]
+
+### Fixed
+
+- `typo3-extension-scanner` reported no matches on TYPO3 14.3.11 and later, where the core moved its `CodeStatistics` and `GeneratorClassesResolver` visitors into the `Php\Visitor` namespace. Both locations are supported now.
+
 ## [0.7.0] - 2026-10-05
 
 ### Added
