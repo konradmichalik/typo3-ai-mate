@@ -16,6 +16,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Whi
 - New tool `typo3-syslog`: backend and DataHandler events from `sys_log` (permission errors, failed file operations, workspace errors), filtered by `error`, `table`, `recordUid`, `type` and `since`, newest first, deduplicated with counts and the details placeholders filled. Rows of the PSR-3 `DatabaseWriter` are included with their message, level, component and request id, filterable by `requestId`. User ids, IP addresses, workspace ids and PSR-3 context data are never returned.
 - New tool `typo3-profiler-compare`: the delta between two request profiles (timing, memory, queries, duplicate queries, HTTP calls, log entries by level), the largest differences first, the cache state of both and the duplicate queries, log components and events that changed most.
 - New tool `typo3-profiler-triage`: a short ranked list of recent request profiles worth a look (5xx, exceptions, error-level log entries, deprecations, duration or query count far above the median, N+1 suspects), each with its reasons and token.
+- New tool `typo3-upgrade-compatibility`: which installed extensions block an upgrade to a `target` TYPO3 version. For every active non-core extension it checks the `typo3/cms-core` constraint from `composer.json`, or `depends.typo3` from `ext_emconf.php` when `composer.json` has none, and reports its source, own or third-party origin and status (`blocking`, `unknown`, `compatible`), blocking extensions first. Offline, from the installed package metadata only.
+
+### Changed
+
+- `composer/semver` is now a direct dependency. TYPO3 v14 pulls it in through `typo3/cms-core`, v13 does not.
 
 ### Fixed
 

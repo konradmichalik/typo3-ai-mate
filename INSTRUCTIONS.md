@@ -78,6 +78,7 @@ Exact tool names, so you can select one directly instead of searching for it.
 | Why does my change to a class not take effect? Is it XCLASSed, and by which extension? | `typo3-overrides` |
 | Which sites exist? What is page N's URL? | `typo3-site` |
 | Which page does this URL hit? Is it redirected? Which route arguments? | `typo3-route` |
+| Which extensions block an upgrade to version X? | `typo3-upgrade-compatibility` |
 | What breaks when I upgrade my code? | `typo3-extension-scanner`, then `typo3-changelog-search` |
 | Which DB/config migrations are outstanding? | `typo3-upgrade-wizards` |
 | Which deprecations actually fired at runtime? | `typo3-deprecations` |
@@ -123,15 +124,19 @@ instead of finding out via a wasted call.
 the changelog does not know your code. *How do I migrate this hit* comes from the
 changelog.
 
-1. `typo3-extension-scanner extension=<key>` — which of your lines break or are
+1. `typo3-upgrade-compatibility target=<major.minor>`: which installed
+   extensions do not allow the target version at all (`blocking` first, `unknown`
+   when no constraint is declared). Offline, so it cannot tell whether a newer
+   release of a blocking extension exists.
+2. `typo3-extension-scanner extension=<key>` — which of your lines break or are
    deprecated in the installed target version. Omit `extension` to sweep every
    non-core extension at once.
-2. `typo3-changelog-search query="<the affected class/method/hook>"` — the
-   migration path for a hit from (1), read from the installed core's own changelog.
-3. `typo3-upgrade-wizards` — which migrations are still `AVAILABLE`. Read-only;
+3. `typo3-changelog-search query="<the affected class/method/hook>"` — the
+   migration path for a hit from (2), read from the installed core's own changelog.
+4. `typo3-upgrade-wizards` — which migrations are still `AVAILABLE`. Read-only;
    never run wizards autonomously.
-4. `typo3-deprecations` — what logged a deprecation at runtime. Feed a hit back
-   into (2).
+5. `typo3-deprecations` — what logged a deprecation at runtime. Feed a hit back
+   into (3).
 
 ---
 
