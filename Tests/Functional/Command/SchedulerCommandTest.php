@@ -83,7 +83,8 @@ final class SchedulerCommandTest extends FunctionalTestCase
         self::assertSame(5, $result['count']);
 
         $byUid = array_column($result['tasks'], null, 'uid');
-        self::assertSame(self::COMMAND, $byUid[1]['type']);
+        // v13 reports a command task by its task class, v14 by the command identifier.
+        self::assertSame($this->isV14() ? self::COMMAND : ExecuteSchedulableCommandTask::class, $byUid[1]['type']);
         self::assertSame('Nightly', $byUid[1]['group']);
         self::assertSame([], $byUid[1]['flags']);
         self::assertSame(['disabled'], $byUid[2]['flags']);
