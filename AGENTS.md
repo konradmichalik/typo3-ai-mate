@@ -23,7 +23,7 @@ Classes/
   DependencyInjection/  Compiler passes (service tag map for typo3-service --tag)
   Mate/           Providers and CLI runner for the Mate container
   Configuration.php
-Configuration/    Services.yaml, Mate.php
+Configuration/    Services.yaml, Services.php (compiler passes), Mate.php
 Tests/
   Unit/           Unit tests (phpunit.xml)
   Functional/     Functional tests (FunctionalTests.xml)

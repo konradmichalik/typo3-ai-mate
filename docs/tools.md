@@ -557,7 +557,7 @@ vendor/bin/mate tools:call typo3-service --tag=typo3.singleton
 }
 ```
 
-Up to 200 services per tag, `serviceCount` holds the full count. A tag no service carries answers an empty `services` list plus `knownTags`, every tag name the container knows. For event listeners in dispatch order use [`typo3-events`](#typo3-events), which reads the listener provider instead.
+Up to 200 services per tag, `serviceCount` holds the full count. A tag no service carries answers an empty `services` list plus `knownTags`, the tag names the container knows (up to 200). A decorated service is listed under its decorator's id, since Symfony moves the tags to the decorator. For event listeners in dispatch order use [`typo3-events`](#typo3-events), which reads the listener provider instead.
 
 </details>
 
