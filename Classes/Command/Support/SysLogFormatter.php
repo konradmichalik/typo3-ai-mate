@@ -23,7 +23,8 @@ use function in_array;
  * SysLogFormatter.
  *
  * Turns `sys_log` rows into deduplicated entries. Only the columns named here
- * reach the output: `userid`, `IP` and `workspace` are never read.
+ * reach the output: `userid`, `IP`, `workspace` and the PSR-3 `data` are never
+ * read.
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
  * @license GPL-2.0-or-later
@@ -79,13 +80,17 @@ final readonly class SysLogFormatter
     /**
      * The details text with its placeholders filled the way the backend log
      * module does it, then redacted and capped. Identity rows keep the unfilled
-     * template.
+     * template. Rows of the PSR-3 DatabaseWriter carry no details but a message,
+     * which that writer stores uninterpolated, so it is shown as stored.
      *
      * @param array<string, mixed> $row
      */
     public function details(array $row): string
     {
         $template = Cast::string($row['details'] ?? '');
+        if ('' === $template) {
+            return LogTrimmer::message(Cast::string($row['message'] ?? ''), self::DETAILS_LIMIT);
+        }
         $details = $this->isIdentityRow($row) ? $template : $this->formatLogDetails($template, $row['log_data'] ?? '');
 
         return LogTrimmer::message($details, self::DETAILS_LIMIT);
@@ -97,14 +102,14 @@ final readonly class SysLogFormatter
      *
      * @param iterable<array<string, mixed>> $rows
      *
-     * @return list<array{lastSeen: string, count: int, type: string|int, action: string|int, error: string|int, table: string, recordUid: int, pageUid: int, details: string}>
+     * @return list<array{lastSeen: string, count: int, type: string|int, action: string|int, error: string|int, level: string, component: string, table: string, recordUid: int, pageUid: int, exampleRequestId: string, details: string}>
      */
     public function aggregate(iterable $rows): array
     {
         $grouped = [];
         foreach ($rows as $row) {
             $entry = $this->entry($row);
-            $key = implode("\0", [$entry['type'], $entry['action'], $entry['error'], $entry['table'], $entry['recordUid'], $entry['details']]);
+            $key = implode("\0", [$entry['type'], $entry['action'], $entry['error'], $entry['level'], $entry['component'], $entry['table'], $entry['recordUid'], $entry['details']]);
             $timestamp = Cast::int($row['tstamp'] ?? 0);
             $grouped[$key] ??= ['timestamp' => $timestamp, 'count' => 0, 'entry' => $entry];
             ++$grouped[$key]['count'];
@@ -123,7 +128,7 @@ final readonly class SysLogFormatter
     /**
      * @param array<string, mixed> $row
      *
-     * @return array{type: string|int, action: string|int, error: string|int, table: string, recordUid: int, pageUid: int, details: string}
+     * @return array{type: string|int, action: string|int, error: string|int, level: string, component: string, table: string, recordUid: int, pageUid: int, exampleRequestId: string, details: string}
      */
     private function entry(array $row): array
     {
@@ -135,9 +140,12 @@ final readonly class SysLogFormatter
             'type' => isset(self::TYPES[$type]) ? self::TYPES[$type]->value : $type,
             'action' => self::ACTIONS[$type][$action] ?? $action,
             'error' => self::ERRORS[$error] ?? $error,
+            'level' => Cast::string($row['level'] ?? ''),
+            'component' => Cast::string($row['component'] ?? ''),
             'table' => Cast::string($row['tablename'] ?? ''),
             'recordUid' => Cast::int($row['recuid'] ?? 0),
             'pageUid' => Cast::int($row['event_pid'] ?? 0),
+            'exampleRequestId' => Cast::string($row['request_id'] ?? ''),
             'details' => $this->details($row),
         ];
     }

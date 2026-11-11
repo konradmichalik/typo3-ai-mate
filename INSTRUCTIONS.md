@@ -94,9 +94,9 @@ instead of finding out via a wasted call.
 ## What the tool surface does consistently
 
 - **`request_id`** (= profile `token` = TYPO3 `Core\RequestId`, logged as
-  `request="…"`) links the request-scoped tools: `typo3-profiler-*`, `typo3-page`
-  and `typo3-logs-*` all accept or report it, so one failing request can be
-  followed across all three.
+  `request="…"`) links the request-scoped tools: `typo3-profiler-*`, `typo3-page`,
+  `typo3-logs-*` and `typo3-syslog` all accept or report it, so one failing
+  request can be followed across all of them.
 - **Truncation is stated.** A capped result carries `_truncated: true` plus the
   real total (`statistics.matchCount`, `eventCount`, `tableCount`). Treat it as a
   sample and re-query with a narrower filter, never as the whole picture.
