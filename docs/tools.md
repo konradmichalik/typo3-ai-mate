@@ -146,7 +146,7 @@ A log entry's `request_id` is the profiler `token`, so it feeds straight into `t
 
 Backend and DataHandler events from the `sys_log` table, which the `typo3-logs-*` tools do not read: permission errors such as "Attempt to modify record tt_content:7 without permission", failed file operations and workspace errors. Filter with `error=true` (errors only, including PSR-3 rows at level `error` and above), `table`, `recordUid`, `type` (`db`, `file`, `cache`, `extension`, `error`, `site`, `setting`, `login`), `requestId` and `since`. Entries come newest first, deduplicated with a `count` and `lastSeen`, each with type, action, error level, PSR-3 `level` and `component`, table, record uid, page uid, `exampleRequestId` and the details text with its placeholders filled from `log_data`, the way the backend log module does it. Rows written by a PSR-3 `DatabaseWriter` have no details and show their `message` as stored, since that writer does not interpolate it.
 
-User ids, IP addresses, workspace ids and the PSR-3 context `data` are never selected. Login entries and `be_users`/`fe_users` records keep their unfilled template, since their log data is a user name. The filled details go through the redactor.
+User ids, IP addresses, workspace ids and the PSR-3 context `data` are never selected. Login entries and `be_users`/`fe_users` records keep their unfilled template, since their log data is a user name, and the latter report `recordUid: null`, since their uid is a user id. The filled details go through the redactor.
 
 <details>
 <summary>Find out why a save in the backend did not work</summary>
