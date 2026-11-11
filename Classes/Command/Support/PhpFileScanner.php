@@ -16,9 +16,10 @@ namespace KonradMichalik\Typo3AiMate\Command\Support;
 use KonradMichalik\Typo3AiMate\Support\Cast;
 use PhpParser\{NodeTraverser, NodeVisitor, ParserFactory, PhpVersion};
 use PhpParser\NodeVisitor\NameResolver;
+use RuntimeException;
 use Throwable;
 use TYPO3\CMS\Install\ExtensionScanner\CodeScannerInterface;
-use TYPO3\CMS\Install\ExtensionScanner\Php\{CodeStatistics, GeneratorClassesResolver, MatcherFactory};
+use TYPO3\CMS\Install\ExtensionScanner\Php\MatcherFactory;
 
 use function explode;
 
@@ -32,6 +33,12 @@ use function explode;
  */
 final readonly class PhpFileScanner
 {
+    // TYPO3 14.3.11 moved the core visitors into the Visitor sub-namespace.
+    private const VISITOR_NAMESPACES = [
+        'TYPO3\\CMS\\Install\\ExtensionScanner\\Php\\Visitor\\',
+        'TYPO3\\CMS\\Install\\ExtensionScanner\\Php\\',
+    ];
+
     /**
      * @param list<array{class: class-string, configurationArray: array<mixed>}> $matcherConfigurations
      *
@@ -65,8 +72,8 @@ final readonly class PhpFileScanner
 
             // Second pass: run the resolvers, the statistics collector and all matchers.
             $traverser = new NodeTraverser();
-            $traverser->addVisitor(new GeneratorClassesResolver());
-            $statistics = new CodeStatistics();
+            $traverser->addVisitor($this->coreVisitor('GeneratorClassesResolver'));
+            $statistics = $this->coreVisitor('CodeStatistics');
             $traverser->addVisitor($statistics);
 
             $matchers = (new MatcherFactory())->createAll($matcherConfigurations);
@@ -84,9 +91,21 @@ final readonly class PhpFileScanner
 
         return [
             'matches' => $matches,
-            'effectiveCodeLines' => $statistics->getNumberOfEffectiveCodeLines(),
-            'ignoredLines' => $statistics->getNumberOfIgnoredLines(),
+            'effectiveCodeLines' => method_exists($statistics, 'getNumberOfEffectiveCodeLines') ? Cast::int($statistics->getNumberOfEffectiveCodeLines()) : 0,
+            'ignoredLines' => method_exists($statistics, 'getNumberOfIgnoredLines') ? Cast::int($statistics->getNumberOfIgnoredLines()) : 0,
         ];
+    }
+
+    private function coreVisitor(string $shortName): NodeVisitor
+    {
+        foreach (self::VISITOR_NAMESPACES as $namespace) {
+            $class = $namespace.$shortName;
+            if (class_exists($class) && is_subclass_of($class, NodeVisitor::class)) {
+                return new $class();
+            }
+        }
+
+        throw new RuntimeException('Extension scanner visitor '.$shortName.' not found in EXT:install.', 1794215680);
     }
 
     /**
