@@ -1,0 +1,9 @@
+title = "typo3-ai-mate"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Invented credentials in test fixtures that check redaction"
+regexTarget = "line"
+regexes = ['''fixture-api-key-123''']
