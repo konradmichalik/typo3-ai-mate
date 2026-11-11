@@ -37,6 +37,7 @@ The examples below omit `--format=toon` for readability. An assistant should pas
 | Configuration | [`typo3-config`](#typo3-config) |
 | Services | [`typo3-service`](#typo3-service) |
 | Overrides | [`typo3-overrides`](#typo3-overrides) |
+| Upgrade | [`typo3-upgrade-compatibility`](#typo3-upgrade-compatibility) |
 | Upgrade | [`typo3-upgrade-wizards`](#typo3-upgrade-wizards) |
 | Upgrade | [`typo3-extension-scanner`](#typo3-extension-scanner) |
 | Upgrade | [`typo3-changelog-search`](#typo3-changelog-search) |
@@ -537,6 +538,8 @@ Pass a class/interface name for an autowired service, or a string service id. A 
 
 ## `typo3-overrides`
 
+`major.minor` matches when the constraint allows any patch release of that minor, a full version only that release. Offline: it reads the installed package metadata and never asks a registry, so it cannot say whether a newer release of a blocking extension already allows the target. Only `typo3/cms-core` is evaluated, not other `typo3/cms-*` requirements. Then run `typo3-extension-scanner` for the code that has to change.
+Which installed extensions block an upgrade to a target TYPO3 version. For every active non-core extension it reports the `typo3/cms-core` constraint, where that constraint came from (`composer.json`, or `depends.typo3` in `ext_emconf.php` when `composer.json` does not require `typo3/cms-core`), whether the extension is `own` or `thirdParty`, and a status against the target: `blocking`, `unknown` or `compatible`. Blocking extensions come first. An extension without any constraint, or with one that cannot be parsed, is `unknown`, never `compatible`.
 Every XCLASS registration in `SYS/Objects`: original class, replacement class, the class TYPO3 effectively instantiates when XCLASSes chain, and the extension that owns the replacement. It answers "why does my change to class X not take effect" without reading `typo3-config --path=SYS/Objects` and guessing which package wrote each entry.
 
 TYPO3 does not record which `ext_localconf.php` made a registration, so the owner is the active extension the replacement class belongs to. `ownerDeterminedBy` says how that was established:
@@ -547,15 +550,22 @@ TYPO3 does not record which `ext_localconf.php` made a registration, so the owne
 Both are `null` when the replacement belongs to no active extension, for example a class from a plain Composer library.
 
 <details>
+<summary>Find the packages that rule out the target before touching code</summary>
 <summary>Is this class replaced, and by whom?</summary>
 
 ```bash
+vendor/bin/mate tools:call typo3-upgrade-compatibility --target=14.3
+vendor/bin/mate tools:call typo3-upgrade-compatibility --target=14.3.7
 vendor/bin/mate tools:call typo3-overrides
 vendor/bin/mate tools:call typo3-overrides --class="TYPO3\CMS\Core\Utility\File\BasicFileUtility"
 ```
 
 ```json
 {
+  "target": "14.3",
+  "summary": {"blocking": 1, "unknown": 0, "compatible": 12},
+  "extensions": [
+    {"extension": "news", "package": "georgringer/news", "origin": "thirdParty", "constraint": "^12.4 || ^13.4", "source": "composer.json", "status": "blocking"}
   "class": "TYPO3\\CMS\\Core\\Utility\\File\\BasicFileUtility",
   "found": true,
   "xclasses": [
@@ -586,6 +596,7 @@ To check a single public service, use [`typo3-service`](#typo3-service): its `cl
 
 </details>
 
+## `typo3-upgrade-compatibility`
 ## `typo3-upgrade-wizards`
 
 List pending and completed upgrade wizards — outstanding DB/config migrations.

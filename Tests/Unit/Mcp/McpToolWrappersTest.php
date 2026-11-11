@@ -15,7 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, BePermissionsTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LabelsTool, LogsTool, MiddlewaresTool, OverridesTool, PageTool, RecordsTool, RenderPageTool, RouteTool, SchedulerTool, SiteTool, SysLogTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool, ViewHelpersTool};
+use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, BePermissionsTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LabelsTool, LogsTool, MiddlewaresTool, OverridesTool, PageTool, RecordsTool, RenderPageTool, RouteTool, SchedulerTool, SiteTool, SysLogTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeCompatibilityTool, UpgradeWizardsTool, ViewHelpersTool};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\{ChangelogType, ConfigSection, LogLevel, MiddlewareStack, OutputMode, SysLogType, TsConfigType, TypoScriptType};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -342,6 +342,15 @@ final class McpToolWrappersTest extends TestCase
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:upgrade:scan');
         self::assertJsonPath($result, 'args', ['--format', 'full', '--own-code']);
+    }
+
+    #[Test]
+    public function upgradeCompatibilityToolForwardsTheTarget(): void
+    {
+        $result = $this->decode((new UpgradeCompatibilityTool($this->runner))->check('14.3'));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:upgrade:compatibility');
+        self::assertJsonPath($result, 'args', ['--target', '14.3']);
     }
 
     #[Test]

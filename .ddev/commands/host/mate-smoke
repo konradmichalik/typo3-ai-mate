@@ -28,6 +28,7 @@ TESTS=(
   "typo3-logs-tail|--limit=5"
   "typo3-logs-by-level|--minLevel=error"
   "typo3-syslog|--limit=5"
+  "typo3-upgrade-compatibility|--target=14.3"
   "typo3-upgrade-wizards|"
   "typo3-scheduler|"
   "typo3-overrides|"

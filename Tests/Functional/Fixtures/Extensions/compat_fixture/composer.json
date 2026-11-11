@@ -1,0 +1,15 @@
+{
+    "name": "konradmichalik/compat-fixture",
+    "type": "typo3-cms-extension",
+    "description": "Fixture extension whose TYPO3 constraint lives only in ext_emconf.php, used by the upgrade compatibility functional test.",
+    "license": "GPL-2.0-or-later",
+    "extra": {
+        "typo3/cms": {
+            "Package": {
+                "providesPackages": {}
+            },
+            "extension-key": "compat_fixture",
+            "version": "1.0.0"
+        }
+    }
+}
