@@ -21,6 +21,7 @@ The examples below omit `--format=toon` for readability. An assistant should pas
 | TSconfig | [`typo3-tsconfig`](#typo3-tsconfig) |
 | Fluid | [`typo3-fluid-resolve`](#typo3-fluid-resolve) |
 | Fluid | [`typo3-fluid-namespaces`](#typo3-fluid-namespaces) |
+| Fluid | [`typo3-viewhelpers`](#typo3-viewhelpers) |
 | Icons | [`typo3-icons`](#typo3-icons) |
 | Labels | [`typo3-labels`](#typo3-labels) |
 | Backend modules | [`typo3-backend-modules`](#typo3-backend-modules) |
@@ -244,6 +245,22 @@ vendor/bin/mate tools:call typo3-fluid-namespaces
 ```
 
 Read from the `ViewHelperResolver`, so on v14 it already reflects every package's `Configuration/Fluid/Namespaces.php` merged with the deprecated registration and any `ModifyNamespacesEvent` listener.
+
+</details>
+
+## `typo3-viewhelpers`
+
+Whether Fluid ViewHelpers such as `f:link.page` exist, which class each resolves to, and its registered arguments with type, required flag, default and description. `exists: false` is the answer, not an empty result: an unresolvable ViewHelper makes the whole template fail to parse. A miss carries the closest ViewHelper names of the same namespace as suggestions, an unknown prefix the closest global prefixes. Resolved through the runtime `ViewHelperResolver`, so global namespaces of every package and `ModifyNamespacesEvent` listeners apply.
+
+<details>
+<summary>Check a ViewHelper and its arguments before writing the tag</summary>
+
+```bash
+vendor/bin/mate tools:call typo3-viewhelpers --names=f:link.page,f:format.date
+vendor/bin/mate tools:call typo3-viewhelpers --namespace=f
+```
+
+`acceptsUndeclaredArguments: true` marks a tag-based ViewHelper, which renders any argument it does not declare as a tag attribute. With `namespace` instead of `names` you get the ViewHelper names of that prefix only, derived from the classes the autoloader finds below its PHP namespaces. A namespace served by a resolver delegate cannot enumerate its ViewHelpers and is reported under `unlisted`. Only global namespaces are known; one a template declares with `xmlns` is outside the tool's reach.
 
 </details>
 
