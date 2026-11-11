@@ -7,7 +7,7 @@ Every command runs only in a Development context (`Environment::getContext()->is
 
 ## Read-only by default
 
-Only 3 of the 33 tools mutate anything:
+Only 3 of the 34 tools mutate anything:
 
 - `typo3-profiler-start` / `-stop` change profiler control state, and only as a time-boxed dev switch. They touch no records.
 - `typo3-render-page` issues a real internal HTTP request, so it has side effects in caches and logs.
