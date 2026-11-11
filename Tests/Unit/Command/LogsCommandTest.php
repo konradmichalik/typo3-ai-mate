@@ -211,23 +211,6 @@ final class LogsCommandTest extends TestCase
     }
 
     #[Test]
-    public function resolveSinceParsesRelativeOffsetsAndDates(): void
-    {
-        $now = time();
-        $thirtyMinutes = $this->command->resolveSince('30m');
-        self::assertIsInt($thirtyMinutes);
-        self::assertEqualsWithDelta($now - 1800, $thirtyMinutes, 5);
-
-        $twoDays = $this->command->resolveSince('2d');
-        self::assertIsInt($twoDays);
-        self::assertEqualsWithDelta($now - 172800, $twoDays, 5);
-
-        self::assertSame(strtotime('Mon, 15 Jun 2026 16:16:25 +0200'), $this->command->resolveSince('Mon, 15 Jun 2026 16:16:25 +0200'));
-        self::assertNull($this->command->resolveSince(null));
-        self::assertNull($this->command->resolveSince(''));
-    }
-
-    #[Test]
     public function aggregateDeduplicatesByMessageCountsAndDropsTrace(): void
     {
         $summaries = $this->command->aggregate([

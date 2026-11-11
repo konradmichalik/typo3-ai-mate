@@ -15,7 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Command;
 
 use Exception;
 use FilesystemIterator;
-use KonradMichalik\Typo3AiMate\Command\Support\{IconLookup, LabelLookup};
+use KonradMichalik\Typo3AiMate\Command\Support\{LabelLookup, ListInput};
 use KonradMichalik\Typo3AiMate\Support\Cast;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -84,7 +84,7 @@ final class LabelsCommand extends AbstractJsonCommand
         // Translation files are named de_CH.locallang.xlf, never de-CH.
         $locale = str_replace('-', '_', $locale);
 
-        $references = IconLookup::parseList($input->getOption('references'));
+        $references = ListInput::parse($input->getOption('references'));
         if ([] !== $references) {
             $described = [];
             foreach ($references as $reference) {
@@ -159,7 +159,7 @@ final class LabelsCommand extends AbstractJsonCommand
             return [
                 'exists' => false,
                 'file' => $file,
-                'suggestions' => IconLookup::suggest($key, array_keys($labels)),
+                'suggestions' => ListInput::suggest($key, array_keys($labels)),
                 '_hint' => sprintf('"%s" is not defined in %s. An LLL: reference to it renders as an empty string.', $key, $file),
             ];
         }

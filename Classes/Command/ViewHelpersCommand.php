@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Command;
 
 use Composer\Autoload\ClassLoader;
-use KonradMichalik\Typo3AiMate\Command\Support\{IconLookup, ViewHelperCatalog, ViewHelperLookup};
+use KonradMichalik\Typo3AiMate\Command\Support\{ListInput, ViewHelperCatalog, ViewHelperLookup};
 use KonradMichalik\Typo3AiMate\Support\{Cast, ClassLoaders};
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\{InputInterface, InputOption};
@@ -59,7 +59,7 @@ final class ViewHelpersCommand extends AbstractJsonCommand
         $resolver = $this->viewHelperResolverFactory->create();
         $namespaces = $resolver->getNamespaces();
 
-        $names = IconLookup::parseList($input->getOption('names'));
+        $names = ListInput::parse($input->getOption('names'));
         if ([] !== $names) {
             $described = [];
             foreach ($names as $name) {
@@ -106,7 +106,7 @@ final class ViewHelpersCommand extends AbstractJsonCommand
                 'exists' => false,
                 'suggestions' => array_map(
                     static fn (string $candidate): string => $prefix.':'.$candidate,
-                    IconLookup::suggest($shortName, ViewHelperCatalog::names($namespaces[$prefix], ClassLoaders::with($this->classLoader))['names']),
+                    ListInput::suggest($shortName, ViewHelperCatalog::names($namespaces[$prefix], ClassLoaders::with($this->classLoader))['names']),
                 ),
                 '_hint' => sprintf('<%s> does not resolve to a ViewHelper class, so the template fails to parse.', $name),
             ];
@@ -181,7 +181,7 @@ final class ViewHelpersCommand extends AbstractJsonCommand
     {
         if (!array_key_exists($prefix, $namespaces)) {
             return [
-                'suggestions' => IconLookup::suggest($prefix, $this->prefixes($namespaces)),
+                'suggestions' => ListInput::suggest($prefix, $this->prefixes($namespaces)),
                 '_hint' => sprintf('"%s" is not a global namespace. A template has to declare it with an xmlns attribute first.', $prefix),
             ];
         }

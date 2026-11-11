@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace KonradMichalik\Typo3AiMate\Command;
 
 use InvalidArgumentException;
-use KonradMichalik\Typo3AiMate\Command\Support\{RecordQueryInput, SysLogFormatter};
+use KonradMichalik\Typo3AiMate\Command\Support\{RecordQueryInput, SinceInput, SysLogFormatter};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\SysLogType;
 use KonradMichalik\Typo3AiMate\Support\Cast;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -101,7 +101,7 @@ final class SysLogCommand extends AbstractJsonCommand
             'recordUid' => $recordUid,
             'type' => $type,
             'requestId' => Cast::string($input->getOption('request-id')),
-            'since' => (new LogsCommand())->resolveSince($input->getOption('since')),
+            'since' => SinceInput::timestamp($input->getOption('since')),
         ];
         $limit = min(self::MAX_LIMIT, max(1, Cast::int($input->getOption('limit'))));
 
