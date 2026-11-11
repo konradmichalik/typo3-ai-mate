@@ -15,7 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Command;
 
 use Composer\Autoload\ClassLoader;
 use KonradMichalik\Typo3AiMate\Command\Support\ClassOwnerResolver;
-use KonradMichalik\Typo3AiMate\Support\Cast;
+use KonradMichalik\Typo3AiMate\Support\{Cast, ClassLoaders};
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Input\{InputInterface, InputOption};
 use Symfony\Component\Console\Output\OutputInterface;
@@ -43,7 +43,10 @@ use function is_string;
 )]
 final class OverridesCommand extends AbstractJsonCommand
 {
-    public function __construct(private readonly PackageManager $packageManager)
+    public function __construct(
+        private readonly PackageManager $packageManager,
+        private readonly ClassLoader $classLoader,
+    )
     {
         parent::__construct();
     }
@@ -159,7 +162,7 @@ final class OverridesCommand extends AbstractJsonCommand
 
     private function findFile(string $class): ?string
     {
-        foreach (ClassLoader::getRegisteredLoaders() as $loader) {
+        foreach (ClassLoaders::with($this->classLoader) as $loader) {
             $file = $loader->findFile($class);
             if (is_string($file)) {
                 return $file;
