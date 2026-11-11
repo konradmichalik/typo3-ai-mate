@@ -36,6 +36,9 @@ $configuration
     // EXT:redirects is optional: typo3-route only reports redirects when it is
     // installed, and its service is injected as an optional reference.
     ->ignoreErrorsOnPackage('typo3/cms-redirects', [ComposerDependencyAnalyser\Config\ErrorType::DEV_DEPENDENCY_IN_PROD])
+    // EXT:scheduler is optional: SchedulerCommand gets its repository injected as
+    // null when the extension is not installed, so it is suggested, not required.
+    ->ignoreErrorsOnPackage('typo3/cms-scheduler', [ComposerDependencyAnalyser\Config\ErrorType::DEV_DEPENDENCY_IN_PROD])
     // posix stays undeclared on purpose: its call site skips the test when the
     // extension is missing, so requiring it would turn an optional check into a
     // hard dependency of the test suite.

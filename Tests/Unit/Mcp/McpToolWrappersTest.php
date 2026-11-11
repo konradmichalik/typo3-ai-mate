@@ -15,7 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, BePermissionsTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LabelsTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, RouteTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool, ViewHelpersTool};
+use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, BePermissionsTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LabelsTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, RouteTool, SchedulerTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool, ViewHelpersTool};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\{ChangelogType, ConfigSection, LogLevel, MiddlewareStack, OutputMode, TsConfigType, TypoScriptType};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -404,6 +404,24 @@ final class McpToolWrappersTest extends TestCase
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:upgrade:deprecations');
         self::assertJsonPath($result, 'args', []);
+    }
+
+    #[Test]
+    public function schedulerToolListsAllTasksByDefault(): void
+    {
+        $result = $this->decode((new SchedulerTool($this->runner))->tasks());
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:scheduler:tasks');
+        self::assertJsonPath($result, 'args', []);
+    }
+
+    #[Test]
+    public function schedulerToolForwardsTheUid(): void
+    {
+        $result = $this->decode((new SchedulerTool($this->runner))->tasks(7));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:scheduler:tasks');
+        self::assertJsonPath($result, 'args', ['--uid', '7']);
     }
 
     #[Test]

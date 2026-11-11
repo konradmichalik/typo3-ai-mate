@@ -1,6 +1,7 @@
 {
 	"symbol-whitelist": [
 		"TYPO3",
-		"TYPO3\\CMS\\Redirects\\Service\\RedirectService"
+		"TYPO3\\CMS\\Redirects\\Service\\RedirectService",
+		"TYPO3\\CMS\\Scheduler\\Domain\\Repository\\SchedulerTaskRepository"
 	]
 }
