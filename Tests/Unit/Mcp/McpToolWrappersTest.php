@@ -15,7 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, BePermissionsTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LabelsTool, LogsTool, MiddlewaresTool, PageTool, RecordsTool, RenderPageTool, RouteTool, SchedulerTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool, ViewHelpersTool};
+use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, BePermissionsTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LabelsTool, LogsTool, MiddlewaresTool, OverridesTool, PageTool, RecordsTool, RenderPageTool, RouteTool, SchedulerTool, SiteTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeWizardsTool, ViewHelpersTool};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\{ChangelogType, ConfigSection, LogLevel, MiddlewareStack, OutputMode, TsConfigType, TypoScriptType};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -215,6 +215,24 @@ final class McpToolWrappersTest extends TestCase
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:events:list');
         self::assertJsonPath($result, 'args', ['--event', 'SomeEvent']);
+    }
+
+    #[Test]
+    public function overridesToolListsEveryXclassByDefault(): void
+    {
+        $result = $this->decode((new OverridesTool($this->runner))->list());
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:overrides:list');
+        self::assertJsonPath($result, 'args', []);
+    }
+
+    #[Test]
+    public function overridesToolForwardsTheClassFilter(): void
+    {
+        $result = $this->decode((new OverridesTool($this->runner))->list('TYPO3\\CMS\\Core\\Http\\RequestFactory'));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:overrides:list');
+        self::assertJsonPath($result, 'args', ['--class', 'TYPO3\\CMS\\Core\\Http\\RequestFactory']);
     }
 
     #[Test]
