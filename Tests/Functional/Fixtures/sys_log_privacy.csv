@@ -1,0 +1,5 @@
+"sys_log"
+,"uid","tstamp","userid","type","action","error","tablename","recuid","event_pid","details","log_data","IP","workspace"
+,1,1700000000,4711,255,1,0,"",0,-1,"User %s logged in from ###IP###","[""jane.roe""]","203.0.113.7",0
+,2,1700000100,4711,1,2,1,"tt_content",9,1,"Record ""{title}"" ({table}:{uid}) failed","{""title"":""Ask 198.51.100.24"",""table"":""tt_content"",""uid"":9}","203.0.113.7",3
+,3,1700000200,4711,1,2,0,"be_users",3,0,"Record ""{title}"" ({table}:{uid}) was updated","{""title"":""jane.roe"",""table"":""be_users"",""uid"":3}","203.0.113.7",0

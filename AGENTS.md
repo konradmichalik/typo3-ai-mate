@@ -33,7 +33,7 @@ docs/             Documentation
 .ddev/            DDEV setup with multi-version TYPO3 instances under .Build/
 ```
 
-The `Classes/Mcp` tools are read-only views of runtime state. Application-derived output is wrapped as untrusted data, `typo3-records` redacts backend user PII and `typo3-render-page` guards against SSRF. Keep these guarantees when changing or adding tools.
+The `Classes/Mcp` tools are read-only views of runtime state. Application-derived output is wrapped as untrusted data, `typo3-records` redacts backend user PII, `typo3-syslog` never returns user ids or IP addresses and `typo3-render-page` guards against SSRF. Keep these guarantees when changing or adding tools.
 
 ## Development commands
 

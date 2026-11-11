@@ -27,6 +27,7 @@ TESTS=(
   "typo3-logs-search|--query=intentional"
   "typo3-logs-tail|--limit=5"
   "typo3-logs-by-level|--minLevel=error"
+  "typo3-syslog|--limit=5"
   "typo3-upgrade-wizards|"
   "typo3-scheduler|"
   "typo3-overrides|"

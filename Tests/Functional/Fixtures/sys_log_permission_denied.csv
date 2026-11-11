@@ -1,0 +1,12 @@
+"pages"
+,"uid","pid","title","perms_userid","perms_groupid","perms_user","perms_group","perms_everybody"
+,1,0,"Locked page",0,0,0,0,0
+"tt_content"
+,"uid","pid","CType","header"
+,7,1,"text","Locked content"
+"be_groups"
+,"uid","pid","title","tables_select","tables_modify"
+,1,0,"Editors","tt_content","tt_content"
+"be_users"
+,"uid","pid","username","password","admin","usergroup","workspace_perms"
+,2,0,"editor.example","$argon2i$v=19$m=65536,t=16,p=1$secrethash",0,"1",1
