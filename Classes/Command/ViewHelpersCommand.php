@@ -44,8 +44,7 @@ final class ViewHelpersCommand extends AbstractJsonCommand
     public function __construct(
         private readonly ViewHelperResolverFactoryInterface $viewHelperResolverFactory,
         private readonly ClassLoader $classLoader,
-    )
-    {
+    ) {
         parent::__construct();
     }
 
