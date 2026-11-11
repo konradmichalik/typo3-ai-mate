@@ -34,6 +34,7 @@ The examples below omit `--format=toon` for readability. An assistant should pas
 | Scheduler | [`typo3-scheduler`](#typo3-scheduler) |
 | Configuration | [`typo3-config`](#typo3-config) |
 | Services | [`typo3-service`](#typo3-service) |
+| Overrides | [`typo3-overrides`](#typo3-overrides) |
 | Upgrade | [`typo3-upgrade-wizards`](#typo3-upgrade-wizards) |
 | Upgrade | [`typo3-extension-scanner`](#typo3-extension-scanner) |
 | Upgrade | [`typo3-changelog-search`](#typo3-changelog-search) |
@@ -488,6 +489,57 @@ vendor/bin/mate tools:call typo3-service --id="GuzzleHttp\ClientInterface"
 ```
 
 Pass a class/interface name for an autowired service, or a string service id. A service that is not registered, or that TYPO3 keeps private (the default), answers `unsupported` — console commands are the one common exception: `#[AsCommand]`'s autoconfiguration makes them public so `CommandRegistry` can fetch them by id, so this tool can also inspect this package's own commands.
+
+</details>
+
+## `typo3-overrides`
+
+Every XCLASS registration in `SYS/Objects`: original class, replacement class, the class TYPO3 effectively instantiates when XCLASSes chain, and the extension that owns the replacement. It answers "why does my change to class X not take effect" without reading `typo3-config --path=SYS/Objects` and guessing which package wrote each entry.
+
+TYPO3 does not record which `ext_localconf.php` made a registration, so the owner is the active extension the replacement class belongs to. `ownerDeterminedBy` says how that was established:
+
+- `classFile`: the file the autoloader resolves for the replacement class lies inside the extension's path. The class itself is never loaded.
+- `namespace`: the autoloader does not know the class (a typo in the registration, an extension that is not autoloaded), but its name matches a PSR-4 namespace from the extension's `composer.json`.
+
+Both are `null` when the replacement belongs to no active extension, for example a class from a plain Composer library.
+
+<details>
+<summary>Is this class replaced, and by whom?</summary>
+
+```bash
+vendor/bin/mate tools:call typo3-overrides
+vendor/bin/mate tools:call typo3-overrides --class="TYPO3\CMS\Core\Utility\File\BasicFileUtility"
+```
+
+```json
+{
+  "class": "TYPO3\\CMS\\Core\\Utility\\File\\BasicFileUtility",
+  "found": true,
+  "xclasses": [
+    {
+      "original": "TYPO3\\CMS\\Core\\Utility\\File\\BasicFileUtility",
+      "replacement": "Vendor\\SitePackage\\Xclass\\BasicFileUtility",
+      "effectiveClass": "Vendor\\SitePackage\\Xclass\\BasicFileUtility",
+      "extension": "site_package",
+      "package": "vendor/site-package",
+      "ownerDeterminedBy": "classFile"
+    }
+  ]
+}
+```
+
+`--class` matches the original and the replacement side, case-insensitively. `found: false` means no XCLASS touches the class.
+
+</details>
+
+<details>
+<summary>Why DI service decorators are not listed</summary>
+
+A decorator (`decorates:` in `Services.yaml`, `#[AsDecorator]`) replaces a service just as effectively as an XCLASS, but the running container no longer knows about it. Symfony's `DecoratorServicePass` resolves decoration at compile time: the decorated id becomes an alias of the decorator, the original definition is renamed to `<decorator id>.inner`, and the `container.decorator` tag that records the pair exists only in the `ContainerBuilder`. TYPO3 then dumps the compiled container to `var/cache/code/di/` with Symfony's `PhpDumper`, which keeps none of that metadata. Verified against TYPO3 13.4 and 14.3, which ship the same `DecoratorServicePass` and `PhpDumper`.
+
+What survives is the list of removed private service ids, which still contains each `<decorator id>.inner`. That names the decorator but not the service it decorates, misses decorators with a custom `decoration_inner_name`, and mixes in TYPO3's own `<id>_decorated_<n>.inner` entries from service provider extensions. The decorated id only appears inside the generated factory code. Recovering the pairing would mean parsing that generated PHP or rebuilding the container, and this tool does neither.
+
+To check a single public service, use [`typo3-service`](#typo3-service): its `class` is the decorator when the service is decorated.
 
 </details>
 
