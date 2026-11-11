@@ -19,6 +19,7 @@ The examples below omit `--format=toon` for readability. An assistant should pas
 | FlexForm | [`typo3-flexform`](#typo3-flexform) |
 | TypoScript | [`typo3-typoscript`](#typo3-typoscript) |
 | TSconfig | [`typo3-tsconfig`](#typo3-tsconfig) |
+| Backend permissions | [`typo3-be-permissions`](#typo3-be-permissions) |
 | Fluid | [`typo3-fluid-resolve`](#typo3-fluid-resolve) |
 | Fluid | [`typo3-fluid-namespaces`](#typo3-fluid-namespaces) |
 | Fluid | [`typo3-viewhelpers`](#typo3-viewhelpers) |
@@ -215,6 +216,23 @@ vendor/bin/mate tools:call typo3-tsconfig --type=user --user=1
 ```
 
 Page TSconfig is rootline-merged, so no single file reveals the effective value.
+
+</details>
+
+## `typo3-be-permissions`
+
+Effective permissions of a backend user (`user`) or of a group (`group`), computed the way the backend computes them: the core loads the user, resolves its groups and subgroups and merges their access lists. Returns the group chain (uids and titles), the tables allowed for select and modify, the granted exclude fields, the explicit allow/deny values, the allowed languages, the webmounts and the file mounts. `pageId` adds whether that page lies inside a webmount and the effective page permission bits (`show`, `edit`, `delete`, `new`, `editContent`). `table` adds which fields of that table the user can edit, which are exclude fields without a grant and which `TCEFORM.<table>.<field>.disabled` hides, read from the Page TSconfig of `pageId` including the user's `page.` overrides. A group is evaluated as the only group of a user that takes its mounts from its groups. Admin users are reported as `admin: true` with a hint instead of a list that would look empty. User names, real names and e-mail addresses are never returned, only uids.
+
+<details>
+<summary>Answer "why can this editor not edit field X on page Y?"</summary>
+
+```bash
+vendor/bin/mate tools:call typo3-be-permissions --user=4
+vendor/bin/mate tools:call typo3-be-permissions --user=4 --table=tt_content --pageId=42
+vendor/bin/mate tools:call typo3-be-permissions --group=2 --pageId=42
+```
+
+A field missing from `editableFields` is either in `excludedFields` (grant it via the group's "Allowed excludefields") or in `disabledByTsconfig` (a `TCEFORM` rule). A page with `inWebmount: false` stays invisible whatever its permission bits say.
 
 </details>
 

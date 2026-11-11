@@ -56,6 +56,7 @@ Exact tool names, so you can select one directly instead of searching for it.
 | Why is this record not showing? What is stored on it? | `typo3-records` |
 | What is the resolved frontend TypoScript here? | `typo3-typoscript` |
 | What is the resolved Page or User TSconfig here? | `typo3-tsconfig` |
+| Why can this editor not see a field, page or language? | `typo3-be-permissions` |
 | Which physical Fluid file wins for this template name? | `typo3-fluid-resolve` |
 | Does this record's stored FlexForm still match its data structure? | `typo3-flexform` |
 | Which Fluid namespaces may a template use without declaring them? | `typo3-fluid-namespaces` |
