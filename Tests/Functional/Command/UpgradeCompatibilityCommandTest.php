@@ -18,6 +18,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Symfony\Component\Console\Tester\CommandTester;
 use TYPO3\CMS\Core\Console\CommandRegistry;
 use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Package\{PackageInterface, PackageManager};
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
 
@@ -75,12 +76,15 @@ final class UpgradeCompatibilityCommandTest extends FunctionalTestCase
         [, $result] = $this->runRegisteredCommand('14.3');
         $byKey = $this->indexByExtension($result);
 
+        // The v13 package manager builds a test extension's manifest from
+        // ext_emconf.php, so composer.json is only read on v14.
+        $fromComposer = (new Typo3Version())->getMajorVersion() >= 14;
         self::assertSame([
             'extension' => 'scanner_fixture',
             'package' => 'konradmichalik/scanner-fixture',
             'origin' => 'own',
-            'constraint' => '^13.4 || ^14.0',
-            'source' => 'composer.json',
+            'constraint' => $fromComposer ? '^13.4 || ^14.0' : '13.4.0-14.99.99',
+            'source' => $fromComposer ? 'composer.json' : 'ext_emconf.php',
             'status' => 'compatible',
         ], $byKey['scanner_fixture']);
 

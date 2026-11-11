@@ -38,11 +38,12 @@ use function strlen;
 final class ViewHelperCatalog
 {
     /**
-     * @param mixed $phpNamespaces the PHP namespaces one prefix maps to
+     * @param mixed             $phpNamespaces the PHP namespaces one prefix maps to
+     * @param list<ClassLoader> $loaders       the class loaders to enumerate classes from
      *
      * @return array{names: list<string>, unlisted: list<string>} unlisted are resolver delegates, which cannot enumerate their ViewHelpers
      */
-    public static function names(mixed $phpNamespaces): array
+    public static function names(mixed $phpNamespaces, array $loaders): array
     {
         $names = [];
         $unlisted = [];
@@ -51,7 +52,7 @@ final class ViewHelperCatalog
             if (is_a($phpNamespace, ViewHelperResolverDelegateInterface::class, true)) {
                 $unlisted[] = $phpNamespace;
             } elseif ('' !== $phpNamespace) {
-                $names = [...$names, ...self::namesIn($phpNamespace)];
+                $names = [...$names, ...self::namesIn($phpNamespace, $loaders)];
             }
         }
         $names = array_values(array_unique($names));
@@ -76,12 +77,14 @@ final class ViewHelperCatalog
     }
 
     /**
+     * @param list<ClassLoader> $loaders
+     *
      * @return list<string>
      */
-    private static function namesIn(string $phpNamespace): array
+    private static function namesIn(string $phpNamespace, array $loaders): array
     {
         $names = [];
-        foreach (self::classesBelow($phpNamespace.'\\') as $className) {
+        foreach (self::classesBelow($phpNamespace.'\\', $loaders) as $className) {
             $name = ViewHelperLookup::nameFromClass($phpNamespace, $className);
             if (null !== $name && self::isViewHelper($className)) {
                 $names[] = $name;
@@ -92,12 +95,14 @@ final class ViewHelperCatalog
     }
 
     /**
+     * @param list<ClassLoader> $loaders
+     *
      * @return list<string>
      */
-    private static function classesBelow(string $prefix): array
+    private static function classesBelow(string $prefix, array $loaders): array
     {
         $classes = [];
-        foreach (ClassLoader::getRegisteredLoaders() as $loader) {
+        foreach ($loaders as $loader) {
             $classes = [
                 ...$classes,
                 ...array_filter(array_keys($loader->getClassMap()), static fn (string $className): bool => str_starts_with($className, $prefix)),
