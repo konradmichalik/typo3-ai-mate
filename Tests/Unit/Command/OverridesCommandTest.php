@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 
+use Composer\Autoload\ClassLoader;
 use KonradMichalik\Ttt\Attribute\WithEnvironment;
 use KonradMichalik\Typo3AiMate\Command\OverridesCommand;
 use KonradMichalik\Typo3AiMate\Support\{Cast, Redactor};
@@ -165,7 +166,7 @@ final class OverridesCommandTest extends TestCase
      */
     private function runCommand(array $input = []): array
     {
-        $tester = new CommandTester(new OverridesCommand($this->packageManager()));
+        $tester = new CommandTester(new OverridesCommand($this->packageManager(), $this->classLoader()));
         $exitCode = $tester->execute($input);
 
         $decoded = json_decode($tester->getDisplay(), true);
@@ -189,6 +190,14 @@ final class OverridesCommandTest extends TestCase
 
             return $xclass;
         }, $xclasses));
+    }
+
+    private function classLoader(): ClassLoader
+    {
+        $loader = require dirname(__DIR__, 3).'/vendor/autoload.php';
+        self::assertInstanceOf(ClassLoader::class, $loader);
+
+        return $loader;
     }
 
     private function packageManager(): PackageManager
