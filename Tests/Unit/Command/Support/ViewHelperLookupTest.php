@@ -38,6 +38,8 @@ final class ViewHelperLookupTest extends TestCase
         yield 'no prefix' => ['link.page', null];
         yield 'empty name' => ['f:', null];
         yield 'empty prefix' => [':link.page', null];
+        yield 'path segments in the name' => ['f:../../tmp/evil', null];
+        yield 'namespace separator in the name' => ['f:Foo\\Bar', null];
     }
 
     /**

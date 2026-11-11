@@ -20,6 +20,7 @@ use Symfony\AI\Mate\Attribute\MateTool;
  * RouteTool.
  *
  * @author Konrad Michalik <hej@konradmichalik.dev>
+ * @license GPL-2.0-or-later
  */
 final readonly class RouteTool
 {
