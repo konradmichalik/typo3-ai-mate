@@ -17,6 +17,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Whi
 - New tool `typo3-profiler-compare`: the delta between two request profiles (timing, memory, queries, duplicate queries, HTTP calls, log entries by level), the largest differences first, the cache state of both and the duplicate queries, log components and events that changed most.
 - New tool `typo3-profiler-triage`: a short ranked list of recent request profiles worth a look (5xx, exceptions, error-level log entries, deprecations, duration or query count far above the median, N+1 suspects), each with its reasons and token.
 - New tool `typo3-upgrade-compatibility`: which installed extensions block an upgrade to a `target` TYPO3 version. For every active non-core extension it checks the `typo3/cms-core` constraint from `composer.json`, or `depends.typo3` from `ext_emconf.php` when `composer.json` has none, and reports its source, own or third-party origin and status (`blocking`, `unknown`, `compatible`), blocking extensions first. Offline, from the installed package metadata only.
+- `typo3-service` takes `tag` to list every service carrying a DI tag, with its tag attributes and public flag, private services included. The tag map is recorded by a compiler pass while TYPO3 builds the container, because the compiled container keeps no tags, so the lookup resolves no service.
 
 ### Changed
 

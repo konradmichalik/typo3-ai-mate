@@ -15,7 +15,7 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Mcp;
 
 use KonradMichalik\Ttt\Assertion\JsonAssertions;
 use KonradMichalik\Typo3AiMate\Mate\Typo3CliRunner;
-use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, BePermissionsTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LabelsTool, LogsTool, MiddlewaresTool, OverridesTool, PageTool, RecordsTool, RenderPageTool, RouteTool, SchedulerTool, SiteTool, SysLogTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeCompatibilityTool, UpgradeWizardsTool, ViewHelpersTool};
+use KonradMichalik\Typo3AiMate\Mcp\{BackendModulesTool, BePermissionsTool, ChangelogSearchTool, CommandsTool, ConfigTool, DbSchemaTool, DeprecationsTool, EventsTool, ExtensionScannerTool, FlexFormTool, FluidNamespacesTool, FluidResolveTool, IconsTool, InfoTool, LabelsTool, LogsTool, MiddlewaresTool, OverridesTool, PageTool, RecordsTool, RenderPageTool, RouteTool, SchedulerTool, ServiceDetailTool, SiteTool, SysLogTool, TcaTool, TsConfigTool, TypoScriptTool, UpgradeCompatibilityTool, UpgradeWizardsTool, ViewHelpersTool};
 use KonradMichalik\Typo3AiMate\Mcp\Enum\{ChangelogType, ConfigSection, LogLevel, MiddlewareStack, OutputMode, SysLogType, TsConfigType, TypoScriptType};
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -216,6 +216,24 @@ final class McpToolWrappersTest extends TestCase
 
         self::assertJsonPath($result, 'command', 'typo3-ai-mate:events:list');
         self::assertJsonPath($result, 'args', ['--event', 'SomeEvent']);
+    }
+
+    #[Test]
+    public function serviceToolForwardsTheServiceId(): void
+    {
+        $result = $this->decode((new ServiceDetailTool($this->runner))->detail('Psr\\Clock\\ClockInterface'));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:service:detail');
+        self::assertJsonPath($result, 'args', ['--', 'Psr\\Clock\\ClockInterface']);
+    }
+
+    #[Test]
+    public function serviceToolForwardsATagLookupWithoutAnId(): void
+    {
+        $result = $this->decode((new ServiceDetailTool($this->runner))->detail(tag: 'event.listener'));
+
+        self::assertJsonPath($result, 'command', 'typo3-ai-mate:service:detail');
+        self::assertJsonPath($result, 'args', ['--tag', 'event.listener']);
     }
 
     #[Test]

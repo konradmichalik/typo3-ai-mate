@@ -74,8 +74,8 @@ Exact tool names, so you can select one directly instead of searching for it.
 | Which console commands exist? | `typo3-commands` |
 | Why did this scheduler task not run? Is the scheduler running at all? | `typo3-scheduler` |
 | What is in `TYPO3_CONF_VARS` or an extension's configuration? | `typo3-config` |
-| Why is this implementation injected? Is this service shared? | `typo3-service` |
 | Why does my change to a class not take effect? Is it XCLASSed, and by which extension? | `typo3-overrides` |
+| Why is this implementation injected? Is this service shared? Which services carry tag X? | `typo3-service` |
 | Which sites exist? What is page N's URL? | `typo3-site` |
 | Which page does this URL hit? Is it redirected? Which route arguments? | `typo3-route` |
 | Which extensions block an upgrade to version X? | `typo3-upgrade-compatibility` |

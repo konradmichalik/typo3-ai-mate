@@ -510,7 +510,9 @@ Three layers: `default` (TYPO3 core's own defaults), `settings.php` (`config/sys
 
 ## `typo3-service`
 
-Class, constructor argument types, and public/shared flags of one DI service — why is this implementation injected, is it shared or a fresh instance per use. Public services only: TYPO3 makes most services private by default (`_defaults: public: false` in `Configuration/Services.yaml`), and this tool can only reach what the container itself exposes. Constructor arguments are the *types* PHP declares, not the *values* TYPO3 resolved: a constructor-injected service and a scalar parameter both show only their declared type. No tags and no lazy/autowired/autoconfigured flags either — both are compiler-only metadata that no longer exists once the container has compiled, and getting them back would mean rebuilding a `ContainerBuilder` the way TYPO3's own cache warmup does, which needs several `@internal` core classes and nine synthetic bootstrap instances (`ClassLoader`, `ApplicationContext`, `cache.core`, …) this tool does not reconstruct.
+Class, constructor argument types, and public/shared flags of one DI service — why is this implementation injected, is it shared or a fresh instance per use. Public services only: TYPO3 makes most services private by default (`_defaults: public: false` in `Configuration/Services.yaml`), and this tool can only reach what the container itself exposes. Constructor arguments are the *types* PHP declares, not the *values* TYPO3 resolved: a constructor-injected service and a scalar parameter both show only their declared type. No lazy/autowired/autoconfigured flags either. They are compiler-only metadata that no longer exists once the container has compiled, and getting them back would mean rebuilding a `ContainerBuilder` the way TYPO3's own cache warmup does, which needs several `@internal` core classes and nine synthetic bootstrap instances (`ClassLoader`, `ApplicationContext`, `cache.core`, …) this tool does not reconstruct.
+
+With `tag` instead of `id`, it lists every service carrying that DI tag, with its tag attributes and public flag, private services included. The compiled container keeps no tags, so this extension records them itself: a compiler pass (`ServiceTagMapPass`) runs while TYPO3 builds the container, before private services are inlined or removed, and the map is dumped into the cached container with everything else. The lookup reads that map and resolves no service, and it reflects the container as last built: flush caches after changing a `Services.yaml`.
 
 Unlike every other tool on this page, this one is not read-only in the strictest sense: the shared/not-shared check resolves the service (twice for a non-shared one), which really constructs it. See [Security](security.md#read-only-by-default).
 
@@ -538,6 +540,7 @@ Pass a class/interface name for an autowired service, or a string service id. A 
 
 ## `typo3-overrides`
 
+Up to 200 services per tag, `serviceCount` holds the full count. A tag no service carries answers an empty `services` list plus `knownTags`, every tag name the container knows. For event listeners in dispatch order use [`typo3-events`](#typo3-events), which reads the listener provider instead.
 `major.minor` matches when the constraint allows any patch release of that minor, a full version only that release. Offline: it reads the installed package metadata and never asks a registry, so it cannot say whether a newer release of a blocking extension already allows the target. Only `typo3/cms-core` is evaluated, not other `typo3/cms-*` requirements. Then run `typo3-extension-scanner` for the code that has to change.
 Which installed extensions block an upgrade to a target TYPO3 version. For every active non-core extension it reports the `typo3/cms-core` constraint, where that constraint came from (`composer.json`, or `depends.typo3` in `ext_emconf.php` when `composer.json` does not require `typo3/cms-core`), whether the extension is `own` or `thirdParty`, and a status against the target: `blocking`, `unknown` or `compatible`. Blocking extensions come first. An extension without any constraint, or with one that cannot be parsed, is `unknown`, never `compatible`.
 Every XCLASS registration in `SYS/Objects`: original class, replacement class, the class TYPO3 effectively instantiates when XCLASSes chain, and the extension that owns the replacement. It answers "why does my change to class X not take effect" without reading `typo3-config --path=SYS/Objects` and guessing which package wrote each entry.
@@ -550,10 +553,12 @@ TYPO3 does not record which `ext_localconf.php` made a registration, so the owne
 Both are `null` when the replacement belongs to no active extension, for example a class from a plain Composer library.
 
 <details>
+<summary>Which services carry this tag?</summary>
 <summary>Find the packages that rule out the target before touching code</summary>
 <summary>Is this class replaced, and by whom?</summary>
 
 ```bash
+vendor/bin/mate tools:call typo3-service --tag=typo3.singleton
 vendor/bin/mate tools:call typo3-upgrade-compatibility --target=14.3
 vendor/bin/mate tools:call typo3-upgrade-compatibility --target=14.3.7
 vendor/bin/mate tools:call typo3-overrides
@@ -562,6 +567,13 @@ vendor/bin/mate tools:call typo3-overrides --class="TYPO3\CMS\Core\Utility\File\
 
 ```json
 {
+  "tag": "typo3.singleton",
+  "services": [
+    {"id": "TYPO3\\CMS\\Backend\\CodeEditor\\CodeEditor", "class": "TYPO3\\CMS\\Backend\\CodeEditor\\CodeEditor", "public": true, "attributes": [[]]},
+    …
+  ],
+  "serviceCount": 74,
+  "_truncated": false
   "target": "14.3",
   "summary": {"blocking": 1, "unknown": 0, "compatible": 12},
   "extensions": [

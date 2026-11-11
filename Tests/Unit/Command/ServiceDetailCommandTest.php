@@ -15,8 +15,9 @@ namespace KonradMichalik\Typo3AiMate\Tests\Unit\Command;
 
 use KonradMichalik\Ttt\Attribute\WithEnvironment;
 use KonradMichalik\Typo3AiMate\Command\ServiceDetailCommand;
+use KonradMichalik\Typo3AiMate\Service\ServiceTagMap;
 use KonradMichalik\Typo3AiMate\Tests\Unit\Command\Fixtures\InMemoryContainer;
-use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\{DataProvider, Test};
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use stdClass;
@@ -107,12 +108,98 @@ final class ServiceDetailCommandTest extends TestCase
         self::assertSame('Could not resolve service "acme.broken": missing runtime dependency', $result[1]['error']);
     }
 
+    #[Test]
+    public function aTagLookupListsTaggedServicesFromTheMapWithoutTouchingTheContainer(): void
+    {
+        $map = new ServiceTagMap(['acme.tag' => [
+            ['id' => 'acme.private', 'class' => NoConstructor::class, 'public' => false, 'attributes' => [['priority' => 10]]],
+        ]]);
+
+        $result = $this->runTagCommand($map, ['--tag' => 'acme.tag']);
+
+        self::assertSame(0, $result[0]);
+        self::assertSame([
+            'tag' => 'acme.tag',
+            'services' => [
+                ['id' => 'acme.private', 'class' => NoConstructor::class, 'public' => false, 'attributes' => [['priority' => 10]]],
+            ],
+            'serviceCount' => 1,
+            '_truncated' => false,
+        ], $result[1]);
+    }
+
+    #[Test]
+    public function anUnknownTagAnswersAnEmptyListWithTheKnownTagNames(): void
+    {
+        $map = new ServiceTagMap(['acme.one' => [], 'acme.two' => []]);
+
+        $result = $this->runTagCommand($map, ['--tag' => 'acme.ghost']);
+
+        self::assertSame(0, $result[0]);
+        self::assertSame([], $result[1]['services']);
+        self::assertSame(['acme.one', 'acme.two'], $result[1]['knownTags']);
+    }
+
+    #[Test]
+    public function aTagWithManyServicesIsTruncated(): void
+    {
+        $services = [];
+        for ($i = 0; $i < 201; ++$i) {
+            $services[] = ['id' => 'acme.'.$i, 'class' => NoConstructor::class, 'public' => false, 'attributes' => [[]]];
+        }
+
+        $result = $this->runTagCommand(new ServiceTagMap(['acme.tag' => $services]), ['--tag' => 'acme.tag']);
+
+        self::assertIsArray($result[1]['services']);
+        self::assertCount(200, $result[1]['services']);
+        self::assertSame(201, $result[1]['serviceCount']);
+        self::assertTrue($result[1]['_truncated']);
+    }
+
+    /**
+     * @param array<string, string> $input
+     */
+    #[Test]
+    #[DataProvider('ambiguousInputs')]
+    public function exactlyOneOfIdAndTagIsRequired(array $input): void
+    {
+        $result = $this->runTagCommand(new ServiceTagMap(), $input);
+
+        self::assertSame(1, $result[0]);
+        self::assertSame('Pass either a service id or --tag, not both and not neither.', $result[1]['error']);
+    }
+
+    /**
+     * @return iterable<string, array{array<string, string>}>
+     */
+    public static function ambiguousInputs(): iterable
+    {
+        yield 'neither' => [[]];
+        yield 'both' => [['id' => 'acme.logger', '--tag' => 'acme.tag']];
+    }
+
+    /**
+     * @param array<string, string> $input
+     *
+     * @return array{0: int, 1: array<mixed>}
+     */
+    private function runTagCommand(ServiceTagMap $map, array $input): array
+    {
+        $tester = new CommandTester(new ServiceDetailCommand(new InMemoryContainer([]), $map));
+        $exitCode = $tester->execute($input);
+
+        $decoded = json_decode($tester->getDisplay(), true);
+        self::assertIsArray($decoded, 'Command output is valid JSON.');
+
+        return [$exitCode, $decoded];
+    }
+
     /**
      * @return array{0: int, 1: array<mixed>}
      */
     private function runCommand(InMemoryContainer $container, string $id): array
     {
-        $tester = new CommandTester(new ServiceDetailCommand($container));
+        $tester = new CommandTester(new ServiceDetailCommand($container, new ServiceTagMap()));
         $exitCode = $tester->execute(['id' => $id]);
 
         $decoded = json_decode($tester->getDisplay(), true);

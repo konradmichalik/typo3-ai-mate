@@ -20,6 +20,7 @@ Classes/
   Service/        Resolvers (Fluid, site URL, TypoScript)
   Support/        Helpers (redaction, tree building, cluster gate)
   Log/            Log processors
+  DependencyInjection/  Compiler passes (service tag map for typo3-service --tag)
   Mate/           Providers and CLI runner for the Mate container
   Configuration.php
 Configuration/    Services.yaml, Mate.php

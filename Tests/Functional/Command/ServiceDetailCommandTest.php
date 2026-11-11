@@ -32,7 +32,47 @@ final class ServiceDetailCommandTest extends FunctionalTestCase
 
     protected array $testExtensionsToLoad = [
         'typo3_ai_mate',
+        __DIR__.'/../Fixtures/Extensions/service_tag_fixture',
     ];
+
+    #[Test]
+    public function aTagLookupListsTheFixtureTagIncludingThePrivateServiceTheCompiledContainerDropped(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['--tag' => 'service_tag_fixture.extension_point']);
+
+        self::assertSame(0, $exitCode);
+        self::assertFalse($this->getContainer()->has('service_tag_fixture.private'));
+        self::assertSame([
+            'tag' => 'service_tag_fixture.extension_point',
+            'services' => [
+                ['id' => 'service_tag_fixture.private', 'class' => 'ArrayObject', 'public' => false, 'attributes' => [['identifier' => 'private-one', 'priority' => 10]]],
+                ['id' => 'service_tag_fixture.public', 'class' => 'SplObjectStorage', 'public' => true, 'attributes' => [['identifier' => 'public-one']]],
+            ],
+            'serviceCount' => 2,
+            '_truncated' => false,
+        ], $result);
+    }
+
+    #[Test]
+    public function aTagLookupCoversTagsAddedByAutoconfiguration(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['--tag' => 'console.command']);
+
+        self::assertSame(0, $exitCode);
+        $ids = array_column($result['services'], 'id');
+        self::assertContains('KonradMichalik\Typo3AiMate\Command\ServiceDetailCommand', $ids);
+    }
+
+    #[Test]
+    public function anUnknownTagListsTheKnownTagNames(): void
+    {
+        [$exitCode, $result] = $this->runCommand(['--tag' => 'service_tag_fixture.unknown']);
+
+        self::assertSame(0, $exitCode);
+        self::assertSame([], $result['services']);
+        self::assertContains('service_tag_fixture.extension_point', $result['knownTags']);
+        self::assertContains('event.listener', $result['knownTags']);
+    }
 
     #[Test]
     public function resolvesAPubliclyAliasedInterfaceToItsRealImplementation(): void
