@@ -15,7 +15,7 @@
 	"require": {
 		"php": "~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0",
 		"ext-mbstring": "*",
-		"composer/semver": "^3.4",
+		"composer/semver": "^3.6.0",
 		"doctrine/dbal": "^4",
 		"helgesverre/toon": "^3.3.0",
 		"konradmichalik/typo3-request-profiler": "^0.5 || ^0.6 || ^1.0",
