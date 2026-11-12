@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). While the version is below 1.0.0 a minor bump may contain breaking changes, and this file marks them explicitly.
 
-## [Unreleased]
+## [0.8.0] - 2026-11-12
 
 ### Added
 
@@ -21,8 +21,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Whi
 
 ### Changed
 
+- **Breaking:** `Typo3CliRunner` leaves out options whose value is `null` or an empty string, as it already did for `false`. Third-party tools no longer need to filter optional parameters themselves. A tool that relied on passing `--name ''` to a command has to handle the missing option in the command instead.
 - `composer/semver` is now a direct dependency. TYPO3 v14 pulls it in through `typo3/cms-core`, v13 does not.
-- `Typo3CliRunner` leaves out options whose value is `null` or an empty string, as it already did for `false`. Third-party tools no longer need to filter optional parameters themselves. A tool that relied on passing `--name ''` to a command has to handle the missing option in the command instead.
 
 ### Fixed
 
@@ -144,7 +144,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Whi
 
 Initial release.
 
-[Unreleased]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.7.0...HEAD
+[Unreleased]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.8.0...HEAD
+[0.8.0]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.7.0...0.8.0
 [0.7.0]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.6.0...0.7.0
 [0.6.0]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.5.0...0.6.0
 [0.5.0]: https://github.com/konradmichalik/typo3-ai-mate/compare/0.4.0...0.5.0
