@@ -86,7 +86,7 @@ ddev composer test:coverage         # merged coverage in .Build/coverage (pcov)
 
 - Commit format: `<type>: <description>`
 - Types: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `ci`
-- Release commits use `release: version <x.y.z>` and go in their own pull request.
+- Releases have no branch and no pull request: commit `release: version <x.y.z>` directly on `main`, tag exactly that commit, push both.
 - No co-author trailers
 - One commit per logical change
 - Create a feature branch and open a pull request with a clear description.
