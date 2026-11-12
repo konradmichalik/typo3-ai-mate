@@ -116,7 +116,7 @@ composer cgl migration
 
 ## Releasing
 
-A release is its own pull request, cut from `main` after the feature pull requests it contains have been merged.
+A release has no branch and no pull request. Once the feature pull requests it contains are merged, the version bump is committed directly on `main`, and the tag goes on exactly that commit.
 
 ```bash
 # 1. Bump the version in composer.json, composer.lock and ext_emconf.php
@@ -135,4 +135,11 @@ composer bump-version 0.5.0
 
 The heading cannot be automated through `version-bumper.yaml`: a `filesToModify` pattern replaces text that already contains a version, and the literal word `Unreleased` is not version-shaped.
 
-4. Commit as `release: version 0.5.0`, open the pull request, merge it, then tag and release from the merge commit.
+4. Commit on `main` as `release: version 0.5.0`, check that this commit is `HEAD`, then tag and push both:
+
+```bash
+git tag 0.5.0
+git push origin main 0.5.0
+```
+
+The tag push triggers `release.yml`, which creates the GitHub release and publishes to TER. A tag on any other commit publishes that commit, and a TER version cannot be uploaded twice.
