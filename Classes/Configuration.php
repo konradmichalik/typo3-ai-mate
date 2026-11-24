@@ -28,9 +28,6 @@ use function is_array;
  */
 class Configuration
 {
-    final public const EXT_KEY = 'typo3_ai_mate';
-    final public const EXT_NAME = 'Typo3AiMate';
-
     /**
      * Dev-only switch: deprecation backtrace tracking is wired up in the
      * Development context only. Evaluated in ext_localconf.php (and therefore
